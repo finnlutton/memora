@@ -38,7 +38,7 @@ export const demoGalleries: Gallery[] = [
         id: "sub-zermatt",
         galleryId: "gallery-switzerland",
         title: "Zermatt",
-        coverImage: "/demo/alpine-dawn.svg",
+        coverImage: "/demo/alpine-village.png",
         location: "Zermatt, Switzerland",
         dateLabel: "Feb 11-13",
         description:
@@ -46,7 +46,7 @@ export const demoGalleries: Gallery[] = [
         photos: buildPhotoSet(
           "sub-zermatt",
           "zermatt",
-          ["/demo/alpine-dawn.svg", "/demo/mountain-window.svg", "/demo/mist-lake.svg"],
+          ["/demo/alpine-village.png", "/demo/mountain-window.svg", "/demo/mist-lake.svg"],
           ["Morning over the ridgeline", "The hotel window after snowfall", "A pause before dinner"],
         ),
         createdAt: now,
@@ -56,7 +56,7 @@ export const demoGalleries: Gallery[] = [
         id: "sub-train-livigno",
         galleryId: "gallery-switzerland",
         title: "Train to Livigno",
-        coverImage: "/demo/train-snow.svg",
+        coverImage: "/demo/train-livigno.png",
         location: "Bernina route",
         dateLabel: "Feb 14",
         description:
@@ -64,7 +64,7 @@ export const demoGalleries: Gallery[] = [
         photos: buildPhotoSet(
           "sub-train-livigno",
           "livigno",
-          ["/demo/train-snow.svg", "/demo/frosted-platform.svg", "/demo/ink-evening.svg"],
+          ["/demo/train-livigno.png", "/demo/frosted-platform.svg", "/demo/ink-evening.svg"],
           ["Windows full of drifting light", "One quiet stop between peaks", "Ink-blue dusk at arrival"],
         ),
         createdAt: now,
@@ -74,7 +74,7 @@ export const demoGalleries: Gallery[] = [
         id: "sub-lake-como",
         galleryId: "gallery-switzerland",
         title: "Lake Como",
-        coverImage: "/demo/como-terrace.svg",
+        coverImage: "/demo/lake-como.png",
         location: "Lake Como, Italy",
         dateLabel: "Feb 15-17",
         description:
@@ -82,7 +82,7 @@ export const demoGalleries: Gallery[] = [
         photos: buildPhotoSet(
           "sub-lake-como",
           "como",
-          ["/demo/como-terrace.svg", "/demo/courtyard-noon.svg", "/demo/mist-lake.svg"],
+          ["/demo/lake-como.png", "/demo/courtyard-noon.svg", "/demo/mist-lake.svg"],
           ["Breakfast facing the water", "Stillness in the courtyard", "Late light on the lake"],
         ),
         createdAt: now,
@@ -92,7 +92,7 @@ export const demoGalleries: Gallery[] = [
         id: "sub-zurich",
         galleryId: "gallery-switzerland",
         title: "Zurich",
-        coverImage: "/demo/zurich-night.svg",
+        coverImage: "/demo/zurich.png",
         location: "Zurich, Switzerland",
         dateLabel: "Feb 18-19",
         description:
@@ -100,7 +100,7 @@ export const demoGalleries: Gallery[] = [
         photos: buildPhotoSet(
           "sub-zurich",
           "zurich",
-          ["/demo/zurich-night.svg", "/demo/paper-morning.svg", "/demo/ink-evening.svg"],
+          ["/demo/zurich.png", "/demo/paper-morning.svg", "/demo/ink-evening.svg"],
           ["Blue hour by the river", "A slow cafe morning", "The city after dinner"],
         ),
         createdAt: now,

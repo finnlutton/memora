@@ -1,6 +1,10 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import { Camera, LayoutGrid, Sparkles } from "lucide-react";
+import { Camera } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export function AppShell({
   children,
@@ -36,7 +40,7 @@ export function AppShell({
           <nav className="flex w-full flex-wrap items-center gap-1 border border-[color:var(--border)] bg-[rgba(255,255,255,0.8)] p-1 lg:w-auto">
             <NavLink href="/">Home</NavLink>
             <NavLink href="/galleries">Galleries</NavLink>
-            <NavLink href="/galleries/new">Create</NavLink>
+            <NavLink href="/galleries/new">Demo</NavLink>
           </nav>
         </div>
       </header>
@@ -44,23 +48,45 @@ export function AppShell({
         {children}
       </main>
       <footer className="mx-auto mt-12 w-full max-w-7xl px-5 pb-10 md:px-8">
-        <div className="border border-[color:var(--border)] bg-[rgba(255,255,255,0.82)] px-6 py-5 backdrop-blur">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-1">
-              <p className="font-serif text-lg text-[color:var(--ink)]">
-                Built for memories with structure, sequence, and permanence.
-              </p>
-              <p className="text-sm text-[color:var(--ink-soft)]">
-                Organize by gallery, move by subgallery, and keep every chapter visually coherent.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-[color:var(--ink-soft)]">
-              <FooterChip icon={LayoutGrid} label="Structured" />
-              <FooterChip icon={Sparkles} label="Reflective" />
-            </div>
-          </div>
-        </div>
+        <ContactUsBox />
       </footer>
+    </div>
+  );
+}
+
+function ContactUsBox() {
+  const [message, setMessage] = useState("");
+  return (
+    <div className="border-t border-[color:var(--border)] pt-10">
+      <div className="border border-[color:var(--border)] bg-[rgba(245,248,252,0.96)] p-6 md:p-8">
+        <p className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
+          Contact
+        </p>
+        <h3 className="mt-4 font-serif text-3xl leading-tight text-[color:var(--ink)] md:text-4xl">
+          Get in touch
+        </h3>
+        <p className="mt-4 text-sm leading-7 text-[color:var(--ink-soft)]">
+          Questions or feedback? Reach us at{" "}
+          <a
+            href="mailto:hello@memora.app"
+            className="text-[color:var(--ink)] underline decoration-[color:var(--ink-soft)] underline-offset-2 transition hover:decoration-[color:var(--accent-strong)]"
+          >
+            hello@memora.app
+          </a>
+        </p>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Leave a message..."
+            className="min-w-0 flex-1 rounded border border-[color:var(--border)] bg-white px-4 py-3 text-sm text-[color:var(--ink)] placeholder:text-[color:var(--ink-faint)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]"
+          />
+          <Button type="button" className="shrink-0 px-5 py-2.5 text-xs">
+            Send
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -76,17 +102,3 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
   );
 }
 
-function FooterChip({
-  icon: Icon,
-  label,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-}) {
-  return (
-    <span className="inline-flex items-center gap-2 border border-[color:var(--border)] bg-[color:var(--paper)] px-3 py-2">
-      <Icon className="h-4 w-4 text-[color:var(--accent)]" />
-      {label}
-    </span>
-  );
-}

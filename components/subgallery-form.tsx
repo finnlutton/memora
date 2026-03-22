@@ -27,7 +27,7 @@ export function SubgalleryForm({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [title, setTitle] = useState(initialValue?.title ?? "");
-  const [coverImage, setCoverImage] = useState(initialValue?.coverImage ?? "");
+  const [coverImage, setCoverImage] = useState(initialValue?.coverImage ?? "/demo/alpine-village.png");
   const [location, setLocation] = useState(initialValue?.location ?? "");
   const [dateLabel, setDateLabel] = useState(initialValue?.dateLabel ?? "");
   const [description, setDescription] = useState(initialValue?.description ?? "");
