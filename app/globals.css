@@ -1,21 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f3ee;
-  --paper: #eef3f8;
-  --paper-strong: #dde7f4;
-  --foreground: #1f2b38;
-  --ink: #1f2b38;
-  --ink-soft: #556376;
-  --ink-faint: #8d97a6;
-  --accent: #60779a;
-  --accent-strong: #435a79;
-  --border: rgba(92, 112, 140, 0.18);
-  --border-strong: rgba(67, 90, 121, 0.28);
+  --background: #f4f0e8;
+  --paper: #e8edf2;
+  --paper-strong: #d8e1ea;
+  --foreground: #1c2833;
+  --ink: #1c2833;
+  --ink-soft: #5c6c79;
+  --ink-faint: #909ba6;
+  --accent: #647b94;
+  --accent-strong: #445a72;
+  --border: rgba(81, 100, 124, 0.16);
+  --border-strong: rgba(68, 90, 114, 0.28);
   --font-body:
-    "Avenir Next", "Segoe UI", "Helvetica Neue", "Noto Sans", sans-serif;
+    "Optima", "Avenir Next", "Segoe UI", "Helvetica Neue", "Noto Sans", sans-serif;
   --font-headline:
-    "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    "Baskerville", "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
 }
 
 @theme inline {
@@ -35,8 +35,9 @@ html {
 
 body {
   background:
-    radial-gradient(circle at top, rgba(221, 231, 244, 0.9), transparent 34%),
-    linear-gradient(180deg, #faf8f4 0%, #f4f1eb 100%);
+    radial-gradient(circle at top left, rgba(215, 225, 237, 0.9), transparent 32%),
+    radial-gradient(circle at 82% 16%, rgba(236, 227, 213, 0.78), transparent 26%),
+    linear-gradient(180deg, #f7f2ea 0%, #f1ece3 100%);
   color: var(--foreground);
   font-family: var(--font-body), sans-serif;
 }
@@ -52,6 +53,15 @@ body::before {
   background-size: 36px 36px;
   mask-image: radial-gradient(circle at center, black 24%, transparent 82%);
   opacity: 0.35;
+}
+
+.memora-carousel {
+  cursor: grab;
+  padding-inline: 2vw;
+}
+
+.memora-carousel[data-dragging="true"] {
+  cursor: grabbing;
 }
 
 a,

@@ -11,9 +11,15 @@ import type { Subgallery } from "@/types/memora";
 export function SubgalleryCarousel({
   galleryId,
   subgalleries,
+  title = "Subgalleries",
+  eyebrow = "Browse the chapters",
+  description,
 }: {
   galleryId: string;
   subgalleries: Subgallery[];
+  title?: string;
+  eyebrow?: string;
+  description?: string;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -70,7 +76,9 @@ export function SubgalleryCarousel({
 
     const onPointerUp = (event: PointerEvent) => {
       isDown = false;
-      container.releasePointerCapture(event.pointerId);
+      if (container.hasPointerCapture(event.pointerId)) {
+        container.releasePointerCapture(event.pointerId);
+      }
       container.dataset.dragging = "false";
     };
 
@@ -103,15 +111,20 @@ export function SubgalleryCarousel({
   };
 
   return (
-    <section className="space-y-5">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
-            Browse the chapters
+    <section className="space-y-6">
+      <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+        <div className="max-w-2xl">
+          <p className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
+            {eyebrow}
           </p>
-          <h2 className="mt-2 font-serif text-3xl text-[color:var(--ink)] md:text-4xl">
-            Subgalleries
+          <h2 className="mt-3 font-serif text-4xl text-[color:var(--ink)] md:text-5xl">
+            {title}
           </h2>
+          {description ? (
+            <p className="mt-4 text-base leading-8 text-[color:var(--ink-soft)]">
+              {description}
+            </p>
+          ) : null}
         </div>
         <div className="hidden gap-2 md:flex">
           <Button variant="secondary" onClick={() => scrollByCard(-1)}>
@@ -124,18 +137,19 @@ export function SubgalleryCarousel({
       </div>
       <div
         ref={containerRef}
-        className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="memora-carousel flex snap-x snap-mandatory gap-5 overflow-x-auto pb-5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {subgalleries.map((subgallery, index) => (
           <motion.div
             key={subgallery.id}
             data-subgallery-card
             animate={{
-              scale: index === activeIndex ? 1 : 0.97,
-              y: index === activeIndex ? -4 : 0,
+              scale: index === activeIndex ? 1 : 0.965,
+              y: index === activeIndex ? -8 : 0,
+              opacity: index === activeIndex ? 1 : 0.86,
             }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="min-w-[88%] snap-center md:min-w-[42rem] lg:min-w-[46rem]"
+            className="min-w-[91%] snap-center md:min-w-[52rem] lg:min-w-[62rem]"
           >
             <Link href={`/galleries/${galleryId}/subgalleries/${subgallery.id}`}>
               <SubgalleryCard subgallery={subgallery} active={index === activeIndex} />

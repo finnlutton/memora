@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Layers3, LibraryBig, Sparkles, Waypoints } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { SubgalleryCarousel } from "@/components/subgallery-carousel";
 import { Button } from "@/components/ui/button";
 import { demoGalleries } from "@/lib/demo-data";
 
@@ -10,141 +11,117 @@ const previewGallery = demoGalleries[0];
 export default function HomePage() {
   return (
     <AppShell accent="immersive">
-      <section className="grid gap-10 pb-10 pt-4 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-        <div className="space-y-7">
-          <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
-            A photo-memory atelier
-          </p>
+      <section className="relative -mx-5 -mt-8 overflow-hidden px-5 pb-14 pt-12 md:-mx-8 md:px-8 md:pb-18 md:pt-18">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(216,225,237,0.9),transparent_32%),radial-gradient(circle_at_78%_18%,rgba(235,226,212,0.76),transparent_24%)]" />
+        <div className="relative grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
           <div className="space-y-5">
-            <h1 className="max-w-3xl font-serif text-6xl leading-[0.92] text-[color:var(--ink)] md:text-7xl">
-              Memora
+            <p className="text-[11px] uppercase tracking-[0.3em] text-[color:var(--ink-faint)]">
+              Memory composition, not photo storage
+            </p>
+            <h1 className="max-w-5xl font-serif text-6xl leading-[0.92] text-[color:var(--ink)] md:text-7xl xl:text-[6.4rem]">
+              Step directly into a memory, and let each place unfold like a chapter.
             </h1>
-            <p className="max-w-2xl text-xl leading-9 text-[color:var(--ink-soft)]">
-              A more intentional home for the moments that matter.
+          </div>
+          <div className="lg:justify-self-end">
+            <p className="max-w-md text-base leading-8 text-[color:var(--ink-soft)]">
+              Memora is a quiet home for galleries with shape: one broad memory for the journey, and cinematic subgalleries for each scene, place, and feeling inside it.
             </p>
-            <p className="max-w-2xl text-base leading-8 text-[color:var(--ink-soft)]">
-              Build elegant galleries for a trip, season, event, or chapter of life. Then shape each one into subgalleries with photographs, narrative, and a sense of place.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Button asChild className="px-5 py-3">
-              <Link href="/galleries/new">
-                Create a Gallery
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button asChild variant="secondary" className="px-5 py-3">
-              <Link href="/galleries">Explore Demo</Link>
-            </Button>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <FeaturePill icon={LibraryBig} label="Structured galleries" />
-            <FeaturePill icon={Layers3} label="Subgallery chapters" />
-            <FeaturePill icon={Sparkles} label="Story-first browsing" />
-          </div>
-        </div>
-        <div className="relative">
-          <div className="absolute -right-4 -top-6 hidden rounded-full border border-white/50 bg-white/75 px-4 py-2 text-xs uppercase tracking-[0.2em] text-[color:var(--ink-faint)] shadow-[0_12px_34px_rgba(34,49,71,0.08)] md:block">
-            Memory, not storage
-          </div>
-          <div className="overflow-hidden rounded-[2.75rem] border border-white/60 bg-white/74 p-4 shadow-[0_28px_90px_rgba(32,46,66,0.12)] backdrop-blur">
-            <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-              <div className="relative min-h-[28rem] overflow-hidden rounded-[2rem]">
-                <Image
-                  src={previewGallery.coverImage}
-                  alt={previewGallery.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 30vw"
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[rgba(12,20,32,0.78)] to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                  <p className="text-xs uppercase tracking-[0.22em] text-white/70">Preview gallery</p>
-                  <h2 className="mt-2 font-serif text-4xl">{previewGallery.title}</h2>
-                  <p className="mt-3 text-sm leading-7 text-white/84">{previewGallery.description}</p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                {previewGallery.subgalleries.map((subgallery) => (
-                  <div
-                    key={subgallery.id}
-                    className="rounded-[1.75rem] border border-[color:var(--border)] bg-[color:var(--paper)] p-4"
-                  >
-                    <div className="flex gap-4">
-                      <div className="relative h-24 w-20 shrink-0 overflow-hidden rounded-[1.25rem]">
-                        <Image
-                          src={subgallery.coverImage}
-                          alt={subgallery.title}
-                          fill
-                          className="object-cover"
-                          sizes="120px"
-                        />
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="font-serif text-2xl text-[color:var(--ink)]">
-                          {subgallery.title}
-                        </h3>
-                        <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">
-                          {subgallery.location} • {subgallery.dateLabel}
-                        </p>
-                        <p className="mt-2 line-clamp-2 text-sm leading-6 text-[color:var(--ink-soft)]">
-                          {subgallery.description}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Button asChild className="px-5 py-3">
+                <Link href="/galleries">
+                  Enter the gallery
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" className="px-3 py-3">
+                <Link href="/galleries/new">Compose your own</Link>
+              </Button>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-5 py-10 md:grid-cols-2 xl:grid-cols-4">
-        <ConceptCard
-          icon={LibraryBig}
-          title="Galleries"
-          description="Shape a broader memory like a trip, season, relationship chapter, or long weekend."
-        />
-        <ConceptCard
-          icon={Layers3}
-          title="Subgalleries"
-          description="Break it into meaningful moments, places, or days so the memory has a natural rhythm."
-        />
-        <ConceptCard
-          icon={Waypoints}
-          title="Stories"
-          description="Descriptions and captions matter here, turning images into a visual journal instead of a dump."
-        />
-        <ConceptCard
-          icon={Sparkles}
-          title="Shareable keepsakes"
-          description="Create something elegant enough to revisit and gentle enough to share with the right people."
+      <section className="space-y-10 pb-8">
+        <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr] lg:items-end">
+          <div className="relative min-h-[35rem] overflow-hidden rounded-[2.8rem] border border-white/35 shadow-[0_40px_120px_rgba(21,34,50,0.18)]">
+            <Image
+              src={previewGallery.coverImage}
+              alt={previewGallery.title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 1024px) 100vw, 60vw"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(7,13,22,0.84)] via-[rgba(7,13,22,0.24)] to-[rgba(7,13,22,0.04)]" />
+            <div className="absolute inset-x-0 bottom-0 p-7 text-white md:p-10">
+              <p className="text-[11px] uppercase tracking-[0.3em] text-white/60">
+                Featured gallery
+              </p>
+              <h2 className="mt-3 max-w-3xl font-serif text-4xl leading-tight md:text-6xl">
+                {previewGallery.title}
+              </h2>
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-white/82 md:text-base md:leading-8">
+                {previewGallery.description}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-8 rounded-[2.5rem] border border-white/30 bg-[rgba(248,246,241,0.58)] p-7 shadow-[0_20px_70px_rgba(21,34,50,0.08)] backdrop-blur">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
+                The gallery has a spine
+              </p>
+              <p className="mt-4 font-serif text-3xl leading-tight text-[color:var(--ink)]">
+                One broader memory, then smaller scenes with place, date, atmosphere, and story.
+              </p>
+            </div>
+            <div className="space-y-5 text-[color:var(--ink-soft)]">
+              <StoryLine
+                title="Gallery"
+                description="A whole trip, season, or chapter of life. The larger emotional frame that holds everything together."
+              />
+              <StoryLine
+                title="Subgallery"
+                description="A day, a town, a train ride, a sunset, a room, a feeling worth giving its own page."
+              />
+              <StoryLine
+                title="Narrative"
+                description="Descriptions matter, because revisiting a memory should feel like opening a keepsake rather than sorting files."
+              />
+            </div>
+          </div>
+        </div>
+
+        <SubgalleryCarousel
+          galleryId={previewGallery.id}
+          subgalleries={previewGallery.subgalleries}
+          eyebrow="Browse the Switzerland chapters"
+          title="Each subgallery is treated like a scene you can return to."
+          description="Drag, swipe, or scroll through the journey. The motion should feel like moving across a row of printed memories, with space to notice the place and the story."
         />
       </section>
 
-      <section className="grid gap-6 py-10 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="rounded-[2.5rem] border border-white/60 bg-white/74 p-7 shadow-[0_22px_70px_rgba(34,49,71,0.09)] backdrop-blur">
-          <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
-            Why Memora
+      <section className="grid gap-6 py-10 lg:grid-cols-[0.86fr_1.14fr]">
+        <div className="space-y-4">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-[color:var(--ink-faint)]">
+            Why it feels different
           </p>
-          <h2 className="mt-3 font-serif text-4xl text-[color:var(--ink)]">
-            Better than a chaotic camera roll
+          <h2 className="font-serif text-4xl leading-tight text-[color:var(--ink)] md:text-5xl">
+            This is a place for preservation, reflection, and return.
           </h2>
-          <p className="mt-4 text-base leading-8 text-[color:var(--ink-soft)]">
-            Camera rolls flatten everything into one endless stream. Memora gives memories shape: a beginning, distinct scenes, descriptions, and a visual tone that invites reflection instead of scrolling fatigue.
-          </p>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <ComparisonTile
-            title="Typical photo storage"
-            items={["Endless feeds", "Missing context", "No sense of chapter", "Hard to revisit emotionally"]}
-            muted
+        <div className="grid gap-6 md:grid-cols-3">
+          <QuietPanel
+            title="Structured by memory"
+            description="Trips, seasons, and life chapters stay legible instead of dissolving into one endless stream."
           />
-          <ComparisonTile
-            title="Memora"
-            items={["Curated galleries", "Subgalleries with place and date", "Narrative descriptions", "Designed to feel revisitable"]}
+          <QuietPanel
+            title="Centered on place"
+            description="Every subgallery keeps its own title, location, date, and narrative weight."
+          />
+          <QuietPanel
+            title="Designed to revisit"
+            description="The interface is calm, spacious, and emotional rather than administrative."
           />
         </div>
       </section>
@@ -152,66 +129,34 @@ export default function HomePage() {
   );
 }
 
-function FeaturePill({
-  icon: Icon,
-  label,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-}) {
-  return (
-    <div className="rounded-full border border-white/60 bg-white/70 px-4 py-3 text-sm text-[color:var(--ink-soft)] shadow-[0_12px_28px_rgba(34,49,71,0.06)] backdrop-blur">
-      <span className="inline-flex items-center gap-2">
-        <Icon className="h-4 w-4 text-[color:var(--accent)]" />
-        {label}
-      </span>
-    </div>
-  );
-}
-
-function ConceptCard({
-  icon: Icon,
+function StoryLine({
   title,
   description,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
   title: string;
   description: string;
 }) {
   return (
-    <div className="rounded-[2rem] border border-white/60 bg-white/74 p-6 shadow-[0_20px_60px_rgba(34,49,71,0.08)] backdrop-blur">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--paper)] text-[color:var(--accent)]">
-        <Icon className="h-5 w-5" />
-      </div>
-      <h3 className="mt-5 font-serif text-3xl text-[color:var(--ink)]">{title}</h3>
-      <p className="mt-3 text-sm leading-7 text-[color:var(--ink-soft)]">{description}</p>
+    <div className="border-l border-[color:var(--border-strong)] pl-4">
+      <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+        {title}
+      </p>
+      <p className="mt-2 text-sm leading-7">{description}</p>
     </div>
   );
 }
 
-function ComparisonTile({
+function QuietPanel({
   title,
-  items,
-  muted = false,
+  description,
 }: {
   title: string;
-  items: string[];
-  muted?: boolean;
+  description: string;
 }) {
   return (
-    <div
-      className={`rounded-[2rem] border p-6 ${
-        muted
-          ? "border-[color:var(--border)] bg-[rgba(255,255,255,0.56)]"
-          : "border-white/60 bg-[color:var(--paper)]"
-      }`}
-    >
+    <div className="rounded-[2rem] border border-white/30 bg-[rgba(255,255,255,0.46)] p-6 backdrop-blur">
       <h3 className="font-serif text-3xl text-[color:var(--ink)]">{title}</h3>
-      <ul className="mt-4 space-y-3 text-sm leading-7 text-[color:var(--ink-soft)]">
-        {items.map((item) => (
-          <li key={item}>{item}</li>
-        ))}
-      </ul>
+      <p className="mt-4 text-sm leading-7 text-[color:var(--ink-soft)]">{description}</p>
     </div>
   );
 }
