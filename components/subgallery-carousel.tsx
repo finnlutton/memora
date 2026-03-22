@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { SubgalleryCard } from "@/components/subgallery-card";
@@ -22,7 +22,26 @@ export function SubgalleryCarousel({
   description?: string;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const cardRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [activeIndex, setActiveIndex] = useState(0);
+
+  const positionCard = useCallback(
+    (index: number, behavior: ScrollBehavior = "smooth") => {
+      const nextIndex = Math.max(0, Math.min(index, subgalleries.length - 1));
+      const card = cardRefs.current[nextIndex];
+      if (!card) {
+        return nextIndex;
+      }
+
+      card.scrollIntoView({
+        behavior,
+        inline: "start",
+        block: "nearest",
+      });
+      return nextIndex;
+    },
+    [subgalleries.length],
+  );
 
   useEffect(() => {
     const container = containerRef.current;
@@ -34,17 +53,15 @@ export function SubgalleryCarousel({
     const handleScroll = () => {
       cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
-        const cards = Array.from(
-          container.querySelectorAll<HTMLElement>("[data-subgallery-card]"),
-        );
-        const containerCenter = container.scrollLeft + container.clientWidth / 2;
+        const cards = cardRefs.current.filter(Boolean) as HTMLDivElement[];
+        const containerLeft = container.scrollLeft;
         const nextIndex = cards.reduce(
           (bestIndex, card, index, list) => {
-            const cardCenter = card.offsetLeft + card.clientWidth / 2;
+            const cardLeft = card.offsetLeft;
             const bestCard = list[bestIndex];
-            const bestCenter = bestCard.offsetLeft + bestCard.clientWidth / 2;
-            return Math.abs(cardCenter - containerCenter) <
-              Math.abs(bestCenter - containerCenter)
+            const bestLeft = bestCard.offsetLeft;
+            return Math.abs(cardLeft - containerLeft) <
+              Math.abs(bestLeft - containerLeft)
               ? index
               : bestIndex;
           },
@@ -87,7 +104,7 @@ export function SubgalleryCarousel({
     container.addEventListener("pointermove", onPointerMove);
     container.addEventListener("pointerup", onPointerUp);
     container.addEventListener("pointerleave", onPointerUp);
-    handleScroll();
+    positionCard(0, "auto");
 
     return () => {
       cancelAnimationFrame(frame);
@@ -97,18 +114,7 @@ export function SubgalleryCarousel({
       container.removeEventListener("pointerup", onPointerUp);
       container.removeEventListener("pointerleave", onPointerUp);
     };
-  }, [subgalleries.length]);
-
-  const scrollByCard = (direction: -1 | 1) => {
-    const container = containerRef.current;
-    if (!container) {
-      return;
-    }
-    container.scrollBy({
-      left: direction * (container.clientWidth * 0.78),
-      behavior: "smooth",
-    });
-  };
+  }, [positionCard, subgalleries.length]);
 
   return (
     <section className="space-y-6 text-white">
@@ -127,10 +133,24 @@ export function SubgalleryCarousel({
           ) : null}
         </div>
         <div className="hidden gap-2 md:flex">
-          <Button variant="secondary" onClick={() => scrollByCard(-1)}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              const nextIndex = positionCard(activeIndex - 1);
+              setActiveIndex(nextIndex);
+            }}
+            disabled={activeIndex === 0}
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="secondary" onClick={() => scrollByCard(1)}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              const nextIndex = positionCard(activeIndex + 1);
+              setActiveIndex(nextIndex);
+            }}
+            disabled={activeIndex === subgalleries.length - 1}
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
@@ -142,6 +162,9 @@ export function SubgalleryCarousel({
         {subgalleries.map((subgallery, index) => (
           <motion.div
             key={subgallery.id}
+            ref={(element) => {
+              cardRefs.current[index] = element;
+            }}
             data-subgallery-card
             animate={{
               scale: index === activeIndex ? 1 : 0.965,
@@ -149,7 +172,7 @@ export function SubgalleryCarousel({
               opacity: index === activeIndex ? 1 : 0.86,
             }}
             transition={{ duration: 0.24, ease: "easeOut" }}
-            className="min-w-[94%] snap-center md:min-w-[44rem] lg:min-w-[54rem] xl:min-w-[62rem]"
+            className="w-[92%] shrink-0 snap-start md:w-[44rem] lg:w-[54rem] xl:w-[62rem]"
           >
             <Link href={`/galleries/${galleryId}/subgalleries/${subgallery.id}`}>
               <SubgalleryCard subgallery={subgallery} active={index === activeIndex} />

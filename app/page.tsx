@@ -11,7 +11,7 @@ const previewGallery = demoGalleries[0];
 export default function HomePage() {
   return (
     <AppShell accent="immersive">
-      <section className="grid gap-6 border-b border-[color:var(--border)] pb-8 lg:grid-cols-[0.95fr_1.05fr] lg:pb-10">
+      <section className="grid gap-6 border-b border-[color:var(--border)] pb-8 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:pb-10">
         <div className="flex flex-col justify-between gap-10 border border-[color:var(--border)] bg-[rgba(255,255,255,0.76)] p-6 md:p-8">
           <div className="space-y-6">
             <p className="text-[11px] uppercase tracking-[0.34em] text-[color:var(--ink-faint)]">
@@ -45,7 +45,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.18fr_0.82fr]">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_minmax(20rem,0.82fr)]">
           <div className="relative min-h-[24rem] overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)] sm:min-h-[31rem]">
             <Image
               src={previewGallery.coverImage}
@@ -98,7 +98,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="grid gap-6 py-10 lg:grid-cols-[0.72fr_1.28fr]">
+      <section className="grid gap-6 py-10 xl:grid-cols-[minmax(20rem,0.72fr)_minmax(0,1.28fr)]">
         <div className="flex flex-col justify-between gap-8 border border-[color:var(--border)] bg-[rgba(246,249,252,0.72)] p-6 md:p-8">
           <div>
             <p className="text-[11px] uppercase tracking-[0.34em] text-[color:var(--ink-faint)]">
@@ -172,7 +172,7 @@ function InfoPanel({
       <p className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
         {label}
       </p>
-      <p className="mt-4 break-words font-serif text-3xl leading-tight text-[color:var(--ink)]">
+      <p className="mt-4 text-balance break-words font-serif text-2xl leading-tight text-[color:var(--ink)] md:text-3xl">
         {value}
       </p>
       <p className="mt-4 text-sm leading-7 text-[color:var(--ink-soft)]">{description}</p>
