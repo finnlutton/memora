@@ -39,6 +39,7 @@ body {
     linear-gradient(180deg, #f8fbff 0%, #f2f6fb 100%);
   color: var(--foreground);
   font-family: var(--font-body), sans-serif;
+  overflow-x: hidden;
 }
 
 body::before {
@@ -57,6 +58,7 @@ body::before {
 .memora-carousel {
   cursor: grab;
   padding-inline: 1rem;
+  scroll-padding-inline: 1rem;
 }
 
 .memora-carousel[data-dragging="true"] {

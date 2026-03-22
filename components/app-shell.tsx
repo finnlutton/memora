@@ -19,7 +19,7 @@ export function AppShell({
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[22rem] bg-[linear-gradient(180deg,rgba(221,231,243,0.34),transparent)]" />
       <header className="sticky top-0 z-30 border-b border-[color:var(--border)] bg-[rgba(248,251,255,0.86)] backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-4 md:px-8">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-5 py-4 md:px-8 lg:flex-row lg:items-center lg:justify-between">
           <Link href="/" className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center border border-[color:var(--border-strong)] bg-white text-[color:var(--accent-strong)]">
               <Camera className="h-4 w-4" />
@@ -33,7 +33,7 @@ export function AppShell({
               </span>
             </span>
           </Link>
-          <nav className="flex items-center gap-1 border border-[color:var(--border)] bg-[rgba(255,255,255,0.8)] p-1">
+          <nav className="flex w-full flex-wrap items-center gap-1 border border-[color:var(--border)] bg-[rgba(255,255,255,0.8)] p-1 lg:w-auto">
             <NavLink href="/">Home</NavLink>
             <NavLink href="/galleries">Galleries</NavLink>
             <NavLink href="/galleries/new">Create</NavLink>
@@ -54,7 +54,7 @@ export function AppShell({
                 Organize by gallery, move by subgallery, and keep every chapter visually coherent.
               </p>
             </div>
-            <div className="flex items-center gap-3 text-sm text-[color:var(--ink-soft)]">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-[color:var(--ink-soft)]">
               <FooterChip icon={LayoutGrid} label="Structured" />
               <FooterChip icon={Sparkles} label="Reflective" />
             </div>
@@ -69,7 +69,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
   return (
     <Link
       href={href}
-      className="px-3.5 py-2 text-xs uppercase tracking-[0.18em] text-[color:var(--ink-soft)] transition hover:bg-[rgba(22,35,56,0.04)] hover:text-[color:var(--ink)]"
+      className="flex-1 px-3.5 py-2 text-center text-xs uppercase tracking-[0.18em] text-[color:var(--ink-soft)] transition hover:bg-[rgba(22,35,56,0.04)] hover:text-[color:var(--ink)] lg:flex-none"
     >
       {children}
     </Link>

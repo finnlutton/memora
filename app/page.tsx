@@ -17,7 +17,7 @@ export default function HomePage() {
             <p className="text-[11px] uppercase tracking-[0.34em] text-[color:var(--ink-faint)]">
               Structured Memory System
             </p>
-            <h1 className="max-w-4xl font-serif text-5xl leading-[0.92] text-[color:var(--ink)] md:text-6xl xl:text-[5.6rem]">
+            <h1 className="max-w-4xl font-serif text-4xl leading-[0.94] text-[color:var(--ink)] sm:text-5xl md:text-6xl xl:text-[5.6rem]">
               A precise way to compose memories with scenes, place, and narrative.
             </h1>
             <p className="max-w-xl text-base leading-8 text-[color:var(--ink-soft)]">
@@ -46,7 +46,7 @@ export default function HomePage() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.18fr_0.82fr]">
-          <div className="relative min-h-[31rem] overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)]">
+          <div className="relative min-h-[24rem] overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)] sm:min-h-[31rem]">
             <Image
               src={previewGallery.coverImage}
               alt={previewGallery.title}
@@ -56,12 +56,12 @@ export default function HomePage() {
               priority
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[rgba(7,15,26,0.88)] via-[rgba(7,15,26,0.28)] to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 grid gap-4 border-t border-white/14 bg-[rgba(7,15,26,0.36)] p-6 backdrop-blur-sm md:grid-cols-[1fr_auto] md:items-end">
+            <div className="absolute bottom-0 left-0 right-0 grid gap-4 border-t border-white/14 bg-[rgba(7,15,26,0.36)] p-5 backdrop-blur-sm md:grid-cols-[1fr_auto] md:items-end md:p-6">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.32em] text-white/56">
                   Featured gallery
                 </p>
-                <h2 className="mt-3 font-serif text-4xl leading-tight text-white md:text-5xl">
+                <h2 className="mt-3 font-serif text-3xl leading-tight text-white sm:text-4xl md:text-5xl">
                   {previewGallery.title}
                 </h2>
                 <p className="mt-4 max-w-2xl text-sm leading-7 text-white/78">
@@ -104,7 +104,7 @@ export default function HomePage() {
             <p className="text-[11px] uppercase tracking-[0.34em] text-[color:var(--ink-faint)]">
               Primary interaction
             </p>
-            <h2 className="mt-4 font-serif text-4xl leading-tight text-[color:var(--ink)] md:text-5xl">
+            <h2 className="mt-4 font-serif text-3xl leading-tight text-[color:var(--ink)] sm:text-4xl md:text-5xl">
               Browse scenes horizontally, like a controlled visual sequence.
             </h2>
           </div>
@@ -118,7 +118,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="bg-[rgba(8,16,28,0.98)] p-5 md:p-6">
+        <div className="overflow-hidden bg-[rgba(8,16,28,0.98)] p-4 md:p-6">
           <SubgalleryCarousel
             galleryId={previewGallery.id}
             subgalleries={previewGallery.subgalleries}
@@ -149,11 +149,11 @@ export default function HomePage() {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="space-y-2">
+    <div className="min-w-0 space-y-2">
       <p className="text-[11px] uppercase tracking-[0.26em] text-[color:var(--ink-faint)]">
         {label}
       </p>
-      <p className="text-sm leading-6 text-[color:var(--ink)]">{value}</p>
+      <p className="break-words text-sm leading-6 text-[color:var(--ink)]">{value}</p>
     </div>
   );
 }
@@ -168,11 +168,11 @@ function InfoPanel({
   description: string;
 }) {
   return (
-    <div className="bg-[rgba(245,248,252,0.96)] p-6">
+    <div className="min-w-0 bg-[rgba(245,248,252,0.96)] p-6">
       <p className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
         {label}
       </p>
-      <p className="mt-4 font-serif text-3xl leading-tight text-[color:var(--ink)]">
+      <p className="mt-4 break-words font-serif text-3xl leading-tight text-[color:var(--ink)]">
         {value}
       </p>
       <p className="mt-4 text-sm leading-7 text-[color:var(--ink-soft)]">{description}</p>

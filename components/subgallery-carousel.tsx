@@ -137,7 +137,7 @@ export function SubgalleryCarousel({
       </div>
       <div
         ref={containerRef}
-        className="memora-carousel flex snap-x snap-mandatory gap-5 overflow-x-auto pb-5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="memora-carousel flex snap-x snap-mandatory gap-4 overflow-x-auto pb-5 [-ms-overflow-style:none] [scrollbar-width:none] md:gap-5 [&::-webkit-scrollbar]:hidden"
       >
         {subgalleries.map((subgallery, index) => (
           <motion.div
@@ -149,7 +149,7 @@ export function SubgalleryCarousel({
               opacity: index === activeIndex ? 1 : 0.86,
             }}
             transition={{ duration: 0.24, ease: "easeOut" }}
-            className="min-w-[91%] snap-center md:min-w-[52rem] lg:min-w-[62rem]"
+            className="min-w-[94%] snap-center md:min-w-[44rem] lg:min-w-[54rem] xl:min-w-[62rem]"
           >
             <Link href={`/galleries/${galleryId}/subgalleries/${subgallery.id}`}>
               <SubgalleryCard subgallery={subgallery} active={index === activeIndex} />
