@@ -1,0 +1,7 @@
+<svg width="1600" height="1200" viewBox="0 0 1600 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="1200" fill="#E8EEF6"/>
+  <rect y="712" width="1600" height="488" fill="#EDE7DD"/>
+  <ellipse cx="810" cy="698" rx="801" ry="160" fill="#CDD9E8"/>
+  <path d="M0 689C162 632 281 623 430 631C579 639 636 716 812 716C988 716 1012 648 1194 639C1376 630 1490 664 1600 706V1200H0V689Z" fill="#B7C7D9"/>
+  <path d="M0 792C166 755 292 744 447 757C601 770 680 833 833 833C985 833 1045 781 1203 773C1361 765 1493 797 1600 830V1200H0V792Z" fill="#90A5C0"/>
+</svg>
