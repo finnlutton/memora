@@ -14,15 +14,15 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <Component
         ref={ref}
         className={cn(
-          "inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent-strong)]/40 disabled:pointer-events-none disabled:opacity-60",
+          "inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2.5 text-sm font-medium uppercase tracking-[0.16em] transition duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent-strong)]/35 disabled:pointer-events-none disabled:opacity-60",
           variant === "primary" &&
-            "bg-[color:var(--accent-strong)] text-white shadow-[0_18px_50px_rgba(47,73,109,0.24)] hover:-translate-y-0.5 hover:bg-[color:var(--accent)] active:translate-y-0",
+            "bg-[color:var(--accent-strong)] text-white shadow-none hover:bg-[#22314a] active:translate-y-0",
           variant === "secondary" &&
-            "border border-[color:var(--border-strong)] bg-white/80 text-[color:var(--ink)] backdrop-blur hover:border-[color:var(--accent)] hover:bg-[color:var(--paper)]",
+            "border border-[color:var(--border-strong)] bg-[rgba(255,255,255,0.82)] text-[color:var(--ink)] backdrop-blur hover:border-[color:var(--accent-strong)] hover:bg-[color:var(--paper)]",
           variant === "ghost" &&
-            "bg-transparent text-[color:var(--ink-soft)] hover:bg-white/70 hover:text-[color:var(--ink)]",
+            "bg-transparent text-[color:var(--ink-soft)] hover:bg-[rgba(22,35,56,0.04)] hover:text-[color:var(--ink)]",
           variant === "danger" &&
-            "bg-[#8b4c4c] text-white shadow-[0_16px_44px_rgba(139,76,76,0.22)] hover:bg-[#7b3f3f]",
+            "bg-[#7f2f39] text-white shadow-none hover:bg-[#67232d]",
           className,
         )}
         {...props}

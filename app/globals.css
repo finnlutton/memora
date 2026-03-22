@@ -1,21 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f0e8;
-  --paper: #e8edf2;
-  --paper-strong: #d8e1ea;
-  --foreground: #1c2833;
-  --ink: #1c2833;
-  --ink-soft: #5c6c79;
-  --ink-faint: #909ba6;
-  --accent: #647b94;
-  --accent-strong: #445a72;
-  --border: rgba(81, 100, 124, 0.16);
-  --border-strong: rgba(68, 90, 114, 0.28);
+  --background: #f5f8fc;
+  --paper: #eef3f8;
+  --paper-strong: #dbe5f0;
+  --foreground: #0f1823;
+  --ink: #0f1823;
+  --ink-soft: #4e6073;
+  --ink-faint: #8c9aab;
+  --accent: #587090;
+  --accent-strong: #162338;
+  --border: rgba(42, 64, 89, 0.14);
+  --border-strong: rgba(22, 35, 56, 0.26);
   --font-body:
-    "Optima", "Avenir Next", "Segoe UI", "Helvetica Neue", "Noto Sans", sans-serif;
+    "Aptos", "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --font-headline:
-    "Baskerville", "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    "Didot", "Bodoni 72", "Iowan Old Style", Georgia, serif;
 }
 
 @theme inline {
@@ -35,9 +35,8 @@ html {
 
 body {
   background:
-    radial-gradient(circle at top left, rgba(215, 225, 237, 0.9), transparent 32%),
-    radial-gradient(circle at 82% 16%, rgba(236, 227, 213, 0.78), transparent 26%),
-    linear-gradient(180deg, #f7f2ea 0%, #f1ece3 100%);
+    radial-gradient(circle at top left, rgba(216, 228, 241, 0.64), transparent 26%),
+    linear-gradient(180deg, #f8fbff 0%, #f2f6fb 100%);
   color: var(--foreground);
   font-family: var(--font-body), sans-serif;
 }
@@ -48,16 +47,16 @@ body::before {
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
-  background-size: 36px 36px;
-  mask-image: radial-gradient(circle at center, black 24%, transparent 82%);
-  opacity: 0.35;
+    linear-gradient(rgba(16, 28, 44, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 28, 44, 0.03) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.5), transparent 90%);
+  opacity: 0.55;
 }
 
 .memora-carousel {
   cursor: grab;
-  padding-inline: 2vw;
+  padding-inline: 1rem;
 }
 
 .memora-carousel[data-dragging="true"] {
@@ -70,14 +69,14 @@ input,
 textarea,
 select {
   transition:
-    color 180ms ease,
-    background-color 180ms ease,
-    border-color 180ms ease,
-    transform 180ms ease,
+    color 140ms ease,
+    background-color 140ms ease,
+    border-color 140ms ease,
+    transform 140ms ease,
     opacity 180ms ease,
-    box-shadow 180ms ease;
+    box-shadow 140ms ease;
 }
 
 ::selection {
-  background: rgba(96, 119, 154, 0.2);
+  background: rgba(61, 92, 131, 0.18);
 }

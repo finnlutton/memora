@@ -111,17 +111,17 @@ export function SubgalleryCarousel({
   };
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-6 text-white">
       <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div className="max-w-2xl">
-          <p className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
+          <p className="text-[11px] uppercase tracking-[0.28em] text-white/42">
             {eyebrow}
           </p>
-          <h2 className="mt-3 font-serif text-4xl text-[color:var(--ink)] md:text-5xl">
+          <h2 className="mt-3 font-serif text-4xl text-white md:text-5xl">
             {title}
           </h2>
           {description ? (
-            <p className="mt-4 text-base leading-8 text-[color:var(--ink-soft)]">
+            <p className="mt-4 text-base leading-8 text-white/64">
               {description}
             </p>
           ) : null}
@@ -145,10 +145,10 @@ export function SubgalleryCarousel({
             data-subgallery-card
             animate={{
               scale: index === activeIndex ? 1 : 0.965,
-              y: index === activeIndex ? -8 : 0,
+              y: index === activeIndex ? -4 : 0,
               opacity: index === activeIndex ? 1 : 0.86,
             }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
+            transition={{ duration: 0.24, ease: "easeOut" }}
             className="min-w-[91%] snap-center md:min-w-[52rem] lg:min-w-[62rem]"
           >
             <Link href={`/galleries/${galleryId}/subgalleries/${subgallery.id}`}>
