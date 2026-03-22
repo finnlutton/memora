@@ -10,27 +10,27 @@ const previewGallery = demoGalleries[0];
 export default function HomePage() {
   return (
     <AppShell accent="immersive">
-      <section className="flex flex-col gap-6 border-b border-[color:var(--border)] pb-8 lg:pb-10">
-        <div className="border border-[color:var(--border)] bg-[rgba(255,255,255,0.76)] p-6 md:p-8">
-          <p className="text-xs uppercase tracking-[0.34em] text-[color:var(--ink-faint)] sm:text-sm">
+      <section className="flex flex-col gap-4 border-b border-[color:var(--border)] pb-5 lg:pb-6">
+        <div className="border border-[color:var(--border)] bg-[rgba(255,255,255,0.76)] p-4 md:p-5">
+          <p className="text-[10px] uppercase tracking-[0.34em] text-[color:var(--ink-faint)] sm:text-xs">
             Curated galleries, meaningful descriptions
           </p>
-          <h1 className="mt-4 w-full font-serif text-4xl leading-[0.94] text-[color:var(--ink)] sm:text-5xl md:text-5xl lg:text-6xl">
+          <h1 className="mt-2 w-full font-serif text-2xl leading-[0.94] text-[color:var(--ink)] sm:text-3xl md:text-3xl lg:text-4xl">
             An intentional way to share and keep your memories
           </h1>
-          <div className="mt-6">
+          <div className="mt-4">
             <Button asChild>
               <Link href="/galleries">
                 Explore demo
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-3 w-3" />
               </Link>
             </Button>
           </div>
         </div>
       </section>
 
-      <section className="border-t border-[color:var(--border)] py-10">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <section className="border-t border-[color:var(--border)] py-6">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <StatementCard
             label="Principle"
             title="Not a feed"
@@ -49,17 +49,17 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="grid gap-6 py-10 xl:grid-cols-[minmax(20rem,0.72fr)_minmax(0,1.28fr)]">
-        <div className="flex flex-col justify-between gap-8 border border-[color:var(--border)] bg-[rgba(246,249,252,0.72)] p-6 md:p-8">
+      <section className="grid gap-4 py-6 xl:grid-cols-[minmax(16rem,0.72fr)_minmax(0,1.28fr)]">
+        <div className="flex flex-col justify-between gap-5 border border-[color:var(--border)] bg-[rgba(246,249,252,0.72)] p-4 md:p-5">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.34em] text-[color:var(--ink-faint)]">
+            <p className="text-[10px] uppercase tracking-[0.34em] text-[color:var(--ink-faint)]">
               Primary interaction
             </p>
-            <h2 className="mt-4 font-serif text-3xl leading-tight text-[color:var(--ink)] sm:text-4xl md:text-5xl">
+            <h2 className="mt-2 font-serif text-xl leading-tight text-[color:var(--ink)] sm:text-2xl md:text-3xl">
               Browse scenes horizontally, like a controlled visual sequence.
             </h2>
           </div>
-          <div className="space-y-4 text-sm leading-7 text-[color:var(--ink-soft)]">
+          <div className="space-y-2 text-xs leading-6 text-[color:var(--ink-soft)]">
             <p>
               The subgallery system is the core of Memora. It gives a trip or life chapter internal structure, so each place carries its own image, location, date, and story.
             </p>
@@ -92,14 +92,14 @@ function StatementCard({
   description: string;
 }) {
   return (
-    <div className="min-w-0 border border-[color:var(--border)] bg-[rgba(245,248,252,0.96)] p-6 transition-transform duration-200 ease-out hover:scale-[1.02] hover:shadow-lg sm:p-8">
-      <p className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
+    <div className="min-w-0 border border-[color:var(--border)] bg-[rgba(245,248,252,0.96)] p-4 transition-transform duration-200 ease-out hover:scale-[1.02] hover:shadow-lg sm:p-5">
+      <p className="text-[10px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
         {label}
       </p>
-      <p className="mt-4 text-balance break-words font-serif text-2xl leading-tight text-[color:var(--ink)] md:text-3xl">
+      <p className="mt-2 text-balance break-words font-serif text-lg leading-tight text-[color:var(--ink)] md:text-xl">
         {title}
       </p>
-      <p className="mt-4 text-sm leading-7 text-[color:var(--ink-soft)]">{description}</p>
+      <p className="mt-2 text-xs leading-6 text-[color:var(--ink-soft)]">{description}</p>
     </div>
   );
 }

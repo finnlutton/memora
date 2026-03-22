@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { SubgalleryCard } from "@/components/subgallery-card";
@@ -22,26 +22,7 @@ export function SubgalleryCarousel({
   description?: string;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const cardRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [activeIndex, setActiveIndex] = useState(0);
-
-  const positionCard = useCallback(
-    (index: number, behavior: ScrollBehavior = "smooth") => {
-      const nextIndex = Math.max(0, Math.min(index, subgalleries.length - 1));
-      const card = cardRefs.current[nextIndex];
-      if (!card) {
-        return nextIndex;
-      }
-
-      card.scrollIntoView({
-        behavior,
-        inline: "start",
-        block: "nearest",
-      });
-      return nextIndex;
-    },
-    [subgalleries.length],
-  );
 
   useEffect(() => {
     const container = containerRef.current;
@@ -53,15 +34,17 @@ export function SubgalleryCarousel({
     const handleScroll = () => {
       cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
-        const cards = cardRefs.current.filter(Boolean) as HTMLDivElement[];
-        const containerLeft = container.scrollLeft;
+        const cards = Array.from(
+          container.querySelectorAll<HTMLElement>("[data-subgallery-card]"),
+        );
+        const containerCenter = container.scrollLeft + container.clientWidth / 2;
         const nextIndex = cards.reduce(
           (bestIndex, card, index, list) => {
-            const cardLeft = card.offsetLeft;
+            const cardCenter = card.offsetLeft + card.clientWidth / 2;
             const bestCard = list[bestIndex];
-            const bestLeft = bestCard.offsetLeft;
-            return Math.abs(cardLeft - containerLeft) <
-              Math.abs(bestLeft - containerLeft)
+            const bestCenter = bestCard.offsetLeft + bestCard.clientWidth / 2;
+            return Math.abs(cardCenter - containerCenter) <
+              Math.abs(bestCenter - containerCenter)
               ? index
               : bestIndex;
           },
@@ -104,7 +87,7 @@ export function SubgalleryCarousel({
     container.addEventListener("pointermove", onPointerMove);
     container.addEventListener("pointerup", onPointerUp);
     container.addEventListener("pointerleave", onPointerUp);
-    positionCard(0, "auto");
+    handleScroll();
 
     return () => {
       cancelAnimationFrame(frame);
@@ -114,18 +97,45 @@ export function SubgalleryCarousel({
       container.removeEventListener("pointerup", onPointerUp);
       container.removeEventListener("pointerleave", onPointerUp);
     };
-  }, [positionCard, subgalleries.length]);
+  }, [subgalleries.length]);
+
+  const scrollToCard = (direction: -1 | 1) => {
+    const container = containerRef.current;
+    if (!container) {
+      return;
+    }
+    const cards = Array.from(
+      container.querySelectorAll<HTMLElement>("[data-subgallery-card]"),
+    );
+    const nextIndex = Math.max(
+      0,
+      Math.min(activeIndex + direction, cards.length - 1),
+    );
+    const targetCard = cards[nextIndex];
+    if (targetCard) {
+      targetCard.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "start",
+      });
+      setActiveIndex(nextIndex);
+    }
+  };
 
   return (
     <section className="space-y-6 text-white">
       <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div className="max-w-2xl">
-          <p className="text-[11px] uppercase tracking-[0.28em] text-white/42">
-            {eyebrow}
-          </p>
-          <h2 className="mt-3 font-serif text-4xl text-white md:text-5xl">
-            {title}
-          </h2>
+          {eyebrow ? (
+            <p className="text-[11px] uppercase tracking-[0.28em] text-white/70 sm:text-sm">
+              {eyebrow}
+            </p>
+          ) : null}
+          {title ? (
+            <h2 className={`font-serif text-4xl text-white md:text-5xl ${eyebrow ? "mt-3" : ""}`}>
+              {title}
+            </h2>
+          ) : null}
           {description ? (
             <p className="mt-4 text-base leading-8 text-white/64">
               {description}
@@ -135,21 +145,17 @@ export function SubgalleryCarousel({
         <div className="hidden gap-2 md:flex">
           <Button
             variant="secondary"
-            onClick={() => {
-              const nextIndex = positionCard(activeIndex - 1);
-              setActiveIndex(nextIndex);
-            }}
+            onClick={() => scrollToCard(-1)}
             disabled={activeIndex === 0}
+            className="bg-white/10 text-white hover:bg-white/20 disabled:opacity-40"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <Button
             variant="secondary"
-            onClick={() => {
-              const nextIndex = positionCard(activeIndex + 1);
-              setActiveIndex(nextIndex);
-            }}
+            onClick={() => scrollToCard(1)}
             disabled={activeIndex === subgalleries.length - 1}
+            className="bg-white/10 text-white hover:bg-white/20 disabled:opacity-40"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -157,14 +163,11 @@ export function SubgalleryCarousel({
       </div>
       <div
         ref={containerRef}
-        className="memora-carousel flex snap-x snap-mandatory gap-4 overflow-x-auto pb-5 [-ms-overflow-style:none] [scrollbar-width:none] md:gap-5 [&::-webkit-scrollbar]:hidden"
+        className="memora-carousel flex snap-x snap-mandatory gap-5 overflow-x-auto pb-5 [-ms-overflow-style:none] [scrollbar-width:none] md:gap-5 [&::-webkit-scrollbar]:hidden"
       >
         {subgalleries.map((subgallery, index) => (
           <motion.div
             key={subgallery.id}
-            ref={(element) => {
-              cardRefs.current[index] = element;
-            }}
             data-subgallery-card
             animate={{
               scale: index === activeIndex ? 1 : 0.965,
@@ -172,7 +175,7 @@ export function SubgalleryCarousel({
               opacity: index === activeIndex ? 1 : 0.86,
             }}
             transition={{ duration: 0.24, ease: "easeOut" }}
-            className="w-[92%] shrink-0 snap-start md:w-[44rem] lg:w-[54rem] xl:w-[62rem]"
+            className="min-w-[91%] shrink-0 snap-center md:min-w-[52rem] lg:min-w-[62rem]"
           >
             <Link href={`/galleries/${galleryId}/subgalleries/${subgallery.id}`}>
               <SubgalleryCard subgallery={subgallery} active={index === activeIndex} />

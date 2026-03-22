@@ -21,11 +21,11 @@ export default function GalleryDetailPage() {
     return (
       <AppShell>
         {hydrated ? (
-          <div className="rounded-[2rem] border border-white/60 bg-white/70 px-6 py-12 text-center text-[color:var(--ink-soft)]">
+          <div className="rounded-[1.25rem] border border-white/60 bg-white/70 px-4 py-8 text-center text-sm text-[color:var(--ink-soft)]">
             Gallery not found.
           </div>
         ) : (
-          <div className="rounded-[2rem] border border-white/60 bg-white/70 px-6 py-12 text-center text-[color:var(--ink-soft)]">
+          <div className="rounded-[1.25rem] border border-white/60 bg-white/70 px-4 py-8 text-center text-sm text-[color:var(--ink-soft)]">
             Loading gallery...
           </div>
         )}
@@ -35,10 +35,10 @@ export default function GalleryDetailPage() {
 
   return (
     <AppShell accent="immersive">
-      <div className="mb-6 flex items-center justify-between gap-4">
+      <div className="mb-4 flex items-center justify-between gap-3">
         <Button asChild variant="ghost">
           <Link href="/galleries">
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-3 w-3" />
             Back to galleries
           </Link>
         </Button>
@@ -53,7 +53,7 @@ export default function GalleryDetailPage() {
         />
       </div>
       <GalleryHero gallery={gallery} />
-      <section className="mt-8">
+      <section className="mt-5">
         {gallery.subgalleries.length ? (
           <SubgalleryCarousel galleryId={gallery.id} subgalleries={gallery.subgalleries} />
         ) : (

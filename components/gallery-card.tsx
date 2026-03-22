@@ -8,7 +8,7 @@ export function GalleryCard({ gallery, index }: { gallery: Gallery; index: numbe
   return (
     <Link
       href={`/galleries/${gallery.id}`}
-      className="group relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/72 shadow-[0_18px_60px_rgba(34,49,71,0.09)] backdrop-blur transition duration-500 hover:-translate-y-1 hover:shadow-[0_24px_80px_rgba(34,49,71,0.14)]"
+      className="group relative overflow-hidden rounded-[1.25rem] border border-white/60 bg-white/72 shadow-[0_12px_40px_rgba(34,49,71,0.09)] backdrop-blur transition duration-500 hover:-translate-y-1 hover:shadow-[0_16px_50px_rgba(34,49,71,0.14)]"
     >
       <div className="relative aspect-[5/4] overflow-hidden">
         <Image
@@ -19,34 +19,34 @@ export function GalleryCard({ gallery, index }: { gallery: Gallery; index: numbe
           sizes="(max-width: 768px) 100vw, 33vw"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[rgba(13,25,39,0.72)] via-[rgba(13,25,39,0.18)] to-transparent" />
-        <div className="absolute left-5 top-5 rounded-full border border-white/25 bg-white/15 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-white backdrop-blur">
+        <div className="absolute left-3 top-3 rounded-full border border-white/25 bg-white/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.22em] text-white backdrop-blur">
           Gallery {index + 1}
         </div>
       </div>
-      <div className="space-y-4 px-5 py-5">
-        <div className="flex items-start justify-between gap-4">
+      <div className="space-y-2 px-4 py-4">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="font-serif text-2xl text-[color:var(--ink)]">{gallery.title}</h3>
-            <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
+            <h3 className="font-serif text-lg text-[color:var(--ink)]">{gallery.title}</h3>
+            <p className="mt-0.5 text-xs text-[color:var(--ink-soft)]">
               {formatDateRange(gallery.startDate, gallery.endDate)}
             </p>
           </div>
-          <span className="rounded-full bg-[color:var(--paper)] p-2 text-[color:var(--accent)] transition group-hover:bg-[color:var(--accent-strong)] group-hover:text-white">
-            <ArrowUpRight className="h-4 w-4" />
+          <span className="rounded-full bg-[color:var(--paper)] p-1.5 text-[color:var(--accent)] transition group-hover:bg-[color:var(--accent-strong)] group-hover:text-white">
+            <ArrowUpRight className="h-3 w-3" />
           </span>
         </div>
-        <p className="line-clamp-3 text-sm leading-7 text-[color:var(--ink-soft)]">
+        <p className="line-clamp-3 text-xs leading-6 text-[color:var(--ink-soft)]">
           {gallery.description}
         </p>
-        <div className="flex flex-wrap items-center gap-3 text-sm text-[color:var(--ink-soft)]">
-          <span className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border)] bg-[color:var(--paper)] px-3 py-1.5">
-            <Images className="h-4 w-4 text-[color:var(--accent)]" />
+        <div className="flex flex-wrap items-center gap-2 text-xs text-[color:var(--ink-soft)]">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border)] bg-[color:var(--paper)] px-2 py-1">
+            <Images className="h-3 w-3 text-[color:var(--accent)]" />
             {gallery.subgalleries.length} subgalleries
           </span>
           <span>{countPhotos(gallery.subgalleries)} photos</span>
           <span>{gallery.locations.slice(0, 2).join(" • ")}</span>
         </div>
-        <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">
+        <p className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">
           Updated {formatUpdatedLabel(gallery.updatedAt)}
         </p>
       </div>

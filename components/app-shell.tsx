@@ -21,33 +21,33 @@ export function AppShell({
           "bg-[radial-gradient(circle_at_top_left,rgba(217,228,240,0.68),transparent_30%),var(--background)]",
       )}
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[22rem] bg-[linear-gradient(180deg,rgba(221,231,243,0.34),transparent)]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[14rem] bg-[linear-gradient(180deg,rgba(221,231,243,0.34),transparent)]" />
       <header className="sticky top-0 z-30 border-b border-[color:var(--border)] bg-[rgba(248,251,255,0.86)] backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-5 py-4 md:px-8 lg:flex-row lg:items-center lg:justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center border border-[color:var(--border-strong)] bg-white text-[color:var(--accent-strong)]">
-              <Camera className="h-4 w-4" />
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-2.5 md:px-6 lg:flex-row lg:items-center lg:justify-between">
+          <Link href="/" className="flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center border border-[color:var(--border-strong)] bg-white text-[color:var(--accent-strong)]">
+              <Camera className="h-3 w-3" />
             </span>
             <span>
-              <span className="block font-serif text-xl leading-none tracking-[0.12em] text-[color:var(--ink)]">
+              <span className="block font-serif text-base leading-none tracking-[0.12em] text-[color:var(--ink)]">
                 Memora
               </span>
-              <span className="mt-1 block text-[10px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
+              <span className="mt-0.5 block text-[9px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
                 Memory Archive
               </span>
             </span>
           </Link>
-          <nav className="flex w-full flex-wrap items-center gap-1 border border-[color:var(--border)] bg-[rgba(255,255,255,0.8)] p-1 lg:w-auto">
+          <nav className="flex w-full flex-wrap items-center gap-0.5 border border-[color:var(--border)] bg-[rgba(255,255,255,0.8)] p-0.5 lg:w-auto">
             <NavLink href="/">Home</NavLink>
             <NavLink href="/galleries">Galleries</NavLink>
             <NavLink href="/galleries/new">Demo</NavLink>
           </nav>
         </div>
       </header>
-      <main className="relative z-10 mx-auto w-full max-w-7xl px-5 py-8 md:px-8 md:py-10">
+      <main className="relative z-10 mx-auto w-full max-w-7xl px-4 py-5 md:px-6 md:py-6">
         {children}
       </main>
-      <footer className="mx-auto mt-12 w-full max-w-7xl px-5 pb-10 md:px-8">
+      <footer className="mx-auto mt-8 w-full max-w-7xl px-4 pb-6 md:px-6">
         <ContactUsBox />
       </footer>
     </div>
@@ -57,15 +57,15 @@ export function AppShell({
 function ContactUsBox() {
   const [message, setMessage] = useState("");
   return (
-    <div className="border-t border-[color:var(--border)] pt-10">
-      <div className="border border-[color:var(--border)] bg-[rgba(245,248,252,0.96)] p-6 md:p-8">
-        <p className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
+    <div className="border-t border-[color:var(--border)] pt-6">
+      <div className="border border-[color:var(--border)] bg-[rgba(245,248,252,0.96)] p-4 md:p-5">
+        <p className="text-[10px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
           Contact
         </p>
-        <h3 className="mt-4 font-serif text-3xl leading-tight text-[color:var(--ink)] md:text-4xl">
+        <h3 className="mt-2 font-serif text-xl leading-tight text-[color:var(--ink)] md:text-2xl">
           Get in touch
         </h3>
-        <p className="mt-4 text-sm leading-7 text-[color:var(--ink-soft)]">
+        <p className="mt-2 text-xs leading-6 text-[color:var(--ink-soft)]">
           Questions or feedback? Reach us at{" "}
           <a
             href="mailto:hello@memora.app"
@@ -74,15 +74,15 @@ function ContactUsBox() {
             hello@memora.app
           </a>
         </p>
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3">
           <input
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Leave a message..."
-            className="min-w-0 flex-1 rounded border border-[color:var(--border)] bg-white px-4 py-3 text-sm text-[color:var(--ink)] placeholder:text-[color:var(--ink-faint)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]"
+            className="min-w-0 flex-1 rounded border border-[color:var(--border)] bg-white px-3 py-2 text-xs text-[color:var(--ink)] placeholder:text-[color:var(--ink-faint)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]"
           />
-          <Button type="button" className="shrink-0 px-5 py-2.5 text-xs">
+          <Button type="button" className="shrink-0 px-3 py-2 text-[11px]">
             Send
           </Button>
         </div>
@@ -95,7 +95,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
   return (
     <Link
       href={href}
-      className="flex-1 px-3.5 py-2 text-center text-xs uppercase tracking-[0.18em] text-[color:var(--ink-soft)] transition hover:bg-[rgba(22,35,56,0.04)] hover:text-[color:var(--ink)] lg:flex-none"
+      className="flex-1 px-2.5 py-1.5 text-center text-[11px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)] transition hover:bg-[rgba(22,35,56,0.04)] hover:text-[color:var(--ink)] lg:flex-none"
     >
       {children}
     </Link>

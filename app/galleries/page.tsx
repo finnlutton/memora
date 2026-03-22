@@ -22,25 +22,25 @@ export default function GalleriesPage() {
 
   return (
     <AppShell>
-      <section className="mb-8 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+      <section className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
             My galleries
           </p>
-          <h1 className="mt-3 font-serif text-5xl text-[color:var(--ink)]">Memory collections</h1>
-          <p className="mt-3 max-w-2xl text-base leading-8 text-[color:var(--ink-soft)]">
+          <h1 className="mt-2 font-serif text-2xl text-[color:var(--ink)] md:text-3xl">Memory collections</h1>
+          <p className="mt-2 max-w-xl text-xs leading-6 text-[color:var(--ink-soft)]">
             Organize life into meaningful galleries and browse them like a shelf of keepsakes, not a bucket of uploads.
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2">
           <Button asChild>
             <Link href="/galleries/new">
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3 w-3" />
               New gallery
             </Link>
           </Button>
           <Button variant="secondary" onClick={resetDemo}>
-            <RotateCcw className="h-4 w-4" />
+            <RotateCcw className="h-3 w-3" />
             Reset demo
           </Button>
         </div>
@@ -51,7 +51,7 @@ export default function GalleriesPage() {
           Loading your memories...
         </div>
       ) : sortedGalleries.length ? (
-        <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {sortedGalleries.map((gallery, index) => (
             <GalleryCard key={gallery.id} gallery={gallery} index={index} />
           ))}
