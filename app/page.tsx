@@ -16,7 +16,7 @@ export default function HomePage() {
             Curated galleries, meaningful descriptions
           </p>
           <h1 className="mt-2 w-full font-serif text-2xl leading-[0.94] text-[color:var(--ink)] sm:text-3xl md:text-3xl lg:text-4xl">
-            An intentional way to share and keep your memories
+            An intentional platform to share and revisit your memories
           </h1>
           <div className="mt-4">
             <Button asChild>
@@ -32,19 +32,16 @@ export default function HomePage() {
       <section className="border-t border-[color:var(--border)] py-6">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <StatementCard
-            label="Principle"
-            title="Not a feed"
-            description="Memora avoids the flattening effect of continuous photo streams by giving each memory chapter a defined structure."
+            title="Not superficial"
+            description="Memora hopes to restore authenticity and maturity to modern social media."
           />
           <StatementCard
-            label="Principle"
             title="Not generic storage"
-            description="The point is not to dump photos. The point is to compose a revisitable archive with visual and narrative clarity."
+            description="The point is not to dump photos, it's to allow you and the people you care about to follow your journeys."
           />
           <StatementCard
-            label="Principle"
-            title="Built to share and revisit"
-            description="Share and record your experiences with more intimacy and care."
+            title="Built to last"
+            description="Enjoy a timeless organizational structure for your favorite trips and moments."
           />
         </div>
       </section>
@@ -57,16 +54,18 @@ export default function HomePage() {
           <h2 className="mt-2 font-serif text-xl leading-tight text-[color:var(--ink)] sm:text-2xl md:text-3xl">
             About the product
           </h2>
-          <div className="mt-4 space-y-6 text-base leading-8 text-[color:var(--ink-soft)] md:text-lg md:leading-[1.75]">
+          <div className="mt-6 space-y-6 text-base leading-8 text-[color:var(--ink-soft)] md:text-lg md:leading-[1.75]">
             <p>
-              As many who have been fortunate to study abroad, I&apos;ve increasingly desired a better system to share and store my photos.
-              My camera roll is cluttered; lacking organization as well as a way to write about a certain place or my experiences.
+              As many who have been fortunate enough to study abroad, I&apos;ve increasingly desired a better system to share and store my photos.
+            </p>
+            <p>
+              My camera roll is cluttered; lacking organization as well as a way to pair photos with written descriptions.
             </p>
             <p>
               Additionally, sharing experiences authentically (Instagram doesn&apos;t fulfill this) with such a wide array of communication methods with friends and family is very challenging.
             </p>
             <p>
-              This app takes this all thoroughly into account, and promises to deliver a superior sharing / memory storage system.
+              Memora takes this thoroughly into account, and promises to deliver a superior sharing / memory storage system.
             </p>
           </div>
         </div>
@@ -75,9 +74,10 @@ export default function HomePage() {
           <SubgalleryCarousel
             galleryId={previewGallery.id}
             subgalleries={previewGallery.subgalleries}
-            eyebrow="Switzerland & Northern Italy"
+            eyebrow="Winter Olympics 2026"
             title="Demo Gallery"
             theme="light"
+            clickable={false}
           />
         </div>
       </section>
@@ -86,23 +86,20 @@ export default function HomePage() {
 }
 
 function StatementCard({
-  label,
   title,
   description,
 }: {
-  label: string;
   title: string;
   description: string;
 }) {
   return (
     <div className="min-w-0 border border-[color:var(--border)] bg-[rgba(245,248,252,0.96)] p-4 transition-transform duration-200 ease-out hover:scale-[1.02] hover:shadow-lg sm:p-5">
-      <p className="text-[10px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
-        {label}
-      </p>
-      <p className="mt-2 text-balance break-words font-serif text-lg leading-tight text-[color:var(--ink)] md:text-xl">
+      <p className="text-balance break-words font-serif text-lg leading-tight text-[color:var(--ink)] md:text-xl">
         {title}
       </p>
-      <p className="mt-2 text-xs leading-6 text-[color:var(--ink-soft)]">{description}</p>
+      <p className="mt-2 text-xs leading-6 text-[color:var(--ink-soft)]">
+        {description}
+      </p>
     </div>
   );
 }

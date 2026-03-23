@@ -43,8 +43,7 @@ export function AppShell({
             </span>
           </Link>
           <nav className="flex items-center gap-1 md:gap-2">
-            <NavLink href="/galleries">Gallery</NavLink>
-            <NavLink href="/galleries/new">Demo</NavLink>
+            <NavLink href="/galleries">My Gallery</NavLink>
             <Button asChild variant="primary" className="ml-1 px-4 py-2 md:ml-2">
               <Link href="/login">Create</Link>
             </Button>

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, MapPin, PenLine } from "lucide-react";
@@ -39,7 +38,7 @@ export default function SubgalleryDetailPage() {
         <Button asChild variant="ghost">
           <Link href={`/galleries/${gallery.id}`}>
             <ArrowLeft className="h-4 w-4" />
-            Back to gallery
+            Back to scenes
           </Link>
         </Button>
         <div className="flex flex-wrap gap-3">
@@ -61,17 +60,7 @@ export default function SubgalleryDetailPage() {
         </div>
       </div>
 
-      <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-        <div className="relative min-h-[24rem] overflow-hidden rounded-[2.5rem] border border-white/60 shadow-[0_28px_90px_rgba(27,42,60,0.16)]">
-          <Image
-            src={subgallery.coverImage}
-            alt={subgallery.title}
-            fill
-            className="object-cover"
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            priority
-          />
-        </div>
+      <section>
         <div className="rounded-[2.5rem] border border-white/60 bg-white/74 p-7 shadow-[0_22px_70px_rgba(34,49,71,0.1)] backdrop-blur">
           <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
             Inside {gallery.title}

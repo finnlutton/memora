@@ -57,7 +57,7 @@ export default function NewGalleryPage() {
             description: value.description,
             photos: [coverPhoto],
           });
-          router.push(`/galleries/${galleryId}`);
+          router.push("/galleries");
         }}
       />
     </AppShell>
