@@ -20,7 +20,7 @@ export default function HomePage() {
           </h1>
           <div className="mt-4">
             <Button asChild>
-              <Link href="/galleries/new">
+              <Link href="/demo/create">
                 Explore demo
                 <ArrowRight className="h-3 w-3" />
               </Link>

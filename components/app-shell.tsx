@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { useMemoraStore } from "@/hooks/use-memora-store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -17,8 +16,6 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const isHomePage = pathname === "/";
-  const { onboarding, getNextOnboardingRoute } = useMemoraStore();
-  const createHref = onboarding.onboardingComplete ? "/galleries/new" : getNextOnboardingRoute();
 
   return (
     <div
@@ -48,7 +45,7 @@ export function AppShell({
           <nav className="flex items-center gap-1 md:gap-2">
             <NavLink href="/galleries">My Gallery</NavLink>
             <Button asChild variant="primary" className="ml-1 px-4 py-2 md:ml-2">
-              <Link href={createHref}>Create</Link>
+              <Link href="/auth">Create</Link>
             </Button>
           </nav>
         </div>
