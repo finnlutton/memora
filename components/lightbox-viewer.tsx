@@ -75,7 +75,7 @@ export function LightboxViewer({
                     Photo {openIndex! + 1} of {photos.length}
                   </p>
                   <p className="mt-2 max-w-2xl text-sm leading-7 text-white/88">
-                    {current.caption || "No caption yet. Add one in the subgallery editor to deepen the memory."}
+                    {current.caption || "No caption yet. Add one in the scene editor to deepen the memory."}
                   </p>
                 </div>
                 <div className="flex gap-2">

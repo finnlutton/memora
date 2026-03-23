@@ -8,14 +8,26 @@ import {
   useState,
 } from "react";
 import { demoGalleries } from "@/lib/demo-data";
+import { getMembershipPlan } from "@/lib/plans";
 import { createId } from "@/lib/utils";
 import type { Gallery, GalleryInput, Subgallery, SubgalleryInput } from "@/types/memora";
 
 const STORAGE_KEY = "memora::galleries:v1";
+const ONBOARDING_KEY = "memora::onboarding:v1";
+
+type OnboardingState = {
+  isAuthenticated: boolean;
+  selectedPlanId: "focus" | "regular" | "archive" | null;
+  onboardingComplete: boolean;
+  user: {
+    email: string;
+  } | null;
+};
 
 type MemoraStore = {
   galleries: Gallery[];
   hydrated: boolean;
+  onboarding: OnboardingState;
   createGallery: (input: GalleryInput) => string;
   updateGallery: (galleryId: string, input: GalleryInput) => void;
   deleteGallery: (galleryId: string) => void;
@@ -29,34 +41,65 @@ type MemoraStore = {
   getGallery: (galleryId: string) => Gallery | undefined;
   getSubgallery: (galleryId: string, subgalleryId: string) => Subgallery | undefined;
   resetDemo: () => void;
+  signIn: (email: string) => void;
+  signOut: () => void;
+  selectPlan: (planId: "focus" | "regular" | "archive") => void;
+  completeCheckout: () => void;
+  resetOnboarding: () => void;
+  getNextOnboardingRoute: () => string;
 };
 
 const MemoraContext = createContext<MemoraStore | null>(null);
+
+const defaultOnboardingState: OnboardingState = {
+  isAuthenticated: false,
+  selectedPlanId: null,
+  onboardingComplete: false,
+  user: null,
+};
 
 function sortPhotos<T extends { order: number }>(photos: T[]) {
   return [...photos].sort((left, right) => left.order - right.order);
 }
 
+function loadStoredGalleries() {
+  if (typeof window === "undefined") {
+    return demoGalleries;
+  }
+
+  const storedValue = window.localStorage.getItem(STORAGE_KEY);
+  if (!storedValue) {
+    return demoGalleries;
+  }
+
+  try {
+    return JSON.parse(storedValue) as Gallery[];
+  } catch {
+    return demoGalleries;
+  }
+}
+
+function loadStoredOnboarding() {
+  if (typeof window === "undefined") {
+    return defaultOnboardingState;
+  }
+
+  const storedValue = window.localStorage.getItem(ONBOARDING_KEY);
+  if (!storedValue) {
+    return defaultOnboardingState;
+  }
+
+  try {
+    return JSON.parse(storedValue) as OnboardingState;
+  } catch {
+    return defaultOnboardingState;
+  }
+}
+
 export function MemoraProvider({ children }: { children: React.ReactNode }) {
-  const [galleries, setGalleries] = useState<Gallery[]>([]);
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    const storedValue = window.localStorage.getItem(STORAGE_KEY);
-    if (!storedValue) {
-      setGalleries(demoGalleries);
-      setHydrated(true);
-      return;
-    }
-
-    try {
-      setGalleries(JSON.parse(storedValue) as Gallery[]);
-    } catch {
-      setGalleries(demoGalleries);
-    } finally {
-      setHydrated(true);
-    }
-  }, []);
+  const [galleries, setGalleries] = useState<Gallery[]>(loadStoredGalleries);
+  const [onboarding, setOnboarding] = useState<OnboardingState>(loadStoredOnboarding);
+  const [hydrated] = useState(true);
 
   useEffect(() => {
     if (!hydrated) {
@@ -65,10 +108,18 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(galleries));
   }, [galleries, hydrated]);
 
+  useEffect(() => {
+    if (!hydrated) {
+      return;
+    }
+    window.localStorage.setItem(ONBOARDING_KEY, JSON.stringify(onboarding));
+  }, [hydrated, onboarding]);
+
   const value = useMemo<MemoraStore>(() => {
     return {
       galleries,
       hydrated,
+      onboarding,
       createGallery(input) {
         const timestamp = new Date().toISOString();
         const nextGallery: Gallery = {
@@ -178,8 +229,46 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
       resetDemo() {
         setGalleries(demoGalleries);
       },
+      signIn(email) {
+        setOnboarding((current) => ({
+          ...current,
+          isAuthenticated: true,
+          user: { email },
+        }));
+      },
+      signOut() {
+        setOnboarding(defaultOnboardingState);
+      },
+      selectPlan(planId) {
+        setOnboarding((current) => ({
+          ...current,
+          selectedPlanId: planId,
+          onboardingComplete: false,
+        }));
+      },
+      completeCheckout() {
+        setOnboarding((current) => ({
+          ...current,
+          onboardingComplete: true,
+        }));
+      },
+      resetOnboarding() {
+        setOnboarding(defaultOnboardingState);
+      },
+      getNextOnboardingRoute() {
+        if (!onboarding.isAuthenticated) {
+          return "/auth";
+        }
+        if (!onboarding.selectedPlanId || !getMembershipPlan(onboarding.selectedPlanId)) {
+          return "/pricing";
+        }
+        if (!onboarding.onboardingComplete) {
+          return "/checkout";
+        }
+        return "/galleries/new";
+      },
     };
-  }, [galleries, hydrated]);
+  }, [galleries, hydrated, onboarding]);
 
   return <MemoraContext.Provider value={value}>{children}</MemoraContext.Provider>;
 }

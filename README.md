@@ -5,7 +5,7 @@ Memora is a photo-memory app for preserving life in structured, story-led galler
 Users create:
 
 - top-level galleries for a trip, season, event, or chapter of life
-- subgalleries for places, moments, or days inside that larger story
+- scenes for places, moments, or days inside that larger story
 - visual journal entries with descriptions, metadata, and photographs
 
 The MVP is designed to feel calm, premium, editorial, and revisit-worthy.
@@ -25,14 +25,14 @@ The MVP is designed to feel calm, premium, editorial, and revisit-worthy.
 - premium landing page
 - dashboard for browsing galleries
 - create, edit, and delete galleries
-- create, edit, and delete subgalleries
+- create, edit, and delete scenes
 - multi-photo upload with drag-and-drop
 - local image previews stored as data URLs
 - cover photo selection
 - photo caption editing
-- photo reordering inside subgallery edit flow
-- horizontal draggable subgallery carousel
-- responsive subgallery detail page
+- photo reordering inside scene edit flow
+- horizontal draggable scene carousel
+- responsive scene detail page
 - elegant lightbox with keyboard navigation
 - preloaded demo content on first launch
 - local persistence via `localStorage`
@@ -44,7 +44,7 @@ app/
   galleries/
     [galleryId]/
       edit/
-      subgalleries/
+      scenes/
   globals.css
   layout.tsx
   page.tsx
@@ -53,8 +53,8 @@ components/
   ui/
   app-shell.tsx
   gallery-form.tsx
-  subgallery-form.tsx
-  subgallery-carousel.tsx
+  scene-form.tsx
+  scene-carousel.tsx
   photo-grid.tsx
   lightbox-viewer.tsx
 hooks/
@@ -101,7 +101,7 @@ npm run start
 
 This MVP uses browser `localStorage` for both:
 
-- gallery and subgallery metadata
+- gallery and scene metadata
 - uploaded images stored as base64 data URLs
 
 That makes the app fully local and easy to demo without backend setup, but it is not intended for large real-world image libraries yet.
@@ -127,7 +127,7 @@ To migrate to Supabase, Firebase, or another backend:
 
 1. Replace the CRUD logic in [`hooks/use-memora-store.tsx`](/Users/owner/Documents/memora-app/hooks/use-memora-store.tsx) with API-backed queries and mutations.
 2. Store uploaded files in object storage instead of base64 strings.
-3. Keep the current components and route structure; they already consume a clean gallery/subgallery model.
+3. Keep the current components and route structure; they already consume a clean gallery/scene model.
 4. Optionally move demo seeding to a server bootstrap or onboarding flow.
 
 ## Customization
