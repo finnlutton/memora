@@ -11,10 +11,10 @@ export function SubgalleryCard({
 }) {
   return (
     <article
-      className={`h-full overflow-hidden border bg-[rgba(255,255,255,0.72)] backdrop-blur transition duration-300 ${
+      className={`h-full overflow-hidden rounded-[6px] border bg-[rgba(255,255,255,0.72)] backdrop-blur transition duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.06)] ${
         active
-          ? "border-white/30 shadow-[0_30px_80px_rgba(0,0,0,0.28)]"
-          : "border-white/12 shadow-[0_14px_40px_rgba(0,0,0,0.18)]"
+          ? "border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.1)]"
+          : "border-white/12"
       }`}
     >
       <div className="relative aspect-[4/5] overflow-hidden md:aspect-[16/11]">
@@ -49,10 +49,6 @@ export function SubgalleryCard({
             </p>
           </div>
         </div>
-      </div>
-      <div className="flex items-center justify-between border-t border-white/10 bg-[rgba(7,15,26,0.96)] px-6 py-4 text-[11px] uppercase tracking-[0.22em] text-white/54 md:px-8">
-        <span>{subgallery.photos.length} photographs</span>
-        <span>Open chapter</span>
       </div>
     </article>
   );

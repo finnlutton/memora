@@ -18,9 +18,11 @@ function fieldClassName() {
 export function GalleryForm({
   initialValue,
   onSubmit,
+  createLabel = "Create gallery",
 }: {
   initialValue?: Gallery;
   onSubmit: (value: GalleryInput) => void;
+  createLabel?: string;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -186,7 +188,7 @@ export function GalleryForm({
             <div className="mt-6 flex flex-wrap gap-3">
               <Button type="submit" disabled={isPending || !coverImage}>
                 <Save className="h-4 w-4" />
-                {initialValue ? "Save gallery" : "Create gallery"}
+                {initialValue ? "Save gallery" : createLabel}
               </Button>
               <Button type="button" variant="secondary" onClick={() => router.back()}>
                 Cancel

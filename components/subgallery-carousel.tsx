@@ -14,13 +14,23 @@ export function SubgalleryCarousel({
   title = "Subgalleries",
   eyebrow = "Browse the chapters",
   description,
+  theme = "dark",
+  onActiveIndexChange,
 }: {
   galleryId: string;
   subgalleries: Subgallery[];
   title?: string;
   eyebrow?: string;
   description?: string;
+  theme?: "light" | "dark";
+  onActiveIndexChange?: (index: number) => void;
 }) {
+  const isLight = theme === "light";
+  const textClass = isLight ? "text-[color:var(--ink)]" : "text-white";
+  const mutedTextClass = isLight ? "text-[color:var(--ink-soft)]" : "text-white/70";
+  const buttonClass = isLight
+    ? "bg-[color:var(--accent-strong)] text-white hover:bg-[#22314a]"
+    : "bg-white/10 text-white hover:bg-white/20";
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -51,6 +61,7 @@ export function SubgalleryCarousel({
           0,
         );
         setActiveIndex(nextIndex);
+        onActiveIndexChange?.(nextIndex);
       });
     };
 
@@ -97,7 +108,7 @@ export function SubgalleryCarousel({
       container.removeEventListener("pointerup", onPointerUp);
       container.removeEventListener("pointerleave", onPointerUp);
     };
-  }, [subgalleries.length]);
+  }, [subgalleries.length, onActiveIndexChange]);
 
   const scrollToCard = (direction: -1 | 1) => {
     const container = containerRef.current;
@@ -119,43 +130,44 @@ export function SubgalleryCarousel({
         inline: "start",
       });
       setActiveIndex(nextIndex);
+      onActiveIndexChange?.(nextIndex);
     }
   };
 
   return (
-    <section className="space-y-6 text-white">
+    <section className="space-y-6">
       <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div className="max-w-2xl">
           {eyebrow ? (
-            <p className="text-[11px] uppercase tracking-[0.28em] text-white/70 sm:text-sm">
+            <p className={`text-[11px] uppercase tracking-[0.28em] sm:text-sm ${mutedTextClass}`}>
               {eyebrow}
             </p>
           ) : null}
           {title ? (
-            <h2 className={`font-serif text-4xl text-white md:text-5xl ${eyebrow ? "mt-3" : ""}`}>
+            <h2 className={`font-serif text-3xl md:text-4xl ${eyebrow ? "mt-3" : ""} ${textClass}`}>
               {title}
             </h2>
           ) : null}
           {description ? (
-            <p className="mt-4 text-base leading-8 text-white/64">
+            <p className={`mt-4 text-base leading-8 ${isLight ? "text-[color:var(--ink-soft)]" : "text-white/64"}`}>
               {description}
             </p>
           ) : null}
         </div>
         <div className="hidden gap-2 md:flex">
           <Button
-            variant="secondary"
+            variant={isLight ? "primary" : "secondary"}
             onClick={() => scrollToCard(-1)}
             disabled={activeIndex === 0}
-            className="bg-white/10 text-white hover:bg-white/20 disabled:opacity-40"
+            className={isLight ? "disabled:opacity-40" : `${buttonClass} disabled:opacity-40`}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <Button
-            variant="secondary"
+            variant={isLight ? "primary" : "secondary"}
             onClick={() => scrollToCard(1)}
             disabled={activeIndex === subgalleries.length - 1}
-            className="bg-white/10 text-white hover:bg-white/20 disabled:opacity-40"
+            className={isLight ? "disabled:opacity-40" : `${buttonClass} disabled:opacity-40`}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>

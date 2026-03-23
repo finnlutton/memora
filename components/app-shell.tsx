@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { Camera } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -13,6 +14,9 @@ export function AppShell({
   children: React.ReactNode;
   accent?: "default" | "immersive";
 }) {
+  const pathname = usePathname();
+  const isHomePage = pathname === "/";
+
   return (
     <div
       className={cn(
@@ -22,34 +26,39 @@ export function AppShell({
       )}
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[14rem] bg-[linear-gradient(180deg,rgba(221,231,243,0.34),transparent)]" />
-      <header className="sticky top-0 z-30 border-b border-[color:var(--border)] bg-[rgba(248,251,255,0.86)] backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-2.5 md:px-6 lg:flex-row lg:items-center lg:justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center border border-[color:var(--border-strong)] bg-white text-[color:var(--accent-strong)]">
-              <Camera className="h-3 w-3" />
+      <header className="sticky top-0 z-30 flex min-h-[68px] items-center border-b border-[rgba(22,35,56,0.1)] bg-[rgba(250,252,255,0.94)] backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-stretch gap-3 px-4 py-3 md:px-6 md:flex-row md:items-center md:justify-between md:gap-4">
+          <Link href="/" className="flex items-center gap-2.5">
+            <span className="relative flex h-10 w-14 shrink-0 items-center">
+              <Image
+                src="/memora-logo.png"
+                alt="Memora"
+                width={56}
+                height={40}
+                className="object-contain object-left"
+              />
             </span>
-            <span>
-              <span className="block font-serif text-base leading-none tracking-[0.12em] text-[color:var(--ink)]">
-                Memora
-              </span>
-              <span className="mt-0.5 block text-[9px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
-                Memory Archive
-              </span>
+            <span className="font-serif text-base leading-none tracking-[0.12em] text-[color:var(--ink)]">
+              Memora
             </span>
           </Link>
-          <nav className="flex w-full flex-wrap items-center gap-0.5 border border-[color:var(--border)] bg-[rgba(255,255,255,0.8)] p-0.5 lg:w-auto">
-            <NavLink href="/">Home</NavLink>
-            <NavLink href="/galleries">Galleries</NavLink>
+          <nav className="flex items-center gap-1 md:gap-2">
+            <NavLink href="/galleries">Gallery</NavLink>
             <NavLink href="/galleries/new">Demo</NavLink>
+            <Button asChild variant="primary" className="ml-1 px-4 py-2 md:ml-2">
+              <Link href="/login">Create</Link>
+            </Button>
           </nav>
         </div>
       </header>
       <main className="relative z-10 mx-auto w-full max-w-7xl px-4 py-5 md:px-6 md:py-6">
         {children}
       </main>
-      <footer className="mx-auto mt-8 w-full max-w-7xl px-4 pb-6 md:px-6">
-        <ContactUsBox />
-      </footer>
+      {isHomePage && (
+        <footer className="mx-auto mt-8 w-full max-w-7xl px-4 pb-6 md:px-6">
+          <ContactUsBox />
+        </footer>
+      )}
     </div>
   );
 }
@@ -95,7 +104,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
   return (
     <Link
       href={href}
-      className="flex-1 px-2.5 py-1.5 text-center text-[11px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)] transition hover:bg-[rgba(22,35,56,0.04)] hover:text-[color:var(--ink)] lg:flex-none"
+      className="px-3 py-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink-soft)] transition hover:text-[color:var(--ink)]"
     >
       {children}
     </Link>

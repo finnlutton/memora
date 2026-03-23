@@ -5,6 +5,9 @@ import { formatDateRange, formatUpdatedLabel, countPhotos } from "@/lib/utils";
 import type { Gallery } from "@/types/memora";
 
 export function GalleryCard({ gallery, index }: { gallery: Gallery; index: number }) {
+  const coverImage =
+    gallery.subgalleries[0]?.coverImage ?? gallery.coverImage;
+
   return (
     <Link
       href={`/galleries/${gallery.id}`}
@@ -12,7 +15,7 @@ export function GalleryCard({ gallery, index }: { gallery: Gallery; index: numbe
     >
       <div className="relative aspect-[5/4] overflow-hidden">
         <Image
-          src={gallery.coverImage}
+          src={coverImage}
           alt={gallery.title}
           fill
           className="object-cover transition duration-700 group-hover:scale-[1.04]"
