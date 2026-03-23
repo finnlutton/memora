@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { SubgalleryCard } from "@/components/subgallery-card";
 import type { Subgallery } from "@/types/memora";
@@ -33,6 +32,7 @@ export function SubgalleryCarousel({
     : "bg-white/10 text-white hover:bg-white/20";
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const isProgrammaticScrollRef = useRef(false);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -42,6 +42,7 @@ export function SubgalleryCarousel({
 
     let frame = 0;
     const handleScroll = () => {
+      if (isProgrammaticScrollRef.current) return;
       cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
         const cards = Array.from(
@@ -124,13 +125,13 @@ export function SubgalleryCarousel({
     );
     const targetCard = cards[nextIndex];
     if (targetCard) {
-      targetCard.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-        inline: "start",
-      });
+      isProgrammaticScrollRef.current = true;
       setActiveIndex(nextIndex);
       onActiveIndexChange?.(nextIndex);
+      targetCard.scrollIntoView({ behavior: "instant", block: "nearest", inline: "start" });
+      setTimeout(() => {
+        isProgrammaticScrollRef.current = false;
+      }, 100);
     }
   };
 
@@ -178,21 +179,15 @@ export function SubgalleryCarousel({
         className="memora-carousel flex snap-x snap-mandatory gap-5 overflow-x-auto pb-5 [-ms-overflow-style:none] [scrollbar-width:none] md:gap-5 [&::-webkit-scrollbar]:hidden"
       >
         {subgalleries.map((subgallery, index) => (
-          <motion.div
+          <div
             key={subgallery.id}
             data-subgallery-card
-            animate={{
-              scale: index === activeIndex ? 1 : 0.965,
-              y: index === activeIndex ? -4 : 0,
-              opacity: index === activeIndex ? 1 : 0.86,
-            }}
-            transition={{ duration: 0.24, ease: "easeOut" }}
-            className="min-w-[91%] shrink-0 snap-center md:min-w-[52rem] lg:min-w-[62rem]"
+            className="min-w-[91%] shrink-0 snap-start md:min-w-[52rem] lg:min-w-[62rem]"
           >
             <Link href={`/galleries/${galleryId}/subgalleries/${subgallery.id}`}>
               <SubgalleryCard subgallery={subgallery} active={index === activeIndex} />
             </Link>
-          </motion.div>
+          </div>
         ))}
       </div>
     </section>

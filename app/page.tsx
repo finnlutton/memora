@@ -16,7 +16,7 @@ export default function HomePage() {
             Curated galleries, meaningful descriptions
           </p>
           <h1 className="mt-2 w-full font-serif text-2xl leading-[0.94] text-[color:var(--ink)] sm:text-3xl md:text-3xl lg:text-4xl">
-            An intentional platform to share and revisit your memories
+            An intentional way to share and keep your memories
           </h1>
           <div className="mt-4">
             <Button asChild>
