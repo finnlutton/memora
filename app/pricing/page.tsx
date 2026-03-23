@@ -9,7 +9,7 @@ import { membershipPlans } from "@/lib/plans";
 
 export default function PricingPage() {
   const router = useRouter();
-  const { hydrated, onboarding, getNextOnboardingRoute, selectPlan } = useMemoraStore();
+  const { hydrated, onboarding, selectPlan } = useMemoraStore();
 
   useEffect(() => {
     if (!hydrated) {
@@ -23,15 +23,10 @@ export default function PricingPage() {
       router.replace("/galleries/new");
       return;
     }
-    if (onboarding.selectedPlanId) {
-      router.replace(getNextOnboardingRoute());
-    }
   }, [
-    getNextOnboardingRoute,
     hydrated,
     onboarding.isAuthenticated,
     onboarding.onboardingComplete,
-    onboarding.selectedPlanId,
     router,
   ]);
 

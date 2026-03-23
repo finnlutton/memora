@@ -112,7 +112,6 @@ export function AuthCard() {
               </span>
               <input
                 type="email"
-                required
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="you@example.com"
@@ -127,7 +126,6 @@ export function AuthCard() {
                 </span>
                 <input
                   type="password"
-                  required
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="••••••••"
@@ -139,9 +137,8 @@ export function AuthCard() {
                   <span className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
                     Confirm password
                   </span>
-                  <input
+                    <input
                     type="password"
-                    required
                     value={confirmPassword}
                     onChange={(event) => setConfirmPassword(event.target.value)}
                     placeholder="••••••••"
