@@ -60,11 +60,11 @@ export function SubgalleryForm({
         </Button>
       </div>
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-[2rem] border border-white/60 bg-white/74 p-6 shadow-[0_20px_70px_rgba(34,49,71,0.08)] backdrop-blur">
+        <section className="rounded-[2rem] border border-white/60 bg-white/74 p-4 shadow-[0_20px_70px_rgba(34,49,71,0.08)] backdrop-blur">
           <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
             Journal entry
           </p>
-          <div className="mt-4 grid gap-4">
+          <div className="mt-2 grid gap-2">
             <label className="space-y-2">
               <span className="text-sm text-[color:var(--ink-soft)]">Title</span>
               <input
@@ -75,7 +75,7 @@ export function SubgalleryForm({
                 placeholder="Zermatt"
               />
             </label>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-3 md:grid-cols-2">
               <label className="space-y-2">
                 <span className="text-sm text-[color:var(--ink-soft)]">Location</span>
                 <input
@@ -102,18 +102,18 @@ export function SubgalleryForm({
                 required
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
-                className={`${fieldClassName()} min-h-40 resize-none`}
+                className={`${fieldClassName()} min-h-[7.5rem] resize-none`}
                 placeholder="What made this stop, place, or moment worth remembering?"
               />
             </label>
           </div>
         </section>
         <aside className="space-y-6">
-          <section className="rounded-[2rem] border border-white/60 bg-white/74 p-6 shadow-[0_20px_70px_rgba(34,49,71,0.08)] backdrop-blur">
+          <section className="rounded-[2rem] border border-white/60 bg-white/74 p-4 shadow-[0_20px_70px_rgba(34,49,71,0.08)] backdrop-blur">
             <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
               Cover image
             </p>
-            <div className="mt-4 space-y-4">
+            <div className="mt-2 space-y-2">
               <UploadDropzone
                 label="Select a cover photo"
                 hint="You can upload a custom cover or pick one from the uploaded photos below."
@@ -126,7 +126,7 @@ export function SubgalleryForm({
                 }}
               />
               {coverImage ? (
-                <div className="relative aspect-[4/3] overflow-hidden rounded-[1.75rem] border border-white/60">
+                <div className="relative aspect-[20/9] overflow-hidden rounded-[1.5rem] border border-white/60">
                   <Image
                     src={coverImage}
                     alt="Subgallery cover preview"

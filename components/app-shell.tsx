@@ -27,10 +27,10 @@ export function AppShell({
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[14rem] bg-[linear-gradient(180deg,rgba(221,231,243,0.34),transparent)]" />
       <header className="sticky top-0 z-30 overflow-visible border-b border-[color:var(--border)] bg-[rgba(250,252,255,0.96)] backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 overflow-visible px-4 py-2 md:h-[88px] md:flex-row md:items-center md:justify-between md:gap-5 md:px-6 md:py-0">
+        <div className="mx-auto flex h-[76px] w-full max-w-7xl items-center justify-between gap-3 overflow-visible px-4 py-1.5 md:h-[88px] md:gap-5 md:px-6 md:py-0">
           <Link
             href="/"
-            className="flex h-[72px] min-w-0 shrink items-center self-start overflow-visible sm:h-[76px] md:h-[86px] md:self-auto"
+            className="flex h-[68px] min-w-0 shrink items-center overflow-visible md:h-[86px]"
             aria-label="Memora home"
           >
             <Image
@@ -39,11 +39,11 @@ export function AppShell({
               width={1040}
               height={240}
               priority
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1200px"
-              className="h-full w-auto origin-left scale-[1.46] object-contain object-left will-change-transform sm:scale-[1.55] md:scale-[1.85] lg:scale-[1.98]"
+              sizes="(max-width: 640px) 78vw, (max-width: 1024px) 90vw, 1200px"
+              className="h-full w-auto origin-left scale-[1.18] object-contain object-left will-change-transform md:scale-[1.85] lg:scale-[1.98]"
             />
           </Link>
-          <nav className="flex items-center gap-0.5 md:gap-1">
+          <nav className="flex shrink-0 items-center gap-0.5 md:gap-1">
             <NavLink href="/galleries">Gallery</NavLink>
             <Button
               asChild
