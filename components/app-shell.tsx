@@ -20,31 +20,36 @@ export function AppShell({
   return (
     <div
       className={cn(
-        "relative min-h-screen overflow-hidden",
+        "relative min-h-screen overflow-x-hidden",
         accent === "immersive" &&
           "bg-[radial-gradient(circle_at_top_left,rgba(217,228,240,0.68),transparent_30%),var(--background)]",
       )}
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[14rem] bg-[linear-gradient(180deg,rgba(221,231,243,0.34),transparent)]" />
-      <header className="sticky top-0 z-30 flex min-h-[68px] items-center border-b border-[rgba(22,35,56,0.1)] bg-[rgba(250,252,255,0.94)] backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-7xl flex-col items-stretch gap-3 px-4 py-3 md:px-6 md:flex-row md:items-center md:justify-between md:gap-4">
-          <Link href="/" className="flex items-center gap-2.5">
-            <span className="relative flex h-10 w-14 shrink-0 items-center">
-              <Image
-                src="/memora-logo.png"
-                alt="Memora"
-                width={56}
-                height={40}
-                className="object-contain object-left"
-              />
-            </span>
-            <span className="font-serif text-base leading-none tracking-[0.12em] text-[color:var(--ink)]">
-              Memora
-            </span>
+      <header className="sticky top-0 z-30 overflow-visible border-b border-[color:var(--border)] bg-[rgba(250,252,255,0.96)] backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 overflow-visible px-4 py-2 md:h-[88px] md:flex-row md:items-center md:justify-between md:gap-5 md:px-6 md:py-0">
+          <Link
+            href="/"
+            className="flex h-[72px] min-w-0 shrink items-center self-start overflow-visible sm:h-[76px] md:h-[86px] md:self-auto"
+            aria-label="Memora home"
+          >
+            <Image
+              src="/memora-logo.png"
+              alt="Memora"
+              width={1040}
+              height={240}
+              priority
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1200px"
+              className="h-full w-auto origin-left scale-[1.46] object-contain object-left will-change-transform sm:scale-[1.55] md:scale-[1.85] lg:scale-[1.98]"
+            />
           </Link>
-          <nav className="flex items-center gap-1 md:gap-2">
-            <NavLink href="/galleries">My Gallery</NavLink>
-            <Button asChild variant="primary" className="ml-1 px-4 py-2 md:ml-2">
+          <nav className="flex items-center gap-0.5 md:gap-1">
+            <NavLink href="/galleries">Gallery</NavLink>
+            <Button
+              asChild
+              variant="primary"
+              className="ml-2 border border-[color:var(--accent-strong)]/20 px-3.5 py-2 text-[11px] tracking-[0.18em] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:ml-3"
+            >
               <Link href="/auth">Create</Link>
             </Button>
           </nav>
@@ -103,7 +108,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
   return (
     <Link
       href={href}
-      className="px-3 py-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink-soft)] transition hover:text-[color:var(--ink)]"
+      className="px-2.5 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)] transition hover:text-[color:var(--ink)]"
     >
       {children}
     </Link>

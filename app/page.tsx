@@ -41,7 +41,7 @@ export default function HomePage() {
           />
           <StatementCard
             title="Built to last"
-            description="Enjoy a timeless organizational structure for your favorite trips and moments."
+            description="Enjoy a timeless organizational structure for your favorite moments."
           />
         </div>
       </section>
