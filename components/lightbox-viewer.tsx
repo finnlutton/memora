@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { nextImageUnoptimizedForSrc } from "@/lib/utils";
 import type { MemoryPhoto } from "@/types/memora";
 
 export function LightboxViewer({
@@ -67,6 +68,7 @@ export function LightboxViewer({
                   fill
                   className="object-contain"
                   sizes="100vw"
+                  unoptimized={nextImageUnoptimizedForSrc(current.src)}
                 />
               </div>
               <div className="flex items-center justify-between gap-4 text-white">

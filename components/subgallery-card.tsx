@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { CalendarDays, MapPin } from "lucide-react";
+import { nextImageUnoptimizedForSrc } from "@/lib/utils";
 import type { Subgallery } from "@/types/memora";
 
 export function SubgalleryCard({
@@ -24,6 +25,7 @@ export function SubgalleryCard({
           fill
           className="object-cover transition duration-700"
           sizes="(max-width: 768px) 90vw, 60vw"
+          unoptimized={nextImageUnoptimizedForSrc(subgallery.coverImage)}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[rgba(6,12,22,0.92)] via-[rgba(6,12,22,0.22)] to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">

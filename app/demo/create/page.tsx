@@ -33,6 +33,9 @@ export default function DemoCreatePage() {
       </section>
       <GalleryForm
         createLabel="Create gallery"
+        backHref="/"
+        backLabel="Back to home"
+        defaultCoverImage="/demo/alpine-village.png"
         onSubmit={(value) => {
           const galleryId = createGallery(value);
           const tempSubgalleryId = createId("temp-sub");

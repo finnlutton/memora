@@ -1,6 +1,11 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+/** Next.js `Image` does not optimize data/blob URLs; pass `unoptimized` to avoid runtime errors. */
+export function nextImageUnoptimizedForSrc(src: string) {
+  return src.startsWith("data:") || src.startsWith("blob:");
+}
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }

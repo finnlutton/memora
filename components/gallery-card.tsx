@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Images } from "lucide-react";
-import { formatDateRange, formatUpdatedLabel, countPhotos } from "@/lib/utils";
+import { formatDateRange, formatUpdatedLabel, countPhotos, nextImageUnoptimizedForSrc } from "@/lib/utils";
 import type { Gallery } from "@/types/memora";
 
 export function GalleryCard({ gallery, index }: { gallery: Gallery; index: number }) {
@@ -20,6 +20,7 @@ export function GalleryCard({ gallery, index }: { gallery: Gallery; index: numbe
           fill
           className="object-cover transition duration-700 group-hover:scale-[1.04]"
           sizes="(max-width: 768px) 100vw, 33vw"
+          unoptimized={nextImageUnoptimizedForSrc(coverImage)}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[rgba(13,25,39,0.72)] via-[rgba(13,25,39,0.18)] to-transparent" />
         <div className="absolute left-3 top-3 rounded-full border border-white/25 bg-white/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.22em] text-white backdrop-blur">

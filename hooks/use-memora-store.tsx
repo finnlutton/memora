@@ -27,6 +27,8 @@ type OnboardingState = {
 type MemoraStore = {
   galleries: Gallery[];
   hydrated: boolean;
+  storageQuotaExceeded: boolean;
+  dismissStorageQuotaWarning: () => void;
   onboarding: OnboardingState;
   createGallery: (input: GalleryInput) => string;
   updateGallery: (galleryId: string, input: GalleryInput) => void;
@@ -97,15 +99,38 @@ function loadStoredOnboarding() {
 }
 
 export function MemoraProvider({ children }: { children: React.ReactNode }) {
-  const [galleries, setGalleries] = useState<Gallery[]>(loadStoredGalleries);
-  const [onboarding, setOnboarding] = useState<OnboardingState>(loadStoredOnboarding);
-  const [hydrated] = useState(true);
+  // Same initial state on server and client so SSR markup matches the first client render.
+  // Rehydrate from localStorage only after mount (client-only).
+  const [galleries, setGalleries] = useState<Gallery[]>(demoGalleries);
+  const [onboarding, setOnboarding] = useState<OnboardingState>(defaultOnboardingState);
+  const [hydrated, setHydrated] = useState(false);
+  const [storageQuotaExceeded, setStorageQuotaExceeded] = useState(false);
+
+  useEffect(() => {
+    setGalleries(loadStoredGalleries());
+    setOnboarding(loadStoredOnboarding());
+    setHydrated(true);
+  }, []);
 
   useEffect(() => {
     if (!hydrated) {
       return;
     }
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(galleries));
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(galleries));
+      setStorageQuotaExceeded(false);
+    } catch (error) {
+      const domErr = error instanceof DOMException ? error : null;
+      const isQuota =
+        domErr?.name === "QuotaExceededError" ||
+        domErr?.code === 22 ||
+        domErr?.code === 1014;
+      if (isQuota) {
+        setStorageQuotaExceeded(true);
+      } else {
+        console.error("Memora: failed to save galleries", error);
+      }
+    }
   }, [galleries, hydrated]);
 
   useEffect(() => {
@@ -119,6 +144,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
     return {
       galleries,
       hydrated,
+      storageQuotaExceeded,
+      dismissStorageQuotaWarning: () => setStorageQuotaExceeded(false),
       onboarding,
       createGallery(input) {
         const timestamp = new Date().toISOString();
@@ -227,6 +254,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         return gallery?.subgalleries.find((subgallery) => subgallery.id === subgalleryId);
       },
       resetDemo() {
+        setStorageQuotaExceeded(false);
         setGalleries(demoGalleries);
       },
       signIn(email) {
@@ -268,7 +296,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         return "/galleries/new";
       },
     };
-  }, [galleries, hydrated, onboarding]);
+  }, [galleries, hydrated, onboarding, storageQuotaExceeded]);
 
   return <MemoraContext.Provider value={value}>{children}</MemoraContext.Provider>;
 }

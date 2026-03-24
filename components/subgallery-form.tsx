@@ -8,7 +8,7 @@ import { ArrowLeft, GripHorizontal, Save, Sparkles } from "lucide-react";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { Button } from "@/components/ui/button";
 import { filesToPhotos, readFileAsDataUrl } from "@/lib/file";
-import { createId, reorderList } from "@/lib/utils";
+import { createId, nextImageUnoptimizedForSrc, reorderList } from "@/lib/utils";
 import type { MemoryPhoto, Subgallery, SubgalleryInput } from "@/types/memora";
 
 function fieldClassName() {
@@ -133,6 +133,7 @@ export function SubgalleryForm({
                     fill
                     className="object-cover"
                     sizes="(max-width: 1024px) 100vw, 35vw"
+                    unoptimized={nextImageUnoptimizedForSrc(coverImage)}
                   />
                 </div>
               ) : null}
@@ -196,6 +197,7 @@ export function SubgalleryForm({
                   fill
                   className="object-cover"
                   sizes="(max-width: 1280px) 50vw, 33vw"
+                  unoptimized={nextImageUnoptimizedForSrc(photo.src)}
                 />
               </div>
               <div className="space-y-3 p-4">

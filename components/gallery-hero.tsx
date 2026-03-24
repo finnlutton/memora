@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { PenLine, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatDateRange } from "@/lib/utils";
+import { formatDateRange, nextImageUnoptimizedForSrc } from "@/lib/utils";
 import { MetadataRow } from "@/components/metadata-row";
 import { TagList } from "@/components/tag-list";
 import type { Gallery } from "@/types/memora";
@@ -18,6 +18,7 @@ export function GalleryHero({ gallery }: { gallery: Gallery }) {
           className="object-cover"
           sizes="(max-width: 1024px) 100vw, 55vw"
           priority
+          unoptimized={nextImageUnoptimizedForSrc(gallery.coverImage)}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[rgba(13,22,34,0.8)] via-[rgba(13,22,34,0.2)] to-transparent" />
       </div>

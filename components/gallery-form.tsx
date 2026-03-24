@@ -8,7 +8,7 @@ import { ArrowLeft, Save } from "lucide-react";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { Button } from "@/components/ui/button";
 import { readFileAsDataUrl } from "@/lib/file";
-import { splitCommaSeparated } from "@/lib/utils";
+import { nextImageUnoptimizedForSrc, splitCommaSeparated } from "@/lib/utils";
 import type { Gallery, GalleryInput } from "@/types/memora";
 
 function fieldClassName() {
@@ -19,14 +19,22 @@ export function GalleryForm({
   initialValue,
   onSubmit,
   createLabel = "Create gallery",
+  backHref = "/galleries",
+  backLabel = "Back to galleries",
+  defaultCoverImage = "",
 }: {
   initialValue?: Gallery;
   onSubmit: (value: GalleryInput) => void;
   createLabel?: string;
+  backHref?: string;
+  backLabel?: string;
+  defaultCoverImage?: string;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [coverImage, setCoverImage] = useState(initialValue?.coverImage ?? "");
+  const [coverImage, setCoverImage] = useState(
+    initialValue?.coverImage ?? defaultCoverImage ?? "",
+  );
   const [title, setTitle] = useState(initialValue?.title ?? "");
   const [description, setDescription] = useState(initialValue?.description ?? "");
   const [startDate, setStartDate] = useState(initialValue?.startDate ?? "");
@@ -58,9 +66,9 @@ export function GalleryForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="flex items-center justify-between">
         <Button asChild variant="ghost">
-          <Link href="/galleries">
+          <Link href={backHref}>
             <ArrowLeft className="h-4 w-4" />
-            Back to galleries
+            {backLabel}
           </Link>
         </Button>
       </div>
@@ -175,6 +183,7 @@ export function GalleryForm({
                     fill
                     className="object-cover"
                     sizes="(max-width: 1024px) 100vw, 35vw"
+                    unoptimized={nextImageUnoptimizedForSrc(coverImage)}
                   />
                 </div>
               ) : null}

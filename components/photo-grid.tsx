@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { LightboxViewer } from "@/components/lightbox-viewer";
+import { nextImageUnoptimizedForSrc } from "@/lib/utils";
 import type { MemoryPhoto } from "@/types/memora";
 
 export function PhotoGrid({ photos }: { photos: MemoryPhoto[] }) {
@@ -25,6 +26,7 @@ export function PhotoGrid({ photos }: { photos: MemoryPhoto[] }) {
               fill
               className="object-cover transition duration-700 group-hover:scale-[1.03]"
               sizes="(max-width: 768px) 50vw, 25vw"
+              unoptimized={nextImageUnoptimizedForSrc(photo.src)}
             />
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[rgba(11,20,31,0.72)] to-transparent px-4 pb-4 pt-10 text-left text-sm text-white">
               {photo.caption || "Tap to open"}
