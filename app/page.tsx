@@ -45,8 +45,8 @@ export default function HomePage() {
   return (
     <AppShell accent="immersive">
       <section className="flex flex-col gap-4 border-b border-[color:var(--border)] pt-4 pb-5 lg:pt-5 lg:pb-6">
-        <div className="w-full border border-[color:var(--border)] bg-[rgba(255,255,255,0.76)] p-4 transition-transform duration-200 ease-out hover:scale-[1.02] hover:shadow-lg md:py-[1.125rem]">
-          <div className="mx-auto w-full max-w-5xl md:px-5">
+        <div className="w-full border border-[color:var(--border)] bg-[rgba(255,255,255,0.76)] px-4 py-[0.875rem] transition-transform duration-200 ease-out hover:scale-[1.02] hover:shadow-lg md:px-5 md:py-3">
+          <div className="w-full max-w-5xl">
             <p className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)] sm:text-xs">
               Curated galleries, meaningful descriptions
             </p>
