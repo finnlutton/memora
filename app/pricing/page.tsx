@@ -9,7 +9,7 @@ import { membershipPlans } from "@/lib/plans";
 
 export default function PricingPage() {
   const router = useRouter();
-  const { hydrated, onboarding, selectPlan } = useMemoraStore();
+  const { hydrated, onboarding, selectPlan, completeCheckout } = useMemoraStore();
 
   useEffect(() => {
     if (!hydrated) {
@@ -30,6 +30,10 @@ export default function PricingPage() {
     router,
   ]);
 
+  const orderedPlans = ["free", "lite", "plus", "pro"]
+    .map((id) => membershipPlans.find((p) => p.id === id))
+    .filter((p): p is (typeof membershipPlans)[number] => Boolean(p));
+
   return (
     <AppShell>
       <section className="space-y-8 py-6">
@@ -41,16 +45,24 @@ export default function PricingPage() {
             Choose a plan to start building your archive.
           </h1>
           <p className="max-w-2xl text-sm leading-7 text-[color:var(--ink-soft)]">
-            Each plan determines how many galleries you can actively maintain each year.
+            Save and organize your memories with the plan that fits how you collect.
+          </p>
+          <p className="text-sm leading-7 text-[color:var(--ink-soft)]">
+            Upgrade anytime as your archive grows.
           </p>
         </div>
-        <div className="grid gap-5 xl:grid-cols-3">
-          {membershipPlans.map((plan) => (
+        <div className="grid items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          {orderedPlans.map((plan) => (
             <PricingCard
               key={plan.id}
               plan={plan}
               onSelect={(selectedPlan) => {
                 selectPlan(selectedPlan.id);
+                if (selectedPlan.id === "free") {
+                  completeCheckout();
+                  router.push("/galleries/new");
+                  return;
+                }
                 router.push("/checkout");
               }}
             />

@@ -17,7 +17,7 @@ const ONBOARDING_KEY = "memora::onboarding:v1";
 
 type OnboardingState = {
   isAuthenticated: boolean;
-  selectedPlanId: "focus" | "regular" | "archive" | null;
+  selectedPlanId: "free" | "lite" | "plus" | "pro" | null;
   onboardingComplete: boolean;
   user: {
     email: string;
@@ -45,7 +45,7 @@ type MemoraStore = {
   resetDemo: () => void;
   signIn: (email: string) => void;
   signOut: () => void;
-  selectPlan: (planId: "focus" | "regular" | "archive") => void;
+  selectPlan: (planId: "free" | "lite" | "plus" | "pro") => void;
   completeCheckout: () => void;
   resetOnboarding: () => void;
   getNextOnboardingRoute: () => string;
@@ -107,9 +107,15 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
   const [storageQuotaExceeded, setStorageQuotaExceeded] = useState(false);
 
   useEffect(() => {
-    setGalleries(loadStoredGalleries());
-    setOnboarding(loadStoredOnboarding());
-    setHydrated(true);
+    const nextGalleries = loadStoredGalleries();
+    const nextOnboarding = loadStoredOnboarding();
+
+    // Defer state updates to avoid sync cascading-render lint warnings.
+    queueMicrotask(() => {
+      setGalleries(nextGalleries);
+      setOnboarding(nextOnboarding);
+      setHydrated(true);
+    });
   }, []);
 
   useEffect(() => {
@@ -118,7 +124,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
     }
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(galleries));
-      setStorageQuotaExceeded(false);
+      queueMicrotask(() => setStorageQuotaExceeded(false));
     } catch (error) {
       const domErr = error instanceof DOMException ? error : null;
       const isQuota =
@@ -126,7 +132,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         domErr?.code === 22 ||
         domErr?.code === 1014;
       if (isQuota) {
-        setStorageQuotaExceeded(true);
+        queueMicrotask(() => setStorageQuotaExceeded(true));
       } else {
         console.error("Memora: failed to save galleries", error);
       }

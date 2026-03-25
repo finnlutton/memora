@@ -1,37 +1,118 @@
+export type MembershipPlanId = "free" | "lite" | "plus" | "pro";
+
 export type MembershipPlan = {
-  id: "focus" | "regular" | "archive";
-  galleryCount: number;
+  id: MembershipPlanId;
+
+  name: string;
+  priceMonthlyLabel: string;
+  /**
+   * Annual billing amount used by the existing checkout prototype.
+   */
   price: number;
-  effectiveCost: string;
+
+  galleryCount: number;
+  subgalleriesPerGallery: number;
+  photosPerSubgallery: number;
+
   summary: string;
-  recommended?: boolean;
+  features: string[];
+
+  /**
+   * Used on the pricing page: Plus is the visual anchor.
+   */
+  featured?: boolean;
+
+  /**
+   * Used by checkout summary UI (front-end prototype).
+   */
+  effectiveCost: string;
 };
+
+function annualPriceFromMonthly(priceMonthly: number) {
+  return Math.round(priceMonthly * 12 * 100) / 100;
+}
+
+function dollars(value: number) {
+  return value.toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatGalleryCount(n: number) {
+  return n === 1 ? "1 gallery" : `${n} galleries`;
+}
 
 export const membershipPlans: MembershipPlan[] = [
   {
-    id: "focus",
+    id: "free",
+    name: "Free",
+    priceMonthlyLabel: "$0/month",
+    price: annualPriceFromMonthly(0),
+    galleryCount: 1,
+    subgalleriesPerGallery: 2,
+    photosPerSubgallery: 10,
+    summary: "Good for trying Memora",
+    features: [
+      formatGalleryCount(1),
+      "2 subgalleries per gallery",
+      "10 photos per subgallery",
+    ],
+    featured: false,
+    effectiveCost: `$${dollars(0)}`,
+  },
+  {
+    id: "lite",
+    name: "Lite",
+    priceMonthlyLabel: "$1.49/month",
+    price: annualPriceFromMonthly(1.49),
     galleryCount: 5,
-    price: 19,
-    effectiveCost: "$3.80",
-    summary: "For a focused personal archive",
+    subgalleriesPerGallery: 5,
+    photosPerSubgallery: 15,
+    summary: "For a few meaningful moments",
+    features: [
+      formatGalleryCount(5),
+      "5 subgalleries per gallery",
+      "15 photos per subgallery",
+    ],
+    featured: false,
+    effectiveCost: `$${dollars(annualPriceFromMonthly(1.99) / 5)}`,
   },
   {
-    id: "regular",
-    galleryCount: 20,
-    price: 49,
-    effectiveCost: "$2.45",
-    summary: "For regular use across trips, seasons, and milestones",
-    recommended: true,
+    id: "plus",
+    name: "Plus",
+    priceMonthlyLabel: "$4.99/month",
+    price: annualPriceFromMonthly(4.99),
+    galleryCount: 15,
+    subgalleriesPerGallery: 10,
+    photosPerSubgallery: 25,
+    summary: "Best for regular use across trips, milestones, and seasons",
+    features: [
+      formatGalleryCount(15),
+      "10 subgalleries per gallery",
+      "25 photos per subgallery",
+    ],
+    featured: true,
+    effectiveCost: `$${dollars(annualPriceFromMonthly(4.99) / 15)}`,
   },
   {
-    id: "archive",
-    galleryCount: 35,
-    price: 79,
-    effectiveCost: "$2.26",
-    summary: "For a fuller long-term archive",
+    id: "pro",
+    name: "Pro",
+    priceMonthlyLabel: "$7.99/month",
+    price: annualPriceFromMonthly(7.99),
+    galleryCount: 50,
+    subgalleriesPerGallery: 20,
+    photosPerSubgallery: 100,
+    summary: "For long-term archiving and power users",
+    features: [
+      formatGalleryCount(50),
+      "20 subgalleries per gallery",
+      "50 photos per subgallery",
+      "Premium layouts",
+      "Advanced sharing",
+    ],
+    featured: false,
+    effectiveCost: `$${dollars(annualPriceFromMonthly(7.99) / 50)}`,
   },
 ];
 
-export function getMembershipPlan(planId: MembershipPlan["id"] | null) {
+export function getMembershipPlan(planId: MembershipPlanId | null) {
   return membershipPlans.find((plan) => plan.id === planId) ?? null;
 }
