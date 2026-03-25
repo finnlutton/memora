@@ -13,9 +13,10 @@
   --border: rgba(42, 64, 89, 0.14);
   --border-strong: rgba(22, 35, 56, 0.26);
   --font-body:
-    "Aptos", "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    "Avenir Next", "Avenir", "SF Pro Text", "SF Pro Display", "Inter",
+    system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --font-headline:
-    "Didot", "Bodoni 72", "Iowan Old Style", Georgia, serif;
+    "Iowan Old Style", "Didot", "Bodoni 72", "Georgia", "Times New Roman", serif;
 }
 
 @theme inline {
@@ -39,6 +40,9 @@ body {
     linear-gradient(180deg, #f8fbff 0%, #f2f6fb 100%);
   color: var(--foreground);
   font-family: var(--font-body), sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  letter-spacing: 0.005em;
   overflow-x: hidden;
 }
 

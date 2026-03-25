@@ -12,10 +12,10 @@ export default function HomePage() {
     <AppShell accent="immersive">
       <section className="flex flex-col gap-4 border-b border-[color:var(--border)] pb-5 lg:pb-6">
         <div className="border border-[color:var(--border)] bg-[rgba(255,255,255,0.76)] p-4 transition-transform duration-200 ease-out hover:scale-[1.02] hover:shadow-lg md:p-5">
-          <p className="text-[10px] uppercase tracking-[0.34em] text-[color:var(--ink-faint)] sm:text-xs">
+          <p className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)] sm:text-xs">
             Curated galleries, meaningful descriptions
           </p>
-          <h1 className="mt-2 w-full font-serif text-2xl leading-[0.94] text-[color:var(--ink)] sm:text-3xl md:text-3xl lg:text-4xl">
+          <h1 className="mt-2 w-full font-serif text-2xl leading-[0.98] text-[color:var(--ink)] sm:text-3xl md:text-3xl lg:text-4xl">
             An intentional platform to share and revisit your memories
           </h1>
           <div className="mt-4">
@@ -48,13 +48,13 @@ export default function HomePage() {
 
       <section className="grid gap-4 py-6 xl:grid-cols-[minmax(16rem,0.72fr)_minmax(0,1.28fr)] xl:items-stretch">
         <div className="flex flex-col border border-[color:var(--border)] bg-[rgba(246,249,252,0.72)] p-5 transition-transform duration-200 ease-out hover:scale-[1.02] hover:shadow-lg md:p-6">
-          <p className="text-[10px] uppercase tracking-[0.34em] text-[color:var(--ink-faint)]">
+          <p className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)]">
             Creators Note
           </p>
-          <h2 className="mt-2 font-serif text-xl leading-tight text-[color:var(--ink)] sm:text-2xl md:text-3xl">
+          <h2 className="mt-2 font-serif text-xl leading-[1.12] text-[color:var(--ink)] sm:text-2xl md:text-3xl">
             About the product
           </h2>
-          <div className="mt-6 space-y-6 text-base leading-8 text-[color:var(--ink-soft)] md:text-lg md:leading-[1.75]">
+          <div className="mt-5 space-y-5 text-[15px] leading-7 text-[color:var(--ink-soft)] md:text-[16px] md:leading-8">
             <p>
               As many who have been fortunate enough to study abroad, I&apos;ve increasingly desired a better system to share and store my photos.
             </p>
@@ -94,10 +94,10 @@ function StatementCard({
 }) {
   return (
     <div className="min-w-0 border border-[color:var(--border)] bg-[rgba(245,248,252,0.96)] p-4 transition-transform duration-200 ease-out hover:scale-[1.02] hover:shadow-lg sm:p-5">
-      <p className="text-balance break-words font-serif text-lg leading-tight text-[color:var(--ink)] md:text-xl">
+      <p className="text-balance break-words font-serif text-lg leading-[1.12] text-[color:var(--ink)] md:text-xl">
         {title}
       </p>
-      <p className="mt-2 text-xs leading-6 text-[color:var(--ink-soft)]">
+      <p className="mt-2 text-sm leading-6 text-[color:var(--ink-soft)]">
         {description}
       </p>
     </div>
