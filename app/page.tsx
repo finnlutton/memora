@@ -30,6 +30,14 @@ export default function HomePage() {
     router,
   ]);
 
+  useEffect(() => {
+    if (!hydrated || onboarding.isAuthenticated) {
+      return;
+    }
+
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [hydrated, onboarding.isAuthenticated]);
+
   if (hydrated && onboarding.isAuthenticated) {
     return null;
   }
