@@ -44,21 +44,23 @@ export default function HomePage() {
 
   return (
     <AppShell accent="immersive">
-      <section className="flex flex-col gap-4 border-b border-[color:var(--border)] pb-5 lg:pb-6">
-        <div className="border border-[color:var(--border)] bg-[rgba(255,255,255,0.76)] p-4 transition-transform duration-200 ease-out hover:scale-[1.02] hover:shadow-lg md:p-5">
-          <p className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)] sm:text-xs">
-            Curated galleries, meaningful descriptions
-          </p>
-          <h1 className="mt-2 w-full font-serif text-2xl leading-[0.98] text-[color:var(--ink)] sm:text-3xl md:text-3xl lg:text-4xl">
-            An intentional platform to share and revisit your memories
-          </h1>
-          <div className="mt-4">
-            <Button asChild>
-              <Link href="/demo/create">
-                Explore demo
-                <ArrowRight className="h-3 w-3" />
-              </Link>
-            </Button>
+      <section className="flex flex-col gap-4 border-b border-[color:var(--border)] pt-4 pb-5 lg:pt-5 lg:pb-6">
+        <div className="w-full border border-[color:var(--border)] bg-[rgba(255,255,255,0.76)] p-4 transition-transform duration-200 ease-out hover:scale-[1.02] hover:shadow-lg md:py-[1.125rem]">
+          <div className="mx-auto w-full max-w-5xl md:px-5">
+            <p className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)] sm:text-xs">
+              Curated galleries, meaningful descriptions
+            </p>
+            <h1 className="mt-2 w-full font-serif text-2xl leading-[0.98] text-[color:var(--ink)] sm:text-3xl md:text-3xl lg:text-4xl">
+              An intentional platform to share and revisit your memories
+            </h1>
+            <div className="mt-4">
+              <Button asChild>
+                <Link href="/demo/create">
+                  Explore demo
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       </section>
