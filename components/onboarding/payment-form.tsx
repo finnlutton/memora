@@ -38,7 +38,7 @@ export function PaymentForm({ plan }: { plan: MembershipPlan }) {
             type="button"
             onClick={() => {
               completeCheckout();
-              router.push("/galleries/new");
+              router.push("/galleries");
             }}
             className="flex w-full items-center justify-center border border-black bg-black px-4 py-4 text-sm uppercase tracking-[0.2em] text-white transition hover:bg-[#111926]"
           >
@@ -50,7 +50,7 @@ export function PaymentForm({ plan }: { plan: MembershipPlan }) {
           onSubmit={(event) => {
             event.preventDefault();
             completeCheckout();
-            router.push("/galleries/new");
+            router.push("/galleries");
           }}
           className="mt-6 space-y-4"
         >

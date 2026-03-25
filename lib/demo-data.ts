@@ -2,6 +2,8 @@ import type { Gallery } from "@/types/memora";
 
 const now = "2026-03-22T12:00:00.000Z";
 
+export const demoGalleryIds = ["gallery-switzerland", "gallery-andalusia"] as const;
+
 function buildPhotoSet(
   subgalleryId: string,
   prefix: string,

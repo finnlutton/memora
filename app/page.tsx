@@ -1,13 +1,39 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { SubgalleryCarousel } from "@/components/subgallery-carousel";
 import { Button } from "@/components/ui/button";
+import { useMemoraStore } from "@/hooks/use-memora-store";
 import { demoGalleries } from "@/lib/demo-data";
 
 const previewGallery = demoGalleries[0];
 
 export default function HomePage() {
+  const router = useRouter();
+  const { hydrated, onboarding, getNextOnboardingRoute } = useMemoraStore();
+
+  useEffect(() => {
+    if (!hydrated || !onboarding.isAuthenticated) {
+      return;
+    }
+
+    router.replace(onboarding.onboardingComplete ? "/galleries" : getNextOnboardingRoute());
+  }, [
+    getNextOnboardingRoute,
+    hydrated,
+    onboarding.isAuthenticated,
+    onboarding.onboardingComplete,
+    router,
+  ]);
+
+  if (hydrated && onboarding.isAuthenticated) {
+    return null;
+  }
+
   return (
     <AppShell accent="immersive">
       <section className="flex flex-col gap-4 border-b border-[color:var(--border)] pb-5 lg:pb-6">

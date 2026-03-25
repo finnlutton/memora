@@ -20,7 +20,7 @@ export default function PricingPage() {
       return;
     }
     if (onboarding.onboardingComplete) {
-      router.replace("/galleries/new");
+      router.replace("/galleries");
       return;
     }
   }, [
@@ -60,7 +60,7 @@ export default function PricingPage() {
                 selectPlan(selectedPlan.id);
                 if (selectedPlan.id === "free") {
                   completeCheckout();
-                  router.push("/galleries/new");
+                  router.push("/galleries");
                   return;
                 }
                 router.push("/checkout");

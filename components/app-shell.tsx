@@ -2,8 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { ChevronDown } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { useMemoraStore } from "@/hooks/use-memora-store";
+import { getMembershipPlan, membershipPlans } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import memoraLogo from "../Logo/MemoraLogo.png";
@@ -16,7 +19,16 @@ export function AppShell({
   accent?: "default" | "immersive";
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const isHomePage = pathname === "/";
+  const { onboarding, getNextOnboardingRoute, signOut } = useMemoraStore();
+  const createHref = onboarding.onboardingComplete ? "/galleries/new" : getNextOnboardingRoute();
+  const homeHref = onboarding.isAuthenticated
+    ? onboarding.onboardingComplete
+      ? "/galleries"
+      : getNextOnboardingRoute()
+    : "/";
+  const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);
 
   return (
     <div
@@ -30,9 +42,9 @@ export function AppShell({
       <header className="sticky top-0 z-30 overflow-visible border-b border-[color:var(--border)] bg-[rgba(250,252,255,0.96)] backdrop-blur-xl">
         <div className="mx-auto flex h-[60px] w-full max-w-7xl items-center justify-between gap-3 overflow-visible px-4 py-1 md:h-[72px] md:gap-5 md:px-6 md:py-0">
           <Link
-            href="/"
+            href={homeHref}
             className="flex h-[60px] min-w-0 items-center overflow-visible md:h-[70px]"
-            aria-label="Memora home"
+            aria-label={onboarding.isAuthenticated ? "Memora dashboard" : "Memora home"}
           >
             <Image
               src={memoraLogo}
@@ -45,14 +57,34 @@ export function AppShell({
             />
           </Link>
           <nav className="flex shrink-0 items-center gap-0.5 md:gap-1">
-            <NavLink href="/galleries">Gallery</NavLink>
-            <Button
-              asChild
-              variant="primary"
-              className="ml-2 border border-[color:var(--accent-strong)]/20 px-3.5 py-2 text-[11px] tracking-[0.18em] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:ml-3"
-            >
-              <Link href="/auth">Create</Link>
-            </Button>
+            <NavLink href="/galleries">
+              {onboarding.isAuthenticated ? "Dashboard" : "Gallery"}
+            </NavLink>
+            {!onboarding.isAuthenticated ? (
+              <Button
+                asChild
+                variant="primary"
+                className="ml-2 border border-[color:var(--accent-strong)]/20 px-3.5 py-2 text-[11px] tracking-[0.18em] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:ml-3"
+              >
+                <Link href={createHref}>Create</Link>
+              </Button>
+            ) : null}
+            {onboarding.isAuthenticated ? (
+              <SettingsDropdown
+                email={onboarding.user?.email ?? ""}
+                planLabel={selectedPlan?.name ?? "Membership pending"}
+                galleryCount={selectedPlan?.galleryCount ?? 0}
+                currentPlanId={onboarding.selectedPlanId}
+                onSelectPlan={(planId) => {
+                  router.push("/pricing");
+                  void planId;
+                }}
+                onSignOut={() => {
+                  signOut();
+                  router.push("/");
+                }}
+              />
+            ) : null}
           </nav>
         </div>
       </header>
@@ -113,5 +145,118 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
     >
       {children}
     </Link>
+  );
+}
+
+function SettingsDropdown({
+  email,
+  planLabel,
+  galleryCount,
+  currentPlanId,
+  onSelectPlan,
+  onSignOut,
+}: {
+  email: string;
+  planLabel: string;
+  galleryCount: number;
+  currentPlanId: string | null;
+  onSelectPlan: (planId: string) => void;
+  onSignOut: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative ml-2">
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        className="flex items-center gap-2 border border-[color:var(--border)] bg-[rgba(255,255,255,0.86)] px-3 py-2 text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:border-[color:var(--border-strong)]"
+      >
+        Settings
+        <ChevronDown className="h-3.5 w-3.5" />
+      </button>
+      {open ? (
+        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-40 w-80 border border-[color:var(--border)] bg-[rgba(250,252,255,0.98)] p-4 shadow-[0_16px_40px_rgba(10,20,35,0.08)] backdrop-blur">
+          <p className="text-[10px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
+            My account
+          </p>
+          <p className="mt-2 text-sm text-[color:var(--ink)]">{email}</p>
+          <div className="mt-4 border-t border-[color:var(--border)] pt-4 text-sm text-[color:var(--ink-soft)]">
+            <div className="flex items-start justify-between gap-4">
+              <span className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-faint)]">
+                Membership
+              </span>
+              <span className="text-right text-[color:var(--ink)]">{planLabel}</span>
+            </div>
+            <div className="mt-3 flex items-start justify-between gap-4">
+              <span className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-faint)]">
+                Capacity
+              </span>
+              <span className="text-right text-[color:var(--ink)]">
+                {galleryCount} active galleries
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-5 border-t border-[color:var(--border)] pt-4">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+              Account actions
+            </p>
+            <button
+              type="button"
+              className="mt-3 w-full border border-[color:var(--border)] px-3 py-2 text-left text-[11px] uppercase tracking-[0.18em] text-[color:var(--ink)] transition hover:bg-[color:var(--paper)]"
+            >
+              Recover password
+            </button>
+          </div>
+
+          <div className="mt-5 border-t border-[color:var(--border)] pt-4">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+              Upgrade subscription
+            </p>
+            <div className="mt-3 space-y-2">
+              {membershipPlans.map((plan) => (
+                <button
+                  key={plan.id}
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    onSelectPlan(plan.id);
+                  }}
+                  className={`w-full border px-3 py-3 text-left transition ${
+                    currentPlanId === plan.id
+                      ? "border-[color:var(--border-strong)] bg-[color:var(--paper)]"
+                      : "border-[color:var(--border)] bg-white hover:bg-[color:var(--paper)]"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--ink)]">
+                        {plan.name}
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-[color:var(--ink-soft)]">
+                        {plan.galleryCount} active galleries
+                      </p>
+                    </div>
+                    <span className="text-xs text-[color:var(--ink-soft)]">${plan.price}/yr</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              onSignOut();
+            }}
+            className="mt-6 w-full border border-[#c98282] bg-[#fff7f7] px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-[#9a4545] transition hover:bg-[#ffefef]"
+          >
+            Sign out
+          </button>
+        </div>
+      ) : null}
+    </div>
   );
 }

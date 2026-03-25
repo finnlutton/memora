@@ -26,7 +26,7 @@ export default function CheckoutPage() {
       return;
     }
     if (onboarding.onboardingComplete) {
-      router.replace("/galleries/new");
+      router.replace("/galleries");
     }
   }, [hydrated, onboarding.isAuthenticated, onboarding.onboardingComplete, plan, router]);
 

@@ -2,47 +2,67 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { Plus, RotateCcw } from "lucide-react";
+import { Plus } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { GalleryCard } from "@/components/gallery-card";
 import { Button } from "@/components/ui/button";
 import { useMemoraStore } from "@/hooks/use-memora-store";
+import { demoGalleryIds } from "@/lib/demo-data";
+import { getMembershipPlan } from "@/lib/plans";
 
 export default function GalleriesPage() {
-  const { galleries, hydrated, resetDemo } = useMemoraStore();
+  const { galleries, hydrated, onboarding } = useMemoraStore();
+  const visibleGalleries = useMemo(
+    () =>
+      onboarding.isAuthenticated
+        ? galleries.filter((gallery) => !demoGalleryIds.includes(gallery.id as (typeof demoGalleryIds)[number]))
+        : galleries,
+    [galleries, onboarding.isAuthenticated],
+  );
   const sortedGalleries = useMemo(
     () =>
-      [...galleries].sort(
+      [...visibleGalleries].sort(
         (left, right) =>
           new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
       ),
-    [galleries],
+    [visibleGalleries],
   );
+  const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);
+  const usageLabel = selectedPlan
+    ? `${sortedGalleries.length} of ${selectedPlan.galleryCount} active galleries`
+    : `${sortedGalleries.length} galleries in archive`;
 
   return (
     <AppShell>
-      <section className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
+      <section className="mb-6 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="border border-[color:var(--border)] bg-[rgba(255,255,255,0.86)] p-5 md:p-6">
           <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
-            My galleries
+            Dashboard
           </p>
-          <h1 className="mt-2 font-serif text-2xl text-[color:var(--ink)] md:text-3xl">Memory collections</h1>
-          <p className="mt-2 max-w-xl text-xs leading-6 text-[color:var(--ink-soft)]">
-            Organize life into meaningful galleries and browse them like a shelf of keepsakes, not a bucket of uploads.
+          <h1 className="mt-2 font-serif text-3xl text-[color:var(--ink)] md:text-4xl">
+            My Galleries
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-[color:var(--ink-soft)]">
+            Open existing galleries, continue building new ones, and keep your archive organized in your personal dashboard.
           </p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Button asChild>
+              <Link href="/galleries/new">
+                <Plus className="h-3 w-3" />
+                Create gallery
+              </Link>
+            </Button>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild>
-            <Link href="/galleries/new">
-              <Plus className="h-3 w-3" />
-              New gallery
-            </Link>
-          </Button>
-          <Button variant="secondary" onClick={resetDemo}>
-            <RotateCcw className="h-3 w-3" />
-            Reset demo
-          </Button>
+
+        <div className="grid gap-px border border-[color:var(--border)] bg-[color:var(--border)] md:grid-cols-3 xl:grid-cols-1">
+          <DashboardPanel label="Membership" value={selectedPlan?.name ?? "Preview mode"} />
+          <DashboardPanel label="Archive usage" value={usageLabel} />
+          <DashboardPanel
+            label="Next step"
+            value={sortedGalleries.length ? "Open a gallery" : "Create your first gallery"}
+          />
         </div>
       </section>
 
@@ -51,10 +71,21 @@ export default function GalleriesPage() {
           Loading your memories...
         </div>
       ) : sortedGalleries.length ? (
-        <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <section className="space-y-4">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+            Active archive
+          </p>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {sortedGalleries.map((gallery, index) => (
             <GalleryCard key={gallery.id} gallery={gallery} index={index} />
           ))}
+          </div>
+        </section>
+      ) : onboarding.isAuthenticated ? (
+        <section className="px-6 py-20 text-center md:px-10">
+          <p className="font-serif text-3xl leading-tight text-[color:var(--ink-faint)] md:text-4xl">
+            One gallery at a time...
+          </p>
         </section>
       ) : (
         <EmptyState
@@ -65,5 +96,16 @@ export default function GalleriesPage() {
         />
       )}
     </AppShell>
+  );
+}
+
+function DashboardPanel({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-[rgba(245,248,252,0.96)] p-4">
+      <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+        {label}
+      </p>
+      <p className="mt-3 font-serif text-2xl leading-tight text-[color:var(--ink)]">{value}</p>
+    </div>
   );
 }
