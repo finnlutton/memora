@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
-import { SubgalleryCarousel } from "@/components/subgallery-carousel";
+import { HomeGalleryReveal } from "@/components/home-gallery-reveal";
 import { Button } from "@/components/ui/button";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 import { demoGalleries } from "@/lib/demo-data";
@@ -52,6 +52,9 @@ export default function HomePage() {
           <h1 className="mt-4 max-w-[18ch] text-center font-serif text-[2rem] leading-[0.95] text-[color:var(--ink)] sm:text-[2.45rem] md:max-w-[17ch] md:text-[3rem] lg:max-w-[16ch] lg:text-[3.55rem]">
             An intentional platform to share and revisit your memories
           </h1>
+          <p className="mt-5 max-w-2xl text-center text-sm leading-7 text-[color:var(--ink-soft)] md:text-[15px]">
+            Memora brings structure, place, and story back to the memories worth preserving.
+          </p>
           <div className="mt-6 flex justify-center">
             <Button asChild>
               <Link href="/demo/create">
@@ -84,41 +87,31 @@ export default function HomePage() {
         <div className="pointer-events-none absolute bottom-5 left-1/2 h-8 w-px -translate-x-1/2 bg-[linear-gradient(180deg,rgba(140,154,171,0),rgba(140,154,171,0.52),rgba(140,154,171,0))]" />
       </section>
 
-      <section className="bg-[linear-gradient(180deg,rgba(241,246,251,0.4),rgba(245,248,252,0.92))] py-10 md:py-12">
-        <div className="grid gap-8 xl:grid-cols-[minmax(13rem,0.42fr)_minmax(0,1.58fr)] xl:items-start xl:gap-12">
-          <div className="max-w-[18rem] pt-2 xl:pt-6">
-            <p className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)]">
-              Creators Note
-            </p>
-            <h2 className="mt-2 font-serif text-xl leading-[1.12] text-[color:var(--ink)] sm:text-2xl md:text-[2rem]">
-              About the product
-            </h2>
-            <div className="mt-5 space-y-5 text-[15px] leading-7 text-[color:var(--ink-soft)] md:text-[15px] md:leading-7">
-              <p>
-                As many who have been fortunate enough to study abroad, I&apos;ve increasingly desired a better system to share and store my photos.
-              </p>
-              <p>
-                My camera roll is cluttered; lacking organization as well as a way to pair photos with written descriptions.
-              </p>
-              <p>
-                Additionally, sharing experiences authentically (Instagram doesn&apos;t fulfill this) with such a wide array of communication methods with friends and family is very challenging.
-              </p>
-              <p>
-                Memora takes this thoroughly into account, and promises to deliver a superior sharing / memory storage system.
-              </p>
-            </div>
-          </div>
+      <section className="bg-[linear-gradient(180deg,rgba(241,246,251,0.44),rgba(245,248,252,0.92))]">
+        <HomeGalleryReveal gallery={previewGallery} />
+      </section>
 
-          <div className="relative overflow-hidden bg-[linear-gradient(180deg,rgba(244,248,253,0.82),rgba(239,245,251,0.62))] px-1 py-4 md:px-2 md:py-5">
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(22,35,56,0.14),transparent)]" />
-            <SubgalleryCarousel
-              galleryId={previewGallery.id}
-              subgalleries={previewGallery.subgalleries}
-              eyebrow="Winter Olympics 2026"
-              title="Demo Gallery"
-              theme="light"
-              clickable={false}
-            />
+      <section className="py-10 md:py-12">
+        <div className="max-w-[30rem]">
+          <p className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)]">
+            Creators Note
+          </p>
+          <h2 className="mt-2 font-serif text-xl leading-[1.12] text-[color:var(--ink)] sm:text-2xl md:text-[2rem]">
+            About the product
+          </h2>
+          <div className="mt-5 space-y-5 text-[15px] leading-7 text-[color:var(--ink-soft)] md:text-[15px] md:leading-7">
+            <p>
+              As many who have been fortunate enough to study abroad, I&apos;ve increasingly desired a better system to share and store my photos.
+            </p>
+            <p>
+              My camera roll is cluttered; lacking organization as well as a way to pair photos with written descriptions.
+            </p>
+            <p>
+              Additionally, sharing experiences authentically (Instagram doesn&apos;t fulfill this) with such a wide array of communication methods with friends and family is very challenging.
+            </p>
+            <p>
+              Memora takes this thoroughly into account, and promises to deliver a superior sharing / memory storage system.
+            </p>
           </div>
         </div>
       </section>
