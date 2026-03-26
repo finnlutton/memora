@@ -44,7 +44,6 @@ type MemoraStore = {
   getGallery: (galleryId: string) => Gallery | undefined;
   getSubgallery: (galleryId: string, subgalleryId: string) => Subgallery | undefined;
   resetDemo: () => void;
-  signIn: (email: string) => void;
   signOut: () => void;
   selectPlan: (planId: "free" | "lite" | "plus" | "pro") => void;
   completeCheckout: () => void;
@@ -296,13 +295,6 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
       resetDemo() {
         setStorageQuotaExceeded(false);
         setGalleries(demoGalleries);
-      },
-      signIn(email) {
-        setOnboarding((current) => ({
-          ...current,
-          isAuthenticated: true,
-          user: { email },
-        }));
       },
       signOut() {
         setOnboarding(defaultOnboardingState);

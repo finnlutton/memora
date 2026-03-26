@@ -1,32 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Apple, ArrowRight, Chrome } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
-import { useMemoraStore } from "@/hooks/use-memora-store";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const fieldClassName =
   "w-full rounded-sm border border-[color:var(--border)] bg-white px-4 py-3 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--accent)] focus:ring-1 focus:ring-[color:var(--accent)]/30";
 
+function safeRedirectPath(value: string | null) {
+  if (!value) return null;
+  if (!value.startsWith("/")) return null;
+  if (value.startsWith("//")) return null;
+  return value;
+}
+
 export function AuthCard() {
   const router = useRouter();
-  const { signIn } = useMemoraStore();
   const [mode, setMode] = useState<"signin" | "signup">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [pendingEmailConfirmation, setPendingEmailConfirmation] = useState(false);
+  const [info, setInfo] = useState<string | null>(null);
+  const [redirectTo, setRedirectTo] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Avoid useSearchParams() to keep /auth prerender/build happy in this Next version.
+    const value =
+      typeof window === "undefined"
+        ? null
+        : safeRedirectPath(new URLSearchParams(window.location.search).get("redirect"));
+    setRedirectTo(value);
+  }, []);
 
   const submitAuth = async () => {
     setError(null);
+    setInfo(null);
     setBusy(true);
 
     try {
       const supabase = createSupabaseBrowserClient();
+      setPendingEmailConfirmation(false);
 
       if (!email || !password) {
         setError("Please enter an email and password.");
@@ -38,12 +57,21 @@ export function AuthCard() {
           setError("Passwords do not match.");
           return;
         }
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
         });
         if (signUpError) {
           setError(signUpError.message);
+          return;
+        }
+        // When Supabase email confirmation is enabled, signUp succeeds but returns no session.
+        if (!data.session) {
+          setPendingEmailConfirmation(true);
+          setInfo("Check your email to confirm your account, then come back and log in.");
+          setMode("signin");
+          setPassword("");
+          setConfirmPassword("");
           return;
         }
       } else {
@@ -52,13 +80,16 @@ export function AuthCard() {
           password,
         });
         if (signInError) {
-          setError(signInError.message);
+          if (signInError.message.toLowerCase().includes("email not confirmed")) {
+            setError("Please confirm your email address, then try logging in again.");
+          } else {
+            setError(signInError.message);
+          }
           return;
         }
       }
 
-      signIn(email);
-      router.push("/pricing");
+      router.replace(redirectTo ?? "/galleries");
     } finally {
       setBusy(false);
     }
@@ -76,9 +107,46 @@ export function AuthCard() {
           </h1>
           <p className="mt-4 max-w-md text-sm leading-7 text-[color:var(--ink-soft)]">
             {mode === "signin"
-              ? "Sign in to continue with your membership selection."
-              : "Create an account to choose a membership and begin building your archive."}
+              ? "Sign in to continue."
+              : "Create an account to begin building your archive."}
           </p>
+          {pendingEmailConfirmation ? (
+            <div className="mt-5 border-t border-[color:var(--border)] pt-5">
+              <p className="text-sm leading-7 text-[color:var(--ink-soft)]">
+                We’ve sent a confirmation link to <span className="text-[color:var(--ink)]">{email}</span>.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={busy || !email}
+                  onClick={async () => {
+                    setError(null);
+                    setInfo(null);
+                    try {
+                      const supabase = createSupabaseBrowserClient();
+                      const { error: resendError } = await supabase.auth.resend({
+                        type: "signup",
+                        email,
+                      });
+                      if (resendError) {
+                        setError(resendError.message);
+                        return;
+                      }
+                      setInfo("Confirmation email resent.");
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : "Failed to resend email.");
+                    }
+                  }}
+                >
+                  Resend confirmation
+                </Button>
+                <Button type="button" variant="secondary" onClick={() => setMode("signin")}>
+                  Go to log in
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="border border-[color:var(--border)] bg-[rgba(255,255,255,0.86)] p-6 md:p-8">
@@ -182,6 +250,11 @@ export function AuthCard() {
               ) : null}
             </div>
 
+            {info ? (
+              <p className="rounded-sm border border-[color:var(--border)] bg-[rgba(245,248,252,0.96)] px-3 py-2 text-sm leading-6 text-[color:var(--ink-soft)]">
+                {info}
+              </p>
+            ) : null}
             {error ? (
               <p className="rounded-sm border border-[#c98282] bg-[#fff7f7] px-3 py-2 text-sm leading-6 text-[#9a4545]">
                 {error}
@@ -189,7 +262,7 @@ export function AuthCard() {
             ) : null}
 
             <Button type="submit" className="mt-3 w-full justify-center" disabled={busy}>
-              {mode === "signin" ? "Continue to membership" : "Create account"}
+              {mode === "signin" ? "Log in" : "Create account"}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </form>
