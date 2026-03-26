@@ -30,7 +30,7 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
           <div
             className={`grid gap-6 transition-[grid-template-columns] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
               isOpen
-                ? "lg:grid-cols-[minmax(17rem,20rem)_minmax(0,1fr)] lg:items-center"
+                ? "lg:grid-cols-[minmax(19rem,23rem)_minmax(0,1fr)] lg:items-center"
                 : "lg:grid-cols-1 lg:place-items-center"
             }`}
           >
@@ -41,7 +41,7 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
               whileHover={{ y: -2 }}
               transition={{ layout: { duration: 0.52, ease: [0.22, 1, 0.36, 1] }, duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
               className={`group relative overflow-hidden rounded-[8px] border border-[color:var(--border)] bg-[rgba(255,255,255,0.78)] text-left shadow-[0_14px_42px_rgba(18,31,48,0.08)] ${
-                isOpen ? "lg:-translate-x-2" : "mx-auto w-full max-w-[34rem]"
+                isOpen ? "lg:-translate-x-2" : "mx-auto w-full max-w-[38rem]"
               }`}
             >
               <div className="relative aspect-[4/5] overflow-hidden md:aspect-[16/13]">
@@ -81,7 +81,7 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-                  className="grid gap-3 sm:grid-cols-2"
+                  className="grid gap-4 sm:grid-cols-2 md:gap-5"
                 >
                   {subgalleries.map((subgallery, index) => (
                     <motion.article
@@ -94,35 +94,33 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                         delay: 0.06 + index * 0.05,
                         ease: [0.22, 1, 0.36, 1],
                       }}
-                      className="overflow-hidden rounded-[8px] border border-[color:var(--border)] bg-[rgba(255,255,255,0.72)]"
+                      className="overflow-hidden rounded-[8px] border border-[color:var(--border)] bg-[rgba(255,255,255,0.72)] shadow-[0_10px_26px_rgba(18,31,48,0.05)]"
                     >
-                      <div className="relative aspect-[5/4] overflow-hidden">
+                      <div className="relative aspect-[1.22/1] overflow-hidden">
                         <Image
                           src={subgallery.coverImage}
                           alt={subgallery.title}
                           fill
                           className="object-cover"
-                          sizes="(max-width: 768px) 100vw, 22vw"
+                          sizes="(max-width: 768px) 100vw, 24vw"
                           unoptimized={nextImageUnoptimizedForSrc(subgallery.coverImage)}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-[rgba(8,14,24,0.74)] via-[rgba(8,14,24,0.18)] to-transparent" />
                         <div className="absolute inset-x-0 bottom-0 p-4 md:p-5">
                           <div className="max-w-[18rem]">
-                            <div className="flex flex-wrap gap-3 text-[10px] uppercase tracking-[0.18em] text-white/70">
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] uppercase tracking-[0.16em] text-white/70 md:text-[10px]">
                               <span className="inline-flex items-center gap-1.5">
                                 <MapPin className="h-3.5 w-3.5" />
                                 {subgallery.location}
                               </span>
-                            </div>
-                            <h3 className="mt-3 font-serif text-xl leading-tight text-white md:text-[1.35rem]">
-                              {subgallery.title === "Zurich" ? "Landing in Zurich" : subgallery.title}
-                            </h3>
-                            <div className="mt-2 flex flex-wrap gap-3 text-[10px] uppercase tracking-[0.18em] text-white/74">
                               <span className="inline-flex items-center gap-1.5">
                                 <CalendarDays className="h-3.5 w-3.5" />
                                 {subgallery.dateLabel}
                               </span>
                             </div>
+                            <h3 className="mt-3 font-serif text-xl leading-tight text-white md:text-[1.35rem]">
+                              {subgallery.title === "Zurich" ? "Landing in Zurich" : subgallery.title}
+                            </h3>
                           </div>
                         </div>
                       </div>
