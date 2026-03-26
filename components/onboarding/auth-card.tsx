@@ -22,6 +22,15 @@ function safeRedirectPath(value: string | null) {
   return value;
 }
 
+function navigateAfterAuth(nextRoute: string, router: ReturnType<typeof useRouter>) {
+  if (typeof window !== "undefined") {
+    window.location.replace(nextRoute);
+    return;
+  }
+
+  router.replace(nextRoute);
+}
+
 export function AuthCard() {
   const router = useRouter();
   const { syncOnboardingFromUser } = useMemoraStore();
@@ -96,7 +105,7 @@ export function AuthCard() {
         setIsTransitioning(true);
         setInfo("Creating your account...");
         syncOnboardingFromUser(data.user ?? null);
-        router.replace(nextRoute);
+        navigateAfterAuth(nextRoute, router);
         return;
       } else {
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
@@ -119,7 +128,7 @@ export function AuthCard() {
         setIsTransitioning(true);
         setInfo("Logging you in...");
         syncOnboardingFromUser(data.user ?? null);
-        router.replace(nextRoute);
+        navigateAfterAuth(nextRoute, router);
         return;
       }
     } finally {
