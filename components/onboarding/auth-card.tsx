@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Apple, ArrowRight, Chrome } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { useMemoraStore } from "@/hooks/use-memora-store";
 import { Button } from "@/components/ui/button";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
@@ -17,8 +18,25 @@ function safeRedirectPath(value: string | null) {
   return value;
 }
 
+function getPostAuthRoute({
+  selectedPlanId,
+  onboardingComplete,
+}: {
+  selectedPlanId: string | null;
+  onboardingComplete: boolean;
+}) {
+  if (!selectedPlanId) {
+    return "/pricing";
+  }
+  if (!onboardingComplete) {
+    return "/checkout";
+  }
+  return "/galleries";
+}
+
 export function AuthCard() {
   const router = useRouter();
+  const { onboarding } = useMemoraStore();
   const [mode, setMode] = useState<"signin" | "signup">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,6 +46,7 @@ export function AuthCard() {
   const [pendingEmailConfirmation, setPendingEmailConfirmation] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
   const [redirectTo, setRedirectTo] = useState<string | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
     // Avoid useSearchParams() to keep /auth prerender/build happy in this Next version.
@@ -89,7 +108,17 @@ export function AuthCard() {
         }
       }
 
-      router.replace(redirectTo ?? "/galleries");
+      setIsTransitioning(true);
+      setInfo(mode === "signin" ? "Logging you in..." : "Creating your account...");
+
+      const nextRoute =
+        redirectTo ??
+        getPostAuthRoute({
+          selectedPlanId: onboarding.selectedPlanId,
+          onboardingComplete: onboarding.onboardingComplete,
+        });
+      await new Promise((resolve) => window.setTimeout(resolve, 450));
+      router.replace(nextRoute);
     } finally {
       setBusy(false);
     }
@@ -215,7 +244,8 @@ export function AuthCard() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="you@example.com"
-                className={fieldClassName}
+              className={fieldClassName}
+                disabled={busy || isTransitioning}
               />
             </label>
 
@@ -231,6 +261,7 @@ export function AuthCard() {
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="••••••••"
                   className={fieldClassName}
+                  disabled={busy || isTransitioning}
                 />
               </label>
               {mode === "signup" ? (
@@ -245,6 +276,7 @@ export function AuthCard() {
                     onChange={(event) => setConfirmPassword(event.target.value)}
                     placeholder="••••••••"
                     className={fieldClassName}
+                    disabled={busy || isTransitioning}
                   />
                 </label>
               ) : null}
@@ -261,8 +293,14 @@ export function AuthCard() {
               </p>
             ) : null}
 
-            <Button type="submit" className="mt-3 w-full justify-center" disabled={busy}>
-              {mode === "signin" ? "Log in" : "Create account"}
+            <Button type="submit" className="mt-3 w-full justify-center" disabled={busy || isTransitioning}>
+              {isTransitioning
+                ? mode === "signin"
+                  ? "Logging you in..."
+                  : "Creating account..."
+                : mode === "signin"
+                  ? "Log in"
+                  : "Create account"}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </form>

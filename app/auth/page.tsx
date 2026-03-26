@@ -7,18 +7,14 @@ import { useMemoraStore } from "@/hooks/use-memora-store";
 
 export default function AuthPage() {
   const router = useRouter();
-  const { hydrated, onboarding } = useMemoraStore();
+  const { hydrated, onboarding, getNextOnboardingRoute } = useMemoraStore();
 
   useEffect(() => {
     if (!hydrated || !onboarding.isAuthenticated) {
       return;
     }
-    router.replace("/galleries");
-  }, [
-    hydrated,
-    onboarding.isAuthenticated,
-    router,
-  ]);
+    router.replace(onboarding.onboardingComplete ? "/galleries" : getNextOnboardingRoute());
+  }, [getNextOnboardingRoute, hydrated, onboarding.isAuthenticated, onboarding.onboardingComplete, router]);
 
   return <AuthCard />;
 }

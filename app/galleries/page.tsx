@@ -8,25 +8,17 @@ import { EmptyState } from "@/components/empty-state";
 import { GalleryCard } from "@/components/gallery-card";
 import { Button } from "@/components/ui/button";
 import { useMemoraStore } from "@/hooks/use-memora-store";
-import { demoGalleryIds } from "@/lib/demo-data";
 import { getMembershipPlan } from "@/lib/plans";
 
 export default function GalleriesPage() {
   const { galleries, hydrated, onboarding } = useMemoraStore();
-  const visibleGalleries = useMemo(
-    () =>
-      onboarding.isAuthenticated
-        ? galleries.filter((gallery) => !demoGalleryIds.includes(gallery.id as (typeof demoGalleryIds)[number]))
-        : galleries,
-    [galleries, onboarding.isAuthenticated],
-  );
   const sortedGalleries = useMemo(
     () =>
-      [...visibleGalleries].sort(
+      [...galleries].sort(
         (left, right) =>
           new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
       ),
-    [visibleGalleries],
+    [galleries],
   );
   const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);
   const usageLabel = selectedPlan

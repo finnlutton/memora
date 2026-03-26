@@ -13,7 +13,9 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { createId } from "@/lib/utils";
 import type { Gallery, GalleryInput, Subgallery, SubgalleryInput } from "@/types/memora";
 
-const STORAGE_KEY = "memora::galleries:v1";
+const LEGACY_STORAGE_KEY = "memora::galleries:v1";
+const DEMO_STORAGE_KEY = "memora::demo-galleries:v1";
+const USER_STORAGE_KEY = "memora::user-galleries:v1";
 const ONBOARDING_KEY = "memora::onboarding:v1";
 
 type OnboardingState = {
@@ -64,20 +66,52 @@ function sortPhotos<T extends { order: number }>(photos: T[]) {
   return [...photos].sort((left, right) => left.order - right.order);
 }
 
-function loadStoredGalleries() {
+function splitLegacyGalleries(galleries: Gallery[]) {
+  return {
+    demo: galleries.filter((gallery) => demoGalleries.some((demoGallery) => demoGallery.id === gallery.id)),
+    user: galleries.filter((gallery) => !demoGalleries.some((demoGallery) => demoGallery.id === gallery.id)),
+  };
+}
+
+function loadStoredGalleryCollections() {
   if (typeof window === "undefined") {
-    return demoGalleries;
+    return {
+      demo: demoGalleries,
+      user: [] as Gallery[],
+    };
   }
 
-  const storedValue = window.localStorage.getItem(STORAGE_KEY);
+  const demoValue = window.localStorage.getItem(DEMO_STORAGE_KEY);
+  const userValue = window.localStorage.getItem(USER_STORAGE_KEY);
+  if (demoValue || userValue) {
+    try {
+      return {
+        demo: demoValue ? (JSON.parse(demoValue) as Gallery[]) : demoGalleries,
+        user: userValue ? (JSON.parse(userValue) as Gallery[]) : [],
+      };
+    } catch {
+      return {
+        demo: demoGalleries,
+        user: [],
+      };
+    }
+  }
+
+  const storedValue = window.localStorage.getItem(LEGACY_STORAGE_KEY);
   if (!storedValue) {
-    return demoGalleries;
+    return {
+      demo: demoGalleries,
+      user: [],
+    };
   }
 
   try {
-    return JSON.parse(storedValue) as Gallery[];
+    return splitLegacyGalleries(JSON.parse(storedValue) as Gallery[]);
   } catch {
-    return demoGalleries;
+    return {
+      demo: demoGalleries,
+      user: [],
+    };
   }
 }
 
@@ -101,18 +135,20 @@ function loadStoredOnboarding() {
 export function MemoraProvider({ children }: { children: React.ReactNode }) {
   // Same initial state on server and client so SSR markup matches the first client render.
   // Rehydrate from localStorage only after mount (client-only).
-  const [galleries, setGalleries] = useState<Gallery[]>(demoGalleries);
+  const [demoGalleryCollection, setDemoGalleryCollection] = useState<Gallery[]>(demoGalleries);
+  const [userGalleryCollection, setUserGalleryCollection] = useState<Gallery[]>([]);
   const [onboarding, setOnboarding] = useState<OnboardingState>(defaultOnboardingState);
   const [hydrated, setHydrated] = useState(false);
   const [storageQuotaExceeded, setStorageQuotaExceeded] = useState(false);
 
   useEffect(() => {
-    const nextGalleries = loadStoredGalleries();
+    const nextCollections = loadStoredGalleryCollections();
     const nextOnboarding = loadStoredOnboarding();
 
     // Defer state updates to avoid sync cascading-render lint warnings.
     queueMicrotask(() => {
-      setGalleries(nextGalleries);
+      setDemoGalleryCollection(nextCollections.demo);
+      setUserGalleryCollection(nextCollections.user);
       setOnboarding(nextOnboarding);
       setHydrated(true);
     });
@@ -123,7 +159,9 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(galleries));
+      window.localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(demoGalleryCollection));
+      window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userGalleryCollection));
+      window.localStorage.removeItem(LEGACY_STORAGE_KEY);
       queueMicrotask(() => setStorageQuotaExceeded(false));
     } catch (error) {
       const domErr = error instanceof DOMException ? error : null;
@@ -137,7 +175,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         console.error("Memora: failed to save galleries", error);
       }
     }
-  }, [galleries, hydrated]);
+  }, [demoGalleryCollection, hydrated, userGalleryCollection]);
 
   useEffect(() => {
     if (!hydrated) {
@@ -180,6 +218,11 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
   }, [hydrated]);
 
   const value = useMemo<MemoraStore>(() => {
+    const galleries = onboarding.isAuthenticated ? userGalleryCollection : demoGalleryCollection;
+    const setActiveGalleries = onboarding.isAuthenticated
+      ? setUserGalleryCollection
+      : setDemoGalleryCollection;
+
     return {
       galleries,
       hydrated,
@@ -195,11 +238,11 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           updatedAt: timestamp,
           subgalleries: [],
         };
-        setGalleries((current) => [nextGallery, ...current]);
+        setActiveGalleries((current) => [nextGallery, ...current]);
         return nextGallery.id;
       },
       updateGallery(galleryId, input) {
-        setGalleries((current) =>
+        setActiveGalleries((current) =>
           current.map((gallery) =>
             gallery.id === galleryId
               ? { ...gallery, ...input, updatedAt: new Date().toISOString() }
@@ -208,7 +251,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         );
       },
       deleteGallery(galleryId) {
-        setGalleries((current) => current.filter((gallery) => gallery.id !== galleryId));
+        setActiveGalleries((current) => current.filter((gallery) => gallery.id !== galleryId));
       },
       createSubgallery(galleryId, input) {
         const timestamp = new Date().toISOString();
@@ -227,7 +270,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           createdAt: timestamp,
           updatedAt: timestamp,
         };
-        setGalleries((current) =>
+        setActiveGalleries((current) =>
           current.map((gallery) =>
             gallery.id === galleryId
               ? {
@@ -242,7 +285,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
       },
       updateSubgallery(galleryId, subgalleryId, input) {
         const timestamp = new Date().toISOString();
-        setGalleries((current) =>
+        setActiveGalleries((current) =>
           current.map((gallery) =>
             gallery.id === galleryId
               ? {
@@ -271,7 +314,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
       },
       deleteSubgallery(galleryId, subgalleryId) {
         const timestamp = new Date().toISOString();
-        setGalleries((current) =>
+        setActiveGalleries((current) =>
           current.map((gallery) =>
             gallery.id === galleryId
               ? {
@@ -294,7 +337,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
       },
       resetDemo() {
         setStorageQuotaExceeded(false);
-        setGalleries(demoGalleries);
+        setDemoGalleryCollection(demoGalleries);
       },
       signOut() {
         setOnboarding(defaultOnboardingState);
@@ -325,10 +368,16 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         if (!onboarding.onboardingComplete) {
           return "/checkout";
         }
-        return "/galleries/new";
+        return "/galleries";
       },
     };
-  }, [galleries, hydrated, onboarding, storageQuotaExceeded]);
+  }, [
+    demoGalleryCollection,
+    hydrated,
+    onboarding,
+    storageQuotaExceeded,
+    userGalleryCollection,
+  ]);
 
   return <MemoraContext.Provider value={value}>{children}</MemoraContext.Provider>;
 }
