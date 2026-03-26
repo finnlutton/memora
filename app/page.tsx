@@ -44,29 +44,40 @@ export default function HomePage() {
 
   return (
     <AppShell accent="immersive">
-      <section className="border-b border-[color:var(--border)] pt-7 pb-9 md:pt-10 md:pb-11">
-        <div className="max-w-4xl">
-          <p className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)] sm:text-xs">
-            Curated galleries, meaningful descriptions
-          </p>
-          <h1 className="mt-3 w-full max-w-3xl font-serif text-3xl leading-[0.94] text-[color:var(--ink)] sm:text-4xl md:text-5xl lg:text-[3.75rem]">
-            An intentional platform to share and revisit your memories
-          </h1>
-          <p className="mt-5 max-w-2xl text-sm leading-7 text-[color:var(--ink-soft)] md:text-[15px]">
-            Memora gives shape to the moments that matter, so your archive feels composed, reflective, and worth returning to.
-          </p>
-          <div className="mt-7">
-            <Button asChild>
-              <Link href="/demo/create">
-                Explore demo
-                <ArrowRight className="h-3 w-3" />
-              </Link>
-            </Button>
+      <section className="border-b border-[color:var(--border)] pt-7 pb-7 md:pt-10 md:pb-8">
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1.2fr)_minmax(16rem,0.55fr)] xl:items-end xl:gap-12">
+          <div className="max-w-[58rem]">
+            <p className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)] sm:text-xs">
+              Curated galleries, meaningful descriptions
+            </p>
+            <h1 className="mt-3 w-full max-w-[12ch] font-serif text-3xl leading-[0.92] text-[color:var(--ink)] sm:text-4xl md:text-5xl lg:max-w-[13ch] lg:text-[4.2rem]">
+              An intentional platform to share and revisit your memories
+            </h1>
+            <p className="mt-5 max-w-[46rem] text-sm leading-7 text-[color:var(--ink-soft)] md:max-w-[42rem] md:text-[15px]">
+              Memora gives shape to the moments that matter, so your archive feels composed, reflective, and worth returning to.
+            </p>
+            <div className="mt-7">
+              <Button asChild>
+                <Link href="/demo/create">
+                  Explore demo
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          <div className="max-w-xs border-t border-[color:var(--border)] pt-4 xl:ml-auto xl:max-w-[17rem]">
+            <p className="text-[10px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
+              Preview
+            </p>
+            <p className="mt-3 text-sm leading-7 text-[color:var(--ink-soft)]">
+              Structured by gallery, scene, and story so each memory keeps its shape over time.
+            </p>
           </div>
         </div>
       </section>
 
-      <section className="py-8 md:py-10">
+      <section className="py-7 md:py-9">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-0">
           <StatementCard
             index={0}
