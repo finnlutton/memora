@@ -35,7 +35,7 @@ export default function DemoCreatePage() {
         createLabel="Create gallery"
         backHref="/"
         backLabel="Back to home"
-        defaultCoverImage="/demo/alpine-village.png"
+        defaultCoverImage="/demo/mountain-window.svg"
         onSubmit={(value) => {
           const galleryId = createGallery(value);
           const tempSubgalleryId = createId("temp-sub");

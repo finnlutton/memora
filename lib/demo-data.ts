@@ -24,7 +24,7 @@ export const demoGalleries: Gallery[] = [
   {
     id: "gallery-switzerland",
     title: "Switzerland & Northern Italy",
-    coverImage: "/demo/alpine-dawn.svg",
+    coverImage: "/demo/winter-olympics-2026/cover.jpg",
     description:
       "A soft braid of mountain air, windowside train hours, and lakeside dinners that made the whole trip feel like a keepsake unfolding chapter by chapter.",
     startDate: "2026-02-11",
@@ -37,19 +37,19 @@ export const demoGalleries: Gallery[] = [
     updatedAt: now,
     subgalleries: [
       {
-        id: "sub-zermatt",
+        id: "sub-zurich",
         galleryId: "gallery-switzerland",
-        title: "Zermatt",
-        coverImage: "/demo/alpine-village.png",
-        location: "Zermatt, Switzerland",
-        dateLabel: "Feb 11-13",
+        title: "Zurich",
+        coverImage: "/demo/winter-olympics-2026/zurich.png",
+        location: "Zurich, Switzerland",
+        dateLabel: "Feb 18-19",
         description:
-          "Early blue hours, cedar interiors, and the mountain appearing and disappearing behind weather like it was keeping a secret.",
+          "The last pages of the trip: blue tram reflections, bookstores, a final long lunch, and that strange feeling of wanting to stay inside the memory a little longer.",
         photos: buildPhotoSet(
-          "sub-zermatt",
-          "zermatt",
-          ["/demo/alpine-village.png", "/demo/mountain-window.svg", "/demo/mist-lake.svg"],
-          ["Morning over the ridgeline", "The hotel window after snowfall", "A pause before dinner"],
+          "sub-zurich",
+          "zurich",
+          ["/demo/zurich.png", "/demo/paper-morning.svg", "/demo/ink-evening.svg"],
+          ["Blue hour by the river", "A slow cafe morning", "The city after dinner"],
         ),
         createdAt: now,
         updatedAt: now,
@@ -58,7 +58,7 @@ export const demoGalleries: Gallery[] = [
         id: "sub-train-livigno",
         galleryId: "gallery-switzerland",
         title: "Train to Livigno",
-        coverImage: "/demo/train-livigno.png",
+        coverImage: "/demo/winter-olympics-2026/train-to-livigno.png",
         location: "Bernina route",
         dateLabel: "Feb 14",
         description:
@@ -73,10 +73,28 @@ export const demoGalleries: Gallery[] = [
         updatedAt: now,
       },
       {
+        id: "sub-zermatt",
+        galleryId: "gallery-switzerland",
+        title: "Snowboard Cross",
+        coverImage: "/demo/winter-olympics-2026/snowboard-cross.jpg",
+        location: "Livigno, Italy",
+        dateLabel: "Feb 11-13",
+        description:
+          "It was unreal to watch the snowboard cross gold medal event unfold in the town of Livigno with Sam, Eli, and Sydney—pure adrenaline and the kind of cheering you never forget.",
+        photos: buildPhotoSet(
+          "sub-zermatt",
+          "snowboard-cross",
+          ["/demo/mountain-window.svg", "/demo/train-livigno.png", "/demo/ink-evening.svg"],
+          ["Watching the first runs", "Gold medal energy in the streets", "Night colors after the final heat"],
+        ),
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
         id: "sub-lake-como",
         galleryId: "gallery-switzerland",
         title: "Lake Como",
-        coverImage: "/demo/lake-como.png",
+        coverImage: "/demo/winter-olympics-2026/lake-como.png",
         location: "Lake Como, Italy",
         dateLabel: "Feb 15-17",
         description:
@@ -86,24 +104,6 @@ export const demoGalleries: Gallery[] = [
           "como",
           ["/demo/lake-como.png", "/demo/courtyard-noon.svg", "/demo/mist-lake.svg"],
           ["Breakfast facing the water", "Stillness in the courtyard", "Late light on the lake"],
-        ),
-        createdAt: now,
-        updatedAt: now,
-      },
-      {
-        id: "sub-zurich",
-        galleryId: "gallery-switzerland",
-        title: "Zurich",
-        coverImage: "/demo/zurich.png",
-        location: "Zurich, Switzerland",
-        dateLabel: "Feb 18-19",
-        description:
-          "The last pages of the trip: blue tram reflections, bookstores, a final long lunch, and that strange feeling of wanting to stay inside the memory a little longer.",
-        photos: buildPhotoSet(
-          "sub-zurich",
-          "zurich",
-          ["/demo/zurich.png", "/demo/paper-morning.svg", "/demo/ink-evening.svg"],
-          ["Blue hour by the river", "A slow cafe morning", "The city after dinner"],
         ),
         createdAt: now,
         updatedAt: now,
