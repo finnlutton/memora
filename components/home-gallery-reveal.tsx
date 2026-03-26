@@ -111,25 +111,34 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                   transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
                   className="flex min-h-[28rem] flex-col justify-center md:min-h-[34rem]"
                 >
+                  <button
+                    type="button"
+                    aria-label="Close gallery"
+                    onClick={() => setIsOpen(false)}
+                    className="absolute inset-0 z-0"
+                  />
+
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-                    className="mx-auto w-full max-w-6xl px-1 text-center"
+                    className="relative z-10 mx-auto w-full max-w-6xl px-1 text-center"
                   >
-                    <p className="text-[11px] uppercase tracking-[0.28em] text-white/64">
-                      Gallery
-                    </p>
-                    <h3 className="mt-3 font-serif text-3xl leading-[1.02] text-white md:text-[2.35rem]">
-                      Winter Olympics 2026
-                    </h3>
+                    <button type="button" onClick={() => setIsOpen(false)} className="text-center">
+                      <p className="text-[11px] uppercase tracking-[0.28em] text-white/64">
+                        Gallery
+                      </p>
+                      <h3 className="mt-3 font-serif text-3xl leading-[1.02] text-white md:text-[2.35rem]">
+                        Winter Olympics 2026
+                      </h3>
+                    </button>
                   </motion.div>
 
                   <motion.div
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.46, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-                    className="mx-auto mt-8 grid w-full max-w-6xl gap-4 sm:grid-cols-2 xl:grid-cols-4"
+                    className="relative z-10 mx-auto mt-8 grid w-full max-w-6xl gap-4 sm:grid-cols-2 xl:grid-cols-4"
                   >
                     {subgalleries.map((subgallery, index) => (
                       <motion.article
@@ -141,9 +150,9 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                           delay: 0.12 + index * 0.05,
                           ease: [0.22, 1, 0.36, 1],
                         }}
-                        className="overflow-hidden rounded-[8px] border border-white/18 bg-[rgba(248,251,255,0.84)] shadow-[0_12px_28px_rgba(13,21,34,0.08)] backdrop-blur-sm"
+                        className="flex h-full min-w-0 flex-col overflow-hidden rounded-[8px] border border-white/18 bg-[rgba(248,251,255,0.84)] shadow-[0_12px_28px_rgba(13,21,34,0.08)] backdrop-blur-sm"
                       >
-                        <div className="relative aspect-[1.22/1] overflow-hidden">
+                        <div className="relative aspect-[1.22/1] w-full overflow-hidden">
                           <Image
                             src={subgallery.coverImage}
                             alt={subgallery.title}
@@ -153,7 +162,7 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                             unoptimized={nextImageUnoptimizedForSrc(subgallery.coverImage)}
                           />
                         </div>
-                        <div className="bg-[rgba(255,255,255,0.92)] p-4 md:p-5">
+                        <div className="flex flex-1 flex-col bg-[rgba(255,255,255,0.92)] p-4 md:p-5">
                           <h3 className="font-serif text-xl leading-tight text-[color:var(--ink)] md:text-[1.3rem]">
                             {subgallery.title === "Zurich" ? "Landing in Zurich" : subgallery.title}
                           </h3>
