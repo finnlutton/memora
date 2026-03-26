@@ -4,12 +4,16 @@ import type { MembershipPlan } from "@/lib/plans";
 
 export function PricingCard({
   plan,
+  isCurrent = false,
+  buttonLabel,
   onSelect,
 }: {
   plan: MembershipPlan;
+  isCurrent?: boolean;
+  buttonLabel?: string;
   onSelect: (plan: MembershipPlan) => void;
 }) {
-  const ctaText = plan.id === "free" ? "Start Free" : "Select Plan";
+  const ctaText = buttonLabel ?? (plan.id === "free" ? "Start Free" : "Select Plan");
 
   return (
     <div
@@ -27,7 +31,11 @@ export function PricingCard({
               {plan.priceMonthlyLabel}
             </p>
           </div>
-          {null}
+          {isCurrent ? (
+            <span className="border border-[color:var(--border-strong)] px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink)]">
+              Current
+            </span>
+          ) : null}
         </div>
 
         <p className="text-sm leading-7 text-[color:var(--ink-soft)]">{plan.summary}</p>
@@ -47,6 +55,8 @@ export function PricingCard({
           <Button
             type="button"
             className="w-full justify-center"
+            variant={isCurrent ? "secondary" : "primary"}
+            disabled={isCurrent}
             onClick={() => onSelect(plan)}
           >
             {ctaText}

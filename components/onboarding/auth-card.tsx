@@ -4,8 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Apple, ArrowRight, Chrome } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
-import { useMemoraStore } from "@/hooks/use-memora-store";
 import { Button } from "@/components/ui/button";
+import {
+  getNextAuthenticatedRoute,
+  readMembershipStateFromUser,
+} from "@/lib/onboarding";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const fieldClassName =
@@ -18,25 +21,8 @@ function safeRedirectPath(value: string | null) {
   return value;
 }
 
-function getPostAuthRoute({
-  selectedPlanId,
-  onboardingComplete,
-}: {
-  selectedPlanId: string | null;
-  onboardingComplete: boolean;
-}) {
-  if (!selectedPlanId) {
-    return "/pricing";
-  }
-  if (!onboardingComplete) {
-    return "/checkout";
-  }
-  return "/galleries";
-}
-
 export function AuthCard() {
   const router = useRouter();
-  const { onboarding } = useMemoraStore();
   const [mode, setMode] = useState<"signin" | "signup">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -93,8 +79,18 @@ export function AuthCard() {
           setConfirmPassword("");
           return;
         }
+        const membershipState = readMembershipStateFromUser(data.user ?? null);
+        const nextRoute = membershipState.onboardingComplete
+          ? redirectTo ?? getNextAuthenticatedRoute(membershipState)
+          : getNextAuthenticatedRoute(membershipState);
+
+        setIsTransitioning(true);
+        setInfo("Creating your account...");
+        await new Promise((resolve) => window.setTimeout(resolve, 450));
+        router.replace(nextRoute);
+        return;
       } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
@@ -106,19 +102,17 @@ export function AuthCard() {
           }
           return;
         }
+        const membershipState = readMembershipStateFromUser(data.user ?? null);
+        const nextRoute = membershipState.onboardingComplete
+          ? redirectTo ?? getNextAuthenticatedRoute(membershipState)
+          : getNextAuthenticatedRoute(membershipState);
+
+        setIsTransitioning(true);
+        setInfo("Logging you in...");
+        await new Promise((resolve) => window.setTimeout(resolve, 450));
+        router.replace(nextRoute);
+        return;
       }
-
-      setIsTransitioning(true);
-      setInfo(mode === "signin" ? "Logging you in..." : "Creating your account...");
-
-      const nextRoute =
-        redirectTo ??
-        getPostAuthRoute({
-          selectedPlanId: onboarding.selectedPlanId,
-          onboardingComplete: onboarding.onboardingComplete,
-        });
-      await new Promise((resolve) => window.setTimeout(resolve, 450));
-      router.replace(nextRoute);
     } finally {
       setBusy(false);
     }
@@ -244,7 +238,7 @@ export function AuthCard() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="you@example.com"
-              className={fieldClassName}
+                className={fieldClassName}
                 disabled={busy || isTransitioning}
               />
             </label>
@@ -269,7 +263,7 @@ export function AuthCard() {
                   <span className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
                     Confirm password
                   </span>
-                    <input
+                  <input
                     type="password"
                     required
                     value={confirmPassword}

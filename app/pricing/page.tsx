@@ -9,7 +9,7 @@ import { membershipPlans } from "@/lib/plans";
 
 export default function PricingPage() {
   const router = useRouter();
-  const { hydrated, onboarding, selectPlan, completeCheckout } = useMemoraStore();
+  const { hydrated, onboarding, completeCheckout } = useMemoraStore();
 
   useEffect(() => {
     if (!hydrated) {
@@ -17,18 +17,8 @@ export default function PricingPage() {
     }
     if (!onboarding.isAuthenticated) {
       router.replace("/auth");
-      return;
     }
-    if (onboarding.onboardingComplete) {
-      router.replace("/galleries");
-      return;
-    }
-  }, [
-    hydrated,
-    onboarding.isAuthenticated,
-    onboarding.onboardingComplete,
-    router,
-  ]);
+  }, [hydrated, onboarding.isAuthenticated, router]);
 
   const orderedPlans = ["free", "lite", "plus", "pro"]
     .map((id) => membershipPlans.find((p) => p.id === id))
@@ -56,14 +46,28 @@ export default function PricingPage() {
             <PricingCard
               key={plan.id}
               plan={plan}
+              isCurrent={onboarding.onboardingComplete && onboarding.selectedPlanId === plan.id}
+              buttonLabel={
+                onboarding.onboardingComplete && onboarding.selectedPlanId === plan.id
+                  ? "Current plan"
+                  : plan.id === "free"
+                    ? "Start Free"
+                    : "Select Plan"
+              }
               onSelect={(selectedPlan) => {
-                selectPlan(selectedPlan.id);
-                if (selectedPlan.id === "free") {
-                  completeCheckout();
+                if (onboarding.onboardingComplete && onboarding.selectedPlanId === selectedPlan.id) {
                   router.push("/galleries");
                   return;
                 }
-                router.push("/checkout");
+
+                if (selectedPlan.id === "free") {
+                  void completeCheckout(selectedPlan.id).then(() => {
+                    router.push("/galleries");
+                  });
+                  return;
+                }
+
+                router.push(`/checkout?plan=${selectedPlan.id}`);
               }}
             />
           ))}

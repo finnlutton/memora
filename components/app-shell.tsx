@@ -23,7 +23,11 @@ export function AppShell({
   const router = useRouter();
   const isHomePage = pathname === "/";
   const { onboarding, getNextOnboardingRoute, signOut } = useMemoraStore();
-  const createHref = onboarding.onboardingComplete ? "/galleries/new" : getNextOnboardingRoute();
+  const createHref = onboarding.isAuthenticated
+    ? onboarding.onboardingComplete
+      ? "/galleries/new"
+      : getNextOnboardingRoute()
+    : "/auth";
   const homeHref = onboarding.isAuthenticated
     ? onboarding.onboardingComplete
       ? "/galleries"
@@ -77,8 +81,7 @@ export function AppShell({
                 galleryCount={selectedPlan?.galleryCount ?? 0}
                 currentPlanId={onboarding.selectedPlanId}
                 onSelectPlan={(planId) => {
-                  router.push("/pricing");
-                  void planId;
+                  router.push(`/pricing?plan=${planId}`);
                 }}
                 onSignOut={() => {
                   const supabase = createSupabaseBrowserClient();

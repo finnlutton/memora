@@ -8,7 +8,12 @@ import {
   useState,
 } from "react";
 import { demoGalleries } from "@/lib/demo-data";
-import { getMembershipPlan } from "@/lib/plans";
+import {
+  buildMembershipMetadata,
+  getNextAuthenticatedRoute,
+  readMembershipStateFromUser,
+} from "@/lib/onboarding";
+import { getMembershipPlan, type MembershipPlanId } from "@/lib/plans";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { createId } from "@/lib/utils";
 import type { Gallery, GalleryInput, Subgallery, SubgalleryInput } from "@/types/memora";
@@ -16,11 +21,11 @@ import type { Gallery, GalleryInput, Subgallery, SubgalleryInput } from "@/types
 const LEGACY_STORAGE_KEY = "memora::galleries:v1";
 const DEMO_STORAGE_KEY = "memora::demo-galleries:v1";
 const USER_STORAGE_KEY = "memora::user-galleries:v1";
-const ONBOARDING_KEY = "memora::onboarding:v1";
+const LEGACY_ONBOARDING_KEY = "memora::onboarding:v1";
 
 type OnboardingState = {
   isAuthenticated: boolean;
-  selectedPlanId: "free" | "lite" | "plus" | "pro" | null;
+  selectedPlanId: MembershipPlanId | null;
   onboardingComplete: boolean;
   user: {
     email: string;
@@ -47,8 +52,7 @@ type MemoraStore = {
   getSubgallery: (galleryId: string, subgalleryId: string) => Subgallery | undefined;
   resetDemo: () => void;
   signOut: () => void;
-  selectPlan: (planId: "free" | "lite" | "plus" | "pro") => void;
-  completeCheckout: () => void;
+  completeCheckout: (planId: MembershipPlanId) => Promise<void>;
   resetOnboarding: () => void;
   getNextOnboardingRoute: () => string;
 };
@@ -115,12 +119,12 @@ function loadStoredGalleryCollections() {
   }
 }
 
-function loadStoredOnboarding() {
+function loadLegacyOnboarding() {
   if (typeof window === "undefined") {
     return defaultOnboardingState;
   }
 
-  const storedValue = window.localStorage.getItem(ONBOARDING_KEY);
+  const storedValue = window.localStorage.getItem(LEGACY_ONBOARDING_KEY);
   if (!storedValue) {
     return defaultOnboardingState;
   }
@@ -143,15 +147,70 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const nextCollections = loadStoredGalleryCollections();
-    const nextOnboarding = loadStoredOnboarding();
+    const legacyOnboarding = loadLegacyOnboarding();
+    const supabase = createSupabaseBrowserClient();
+    let cancelled = false;
 
-    // Defer state updates to avoid sync cascading-render lint warnings.
-    queueMicrotask(() => {
-      setDemoGalleryCollection(nextCollections.demo);
-      setUserGalleryCollection(nextCollections.user);
-      setOnboarding(nextOnboarding);
-      setHydrated(true);
-    });
+    const syncInitialState = async () => {
+      try {
+        const { data } = await supabase.auth.getUser();
+        if (cancelled) {
+          return;
+        }
+
+        const nextUser = data.user ?? null;
+        let membershipState = readMembershipStateFromUser(nextUser);
+
+        if (
+          nextUser &&
+          !membershipState.selectedPlanId &&
+          legacyOnboarding.selectedPlanId &&
+          getMembershipPlan(legacyOnboarding.selectedPlanId)
+        ) {
+          membershipState = {
+            selectedPlanId: legacyOnboarding.selectedPlanId,
+            onboardingComplete: legacyOnboarding.onboardingComplete,
+          };
+
+          try {
+            await supabase.auth.updateUser({
+              data: buildMembershipMetadata(membershipState),
+            });
+          } catch (error) {
+            console.error("Memora: failed to migrate membership metadata", error);
+          }
+        }
+
+        queueMicrotask(() => {
+          setDemoGalleryCollection(nextCollections.demo);
+          setUserGalleryCollection(nextCollections.user);
+          setOnboarding({
+            isAuthenticated: Boolean(nextUser),
+            selectedPlanId: membershipState.selectedPlanId,
+            onboardingComplete: membershipState.onboardingComplete,
+            user: nextUser?.email ? { email: nextUser.email } : null,
+          });
+          if (typeof window !== "undefined") {
+            window.localStorage.removeItem(LEGACY_ONBOARDING_KEY);
+          }
+          setHydrated(true);
+        });
+      } catch (error) {
+        console.error("Memora: failed to load initial auth state", error);
+        queueMicrotask(() => {
+          setDemoGalleryCollection(nextCollections.demo);
+          setUserGalleryCollection(nextCollections.user);
+          setOnboarding(defaultOnboardingState);
+          setHydrated(true);
+        });
+      }
+    };
+
+    void syncInitialState();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -178,13 +237,6 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
   }, [demoGalleryCollection, hydrated, userGalleryCollection]);
 
   useEffect(() => {
-    if (!hydrated) {
-      return;
-    }
-    window.localStorage.setItem(ONBOARDING_KEY, JSON.stringify(onboarding));
-  }, [hydrated, onboarding]);
-
-  useEffect(() => {
     if (!hydrated) return;
 
     const supabase = createSupabaseBrowserClient();
@@ -194,14 +246,16 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
     const syncUser = async () => {
       const { data } = await supabase.auth.getUser();
       if (cancelled) return;
-      const email = data.user?.email ?? null;
+      const nextUser = data.user ?? null;
+      const membershipState = readMembershipStateFromUser(nextUser);
 
       queueMicrotask(() => {
-        setOnboarding((current) => ({
-          ...current,
-          isAuthenticated: Boolean(data.user),
-          user: email ? { email } : null,
-        }));
+        setOnboarding({
+          isAuthenticated: Boolean(nextUser),
+          selectedPlanId: membershipState.selectedPlanId,
+          onboardingComplete: membershipState.onboardingComplete,
+          user: nextUser?.email ? { email: nextUser.email } : null,
+        });
       });
     };
 
@@ -342,17 +396,25 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
       signOut() {
         setOnboarding(defaultOnboardingState);
       },
-      selectPlan(planId) {
-        setOnboarding((current) => ({
-          ...current,
+      async completeCheckout(planId) {
+        const membershipState = {
           selectedPlanId: planId,
-          onboardingComplete: false,
-        }));
-      },
-      completeCheckout() {
+          onboardingComplete: true,
+        } satisfies ReturnType<typeof readMembershipStateFromUser>;
+
+        const supabase = createSupabaseBrowserClient();
+        const { error } = await supabase.auth.updateUser({
+          data: buildMembershipMetadata(membershipState),
+        });
+
+        if (error) {
+          throw error;
+        }
+
         setOnboarding((current) => ({
           ...current,
-          onboardingComplete: true,
+          selectedPlanId: membershipState.selectedPlanId,
+          onboardingComplete: membershipState.onboardingComplete,
         }));
       },
       resetOnboarding() {
@@ -362,13 +424,10 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         if (!onboarding.isAuthenticated) {
           return "/auth";
         }
-        if (!onboarding.selectedPlanId || !getMembershipPlan(onboarding.selectedPlanId)) {
-          return "/pricing";
-        }
-        if (!onboarding.onboardingComplete) {
-          return "/checkout";
-        }
-        return "/galleries";
+        return getNextAuthenticatedRoute({
+          selectedPlanId: onboarding.selectedPlanId,
+          onboardingComplete: onboarding.onboardingComplete,
+        });
       },
     };
   }, [

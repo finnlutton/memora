@@ -17,6 +17,26 @@ export function PaymentForm({ plan }: { plan: MembershipPlan }) {
   const router = useRouter();
   const { completeCheckout } = useMemoraStore();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleCompleteCheckout = async () => {
+    setBusy(true);
+    setError(null);
+
+    try {
+      await completeCheckout(plan.id);
+      router.push("/galleries");
+    } catch (checkoutError) {
+      setError(
+        checkoutError instanceof Error
+          ? checkoutError.message
+          : "Unable to complete membership right now.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div className="border border-[color:var(--border)] bg-[rgba(255,255,255,0.9)] p-6 md:p-8">
@@ -37,20 +57,19 @@ export function PaymentForm({ plan }: { plan: MembershipPlan }) {
           <button
             type="button"
             onClick={() => {
-              completeCheckout();
-              router.push("/galleries");
+              void handleCompleteCheckout();
             }}
+            disabled={busy}
             className="flex w-full items-center justify-center border border-black bg-black px-4 py-4 text-sm uppercase tracking-[0.2em] text-white transition hover:bg-[#111926]"
           >
-            Pay with Apple Pay
+            {busy ? "Processing..." : "Pay with Apple Pay"}
           </button>
         </div>
       ) : (
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            completeCheckout();
-            router.push("/galleries");
+            void handleCompleteCheckout();
           }}
           className="mt-6 space-y-4"
         >
@@ -100,12 +119,18 @@ export function PaymentForm({ plan }: { plan: MembershipPlan }) {
               <input className={fieldClassName} placeholder="you@example.com" required />
             </label>
           </div>
-          <Button type="submit" className="mt-3 w-full justify-center">
-            Complete purchase
+          <Button type="submit" className="mt-3 w-full justify-center" disabled={busy}>
+            {busy ? "Processing..." : "Complete purchase"}
             <ArrowRight className="h-4 w-4" />
           </Button>
         </form>
       )}
+
+      {error ? (
+        <p className="mt-4 rounded-sm border border-[#c98282] bg-[#fff7f7] px-3 py-2 text-sm leading-6 text-[#9a4545]">
+          {error}
+        </p>
+      ) : null}
 
       <div className="mt-6 border-t border-[color:var(--border)] pt-4 text-xs leading-6 text-[color:var(--ink-faint)]">
         Memora membership is billed annually at ${plan.price}. This is a polished front-end prototype; no real payment is processed yet.
