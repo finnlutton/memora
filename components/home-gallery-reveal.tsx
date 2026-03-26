@@ -30,7 +30,7 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
           <div
             className={`grid gap-6 transition-[grid-template-columns] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
               isOpen
-                ? "lg:grid-cols-[minmax(18rem,22rem)_minmax(0,1fr)] lg:items-center"
+                ? "lg:grid-cols-[minmax(17rem,20rem)_minmax(0,1fr)] lg:items-center"
                 : "lg:grid-cols-1 lg:place-items-center"
             }`}
           >
@@ -53,20 +53,22 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                   sizes="(max-width: 1024px) 100vw, 26rem"
                   unoptimized={nextImageUnoptimizedForSrc(gallery.coverImage)}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[rgba(8,14,24,0.88)] via-[rgba(8,14,24,0.22)] to-transparent" />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0))]" />
                 <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-white/62">
+                  <div className="max-w-sm rounded-[6px] bg-[rgba(246,249,253,0.74)] px-4 py-3 backdrop-blur-sm">
+                    <p className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
                     Gallery
-                  </p>
-                  <h3 className="mt-3 font-serif text-3xl leading-[1.02] text-white md:text-[2.25rem]">
-                    Winter Olympics 2026
-                  </h3>
-                  <p className="mt-3 max-w-sm text-sm leading-6 text-white/76">
-                    Open one archive to reveal the scenes that give it shape.
-                  </p>
-                  <div className="mt-5 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/72">
-                    <ArrowUpRight className="h-3.5 w-3.5" />
-                    Click to open
+                    </p>
+                    <h3 className="mt-2 font-serif text-3xl leading-[1.02] text-[color:var(--ink)] md:text-[2.15rem]">
+                      Winter Olympics 2026
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-[color:var(--ink-soft)]">
+                      Open one archive to reveal the scenes that give it shape.
+                    </p>
+                    <div className="mt-4 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
+                      <ArrowUpRight className="h-3.5 w-3.5" />
+                      Click to open
+                    </div>
                   </div>
                 </div>
               </div>
@@ -80,7 +82,7 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-                  className="grid gap-4 sm:grid-cols-2"
+                  className="grid gap-3 sm:grid-cols-2"
                 >
                   {subgalleries.map((subgallery, index) => (
                     <motion.article
@@ -93,36 +95,38 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                         delay: 0.06 + index * 0.05,
                         ease: [0.22, 1, 0.36, 1],
                       }}
-                      className="overflow-hidden rounded-[8px] border border-[color:var(--border)] bg-[rgba(255,255,255,0.78)]"
+                      className="overflow-hidden rounded-[8px] border border-[color:var(--border)] bg-[rgba(255,255,255,0.72)]"
                     >
-                      <div className="relative aspect-[4/3] overflow-hidden">
+                      <div className="relative aspect-[5/4] overflow-hidden">
                         <Image
                           src={subgallery.coverImage}
                           alt={subgallery.title}
                           fill
                           className="object-cover"
-                          sizes="(max-width: 768px) 100vw, 26vw"
+                          sizes="(max-width: 768px) 100vw, 22vw"
                           unoptimized={nextImageUnoptimizedForSrc(subgallery.coverImage)}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[rgba(8,14,24,0.66)] via-transparent to-transparent" />
-                      </div>
-                      <div className="p-4 md:p-5">
-                        <div className="flex flex-wrap gap-3 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-faint)]">
-                          <span className="inline-flex items-center gap-1.5">
-                            <MapPin className="h-3.5 w-3.5" />
-                            {subgallery.location}
-                          </span>
-                          <span className="inline-flex items-center gap-1.5">
-                            <CalendarDays className="h-3.5 w-3.5" />
-                            {subgallery.dateLabel}
-                          </span>
+                        <div className="absolute inset-0 bg-gradient-to-t from-[rgba(8,14,24,0.74)] via-[rgba(8,14,24,0.18)] to-transparent" />
+                        <div className="absolute inset-x-0 bottom-0 p-4 md:p-5">
+                          <div className="max-w-[18rem]">
+                            <div className="flex flex-wrap gap-3 text-[10px] uppercase tracking-[0.18em] text-white/70">
+                              <span className="inline-flex items-center gap-1.5">
+                                <MapPin className="h-3.5 w-3.5" />
+                                {subgallery.location}
+                              </span>
+                              <span className="inline-flex items-center gap-1.5">
+                                <CalendarDays className="h-3.5 w-3.5" />
+                                {subgallery.dateLabel}
+                              </span>
+                            </div>
+                            <h3 className="mt-3 font-serif text-xl leading-tight text-white md:text-[1.35rem]">
+                              {subgallery.title}
+                            </h3>
+                            <p className="mt-2 text-sm leading-6 text-white/82">
+                              {subgallery.description}
+                            </p>
+                          </div>
                         </div>
-                        <h3 className="mt-3 font-serif text-xl leading-tight text-[color:var(--ink)] md:text-[1.4rem]">
-                          {subgallery.title}
-                        </h3>
-                        <p className="mt-2 text-sm leading-6 text-[color:var(--ink-soft)]">
-                          {subgallery.description}
-                        </p>
                       </div>
                     </motion.article>
                   ))}

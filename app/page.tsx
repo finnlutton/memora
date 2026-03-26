@@ -87,31 +87,35 @@ export default function HomePage() {
         <div className="pointer-events-none absolute bottom-5 left-1/2 h-8 w-px -translate-x-1/2 bg-[linear-gradient(180deg,rgba(140,154,171,0),rgba(140,154,171,0.52),rgba(140,154,171,0))]" />
       </section>
 
-      <section className="bg-[linear-gradient(180deg,rgba(241,246,251,0.44),rgba(245,248,252,0.92))]">
+      <section className="bg-[linear-gradient(180deg,rgba(241,246,251,0.44),rgba(244,248,252,0.9))]">
         <HomeGalleryReveal gallery={previewGallery} />
       </section>
 
-      <section className="py-10 md:py-12">
-        <div className="max-w-[30rem]">
-          <p className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)]">
+      <section className="bg-[linear-gradient(180deg,rgba(244,248,252,0.9),rgba(245,248,252,1))] py-10 md:py-12">
+        <div className="mx-auto max-w-5xl">
+          <p className="text-center text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)]">
             Creators Note
           </p>
-          <h2 className="mt-2 font-serif text-xl leading-[1.12] text-[color:var(--ink)] sm:text-2xl md:text-[2rem]">
+          <h2 className="mt-3 text-center font-serif text-2xl leading-[1.08] text-[color:var(--ink)] sm:text-3xl md:text-[2.5rem]">
             About the product
           </h2>
-          <div className="mt-5 space-y-5 text-[15px] leading-7 text-[color:var(--ink-soft)] md:text-[15px] md:leading-7">
-            <p>
-              As many who have been fortunate enough to study abroad, I&apos;ve increasingly desired a better system to share and store my photos.
-            </p>
-            <p>
-              My camera roll is cluttered; lacking organization as well as a way to pair photos with written descriptions.
-            </p>
-            <p>
-              Additionally, sharing experiences authentically (Instagram doesn&apos;t fulfill this) with such a wide array of communication methods with friends and family is very challenging.
-            </p>
-            <p>
-              Memora takes this thoroughly into account, and promises to deliver a superior sharing / memory storage system.
-            </p>
+          <div className="mt-7 grid gap-6 text-[15px] leading-7 text-[color:var(--ink-soft)] md:grid-cols-2 md:gap-10 md:text-[15px] md:leading-7">
+            <div className="space-y-5">
+              <p>
+                As many who have been fortunate enough to study abroad, I&apos;ve increasingly desired a better system to share and store my photos.
+              </p>
+              <p>
+                My camera roll is cluttered; lacking organization as well as a way to pair photos with written descriptions.
+              </p>
+            </div>
+            <div className="space-y-5">
+              <p>
+                Additionally, sharing experiences authentically (Instagram doesn&apos;t fulfill this) with such a wide array of communication methods with friends and family is very challenging.
+              </p>
+              <p>
+                Memora takes this thoroughly into account, and promises to deliver a superior sharing / memory storage system.
+              </p>
+            </div>
           </div>
         </div>
       </section>
