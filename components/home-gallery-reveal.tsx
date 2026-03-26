@@ -26,108 +26,153 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
       </div>
 
       <div className="mt-8">
-        <div className="rounded-[10px] bg-[linear-gradient(180deg,rgba(244,248,253,0.85),rgba(239,245,251,0.62))] px-4 py-5 md:px-5 md:py-6">
-          <div
-            className={`grid gap-6 transition-[grid-template-columns] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-              isOpen
-                ? "lg:grid-cols-[minmax(19rem,23rem)_minmax(0,1fr)] lg:items-center"
-                : "lg:grid-cols-1 lg:place-items-center"
-            }`}
-          >
-            <motion.button
-              type="button"
-              layout
-              onClick={() => setIsOpen((current) => !current)}
-              whileHover={{ y: -2 }}
-              transition={{ layout: { duration: 0.52, ease: [0.22, 1, 0.36, 1] }, duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-              className={`group relative overflow-hidden rounded-[8px] border border-[color:var(--border)] bg-[rgba(255,255,255,0.78)] text-left shadow-[0_14px_42px_rgba(18,31,48,0.08)] ${
-                isOpen ? "lg:-translate-x-2" : "mx-auto w-full max-w-[38rem]"
-              }`}
-            >
-              <div className="relative aspect-[4/5] overflow-hidden md:aspect-[16/13]">
-                <Image
-                  src={gallery.coverImage}
-                  alt="Winter Olympics 2026"
-                  fill
-                  className="object-cover transition duration-500 group-hover:scale-[1.02]"
-                  sizes="(max-width: 1024px) 100vw, 26rem"
-                  unoptimized={nextImageUnoptimizedForSrc(gallery.coverImage)}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[rgba(8,14,24,0.76)] via-[rgba(8,14,24,0.16)] to-[rgba(255,255,255,0.04)]" />
-                <div className="absolute inset-0 bg-[rgba(255,255,255,0.06)]" />
-                <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-white/62">
-                    Gallery
-                  </p>
-                  <h3 className="mt-3 font-serif text-3xl leading-[1.02] text-white md:text-[2.25rem]">
-                    Winter Olympics 2026
-                  </h3>
-                  <p className="mt-3 max-w-sm text-sm leading-6 text-white/82">
-                    Open one archive to reveal the scenes that give it shape.
-                  </p>
-                  <div className="mt-5 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/72">
-                    <ArrowUpRight className="h-3.5 w-3.5" />
-                    Click to open
-                  </div>
+        <div className="relative overflow-hidden rounded-[10px] bg-[linear-gradient(180deg,rgba(244,248,253,0.85),rgba(239,245,251,0.62))] px-4 py-5 md:px-5 md:py-6">
+          <AnimatePresence initial={false}>
+            {isOpen ? (
+              <motion.div
+                key="gallery-atmosphere"
+                layoutId="home-gallery-shell"
+                className="absolute inset-0"
+                transition={{ duration: 0.58, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <div className="absolute inset-0 overflow-hidden">
+                  <Image
+                    src={gallery.coverImage}
+                    alt="Winter Olympics 2026 background"
+                    fill
+                    className="scale-[1.08] object-cover blur-[2px] brightness-[0.82] saturate-[0.88]"
+                    sizes="100vw"
+                    unoptimized={nextImageUnoptimizedForSrc(gallery.coverImage)}
+                  />
                 </div>
-              </div>
-            </motion.button>
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(242,246,250,0.44),rgba(10,18,28,0.36))]" />
+                <div className="absolute inset-0 bg-[rgba(238,244,250,0.22)]" />
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
 
-            <AnimatePresence initial={false}>
-              {isOpen ? (
+          <div className="relative min-h-[28rem] md:min-h-[34rem]">
+            <AnimatePresence mode="wait" initial={false}>
+              {!isOpen ? (
                 <motion.div
-                  key="subgalleries"
-                  initial={{ opacity: 0, x: -24 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-                  className="grid gap-4 sm:grid-cols-2 md:gap-5"
+                  key="closed-gallery"
+                  className="flex min-h-[28rem] items-center justify-center md:min-h-[34rem]"
+                  initial={{ opacity: 1 }}
+                  exit={{ opacity: 0, scale: 1.02 }}
+                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  {subgalleries.map((subgallery, index) => (
-                    <motion.article
-                      key={subgallery.id}
-                      initial={{ opacity: 0, y: 18, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                      transition={{
-                        duration: 0.38,
-                        delay: 0.06 + index * 0.05,
-                        ease: [0.22, 1, 0.36, 1],
-                      }}
-                      className="overflow-hidden rounded-[8px] border border-[color:var(--border)] bg-[rgba(255,255,255,0.72)] shadow-[0_10px_26px_rgba(18,31,48,0.05)]"
-                    >
-                      <div className="relative aspect-[1.22/1] overflow-hidden">
-                        <Image
-                          src={subgallery.coverImage}
-                          alt={subgallery.title}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 100vw, 24vw"
-                          unoptimized={nextImageUnoptimizedForSrc(subgallery.coverImage)}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[rgba(8,14,24,0.74)] via-[rgba(8,14,24,0.18)] to-transparent" />
-                        <div className="absolute inset-x-0 bottom-0 p-4 md:p-5">
-                          <div className="max-w-[18rem]">
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] uppercase tracking-[0.16em] text-white/70 md:text-[10px]">
-                              <span className="inline-flex items-center gap-1.5">
-                                <MapPin className="h-3.5 w-3.5" />
-                                {subgallery.location}
-                              </span>
-                              <span className="inline-flex items-center gap-1.5">
-                                <CalendarDays className="h-3.5 w-3.5" />
-                                {subgallery.dateLabel}
-                              </span>
-                            </div>
-                            <h3 className="mt-3 font-serif text-xl leading-tight text-white md:text-[1.35rem]">
-                              {subgallery.title === "Zurich" ? "Landing in Zurich" : subgallery.title}
-                            </h3>
-                          </div>
+                  <motion.button
+                    type="button"
+                    layoutId="home-gallery-shell"
+                    onClick={() => setIsOpen(true)}
+                    whileHover={{ y: -2 }}
+                    transition={{
+                      layout: { duration: 0.58, ease: [0.22, 1, 0.36, 1] },
+                      duration: 0.28,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                    className="group relative w-full max-w-[42rem] overflow-hidden rounded-[8px] border border-[color:var(--border)] bg-[rgba(255,255,255,0.78)] text-left shadow-[0_14px_42px_rgba(18,31,48,0.08)]"
+                  >
+                    <div className="relative aspect-[16/13] overflow-hidden">
+                      <Image
+                        src={gallery.coverImage}
+                        alt="Winter Olympics 2026"
+                        fill
+                        className="object-cover transition duration-500 group-hover:scale-[1.02]"
+                        sizes="(max-width: 1024px) 100vw, 42rem"
+                        unoptimized={nextImageUnoptimizedForSrc(gallery.coverImage)}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[rgba(8,14,24,0.76)] via-[rgba(8,14,24,0.16)] to-[rgba(255,255,255,0.04)]" />
+                      <div className="absolute inset-0 bg-[rgba(255,255,255,0.06)]" />
+                      <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
+                        <p className="text-[11px] uppercase tracking-[0.28em] text-white/62">
+                          Gallery
+                        </p>
+                        <h3 className="mt-3 font-serif text-3xl leading-[1.02] text-white md:text-[2.25rem]">
+                          Winter Olympics 2026
+                        </h3>
+                        <p className="mt-3 max-w-sm text-sm leading-6 text-white/82">
+                          Open one archive to reveal the scenes that give it shape.
+                        </p>
+                        <div className="mt-5 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/72">
+                          <ArrowUpRight className="h-3.5 w-3.5" />
+                          Click to open
                         </div>
                       </div>
-                    </motion.article>
-                  ))}
+                    </div>
+                  </motion.button>
                 </motion.div>
-              ) : null}
+              ) : (
+                <motion.div
+                  key="open-gallery"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+                  className="flex min-h-[28rem] flex-col justify-center md:min-h-[34rem]"
+                >
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+                    className="mx-auto w-full max-w-6xl px-1 text-center"
+                  >
+                    <p className="text-[11px] uppercase tracking-[0.28em] text-white/64">
+                      Gallery
+                    </p>
+                    <h3 className="mt-3 font-serif text-3xl leading-[1.02] text-white md:text-[2.35rem]">
+                      Winter Olympics 2026
+                    </h3>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.46, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+                    className="mx-auto mt-8 grid w-full max-w-6xl gap-4 sm:grid-cols-2 xl:grid-cols-4"
+                  >
+                    {subgalleries.map((subgallery, index) => (
+                      <motion.article
+                        key={subgallery.id}
+                        initial={{ opacity: 0, y: 18, scale: 0.985 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{
+                          duration: 0.38,
+                          delay: 0.12 + index * 0.05,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
+                        className="overflow-hidden rounded-[8px] border border-white/18 bg-[rgba(248,251,255,0.84)] shadow-[0_12px_28px_rgba(13,21,34,0.08)] backdrop-blur-sm"
+                      >
+                        <div className="relative aspect-[1.22/1] overflow-hidden">
+                          <Image
+                            src={subgallery.coverImage}
+                            alt={subgallery.title}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 100vw, 24vw"
+                            unoptimized={nextImageUnoptimizedForSrc(subgallery.coverImage)}
+                          />
+                        </div>
+                        <div className="bg-[rgba(255,255,255,0.92)] p-4 md:p-5">
+                          <h3 className="font-serif text-xl leading-tight text-[color:var(--ink)] md:text-[1.3rem]">
+                            {subgallery.title === "Zurich" ? "Landing in Zurich" : subgallery.title}
+                          </h3>
+                          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">
+                            <span className="inline-flex items-center gap-1.5">
+                              <MapPin className="h-3.5 w-3.5" />
+                              {subgallery.location}
+                            </span>
+                            <span className="inline-flex items-center gap-1.5">
+                              <CalendarDays className="h-3.5 w-3.5" />
+                              {subgallery.dateLabel}
+                            </span>
+                          </div>
+                        </div>
+                      </motion.article>
+                    ))}
+                  </motion.div>
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
         </div>
