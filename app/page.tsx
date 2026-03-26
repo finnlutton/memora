@@ -46,13 +46,13 @@ export default function HomePage() {
     <AppShell accent="immersive">
       <section className="border-b border-[color:var(--border)] pt-7 pb-7 md:pt-10 md:pb-8">
         <div className="max-w-[66rem]">
-          <p className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)] sm:text-xs">
+          <p className="text-center text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)] sm:text-xs">
             Curated galleries, meaningful descriptions
           </p>
-          <h1 className="mt-3 w-full font-serif text-[2rem] leading-[0.96] text-[color:var(--ink)] sm:text-[2.35rem] md:text-[2.8rem] lg:text-[3.25rem]">
+          <h1 className="mt-3 w-full text-center font-serif text-[2rem] leading-[0.96] text-[color:var(--ink)] sm:text-[2.35rem] md:text-[2.8rem] lg:text-[3.25rem]">
             An intentional platform to share and revisit your memories
           </h1>
-          <div className="mt-5">
+          <div className="mt-5 flex justify-center">
             <Button asChild>
               <Link href="/demo/create">
                 Explore demo
