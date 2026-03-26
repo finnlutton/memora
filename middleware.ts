@@ -7,6 +7,7 @@ import {
 
 function isProtectedPath(pathname: string) {
   return (
+    pathname === "/" ||
     pathname.startsWith("/galleries") ||
     pathname.startsWith("/pricing") ||
     pathname.startsWith("/checkout")
@@ -55,11 +56,13 @@ export async function middleware(request: NextRequest) {
 
   if (pathname === "/auth" && user) {
     const url = request.nextUrl.clone();
-    url.pathname = getNextAuthenticatedRoute(readMembershipStateFromUser(user as { user_metadata?: Record<string, unknown> | null }));
+    url.pathname = getNextAuthenticatedRoute(
+      readMembershipStateFromUser(user as { user_metadata?: Record<string, unknown> | null }),
+    );
     return NextResponse.redirect(url);
   }
 
-  if (isProtectedPath(pathname) && !user) {
+  if (isProtectedPath(pathname) && pathname !== "/" && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth";
     url.searchParams.set("redirect", `${pathname}${request.nextUrl.search}`);
@@ -73,6 +76,13 @@ export async function middleware(request: NextRequest) {
     const nextRoute = getNextAuthenticatedRoute(membershipState);
 
     if (pathname.startsWith("/galleries") && nextRoute !== "/galleries") {
+      const url = request.nextUrl.clone();
+      url.pathname = nextRoute;
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+
+    if (pathname === "/") {
       const url = request.nextUrl.clone();
       url.pathname = nextRoute;
       url.search = "";
@@ -102,5 +112,5 @@ export async function middleware(request: NextRequest) {
 export const config = {
   // Only run middleware for routes that should be auth-aware.
   // Keep marketing pages fully public.
-  matcher: ["/auth", "/pricing/:path*", "/galleries/:path*", "/checkout/:path*"],
+  matcher: ["/", "/auth", "/pricing/:path*", "/galleries/:path*", "/checkout/:path*"],
 };

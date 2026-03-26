@@ -38,11 +38,18 @@ export function AuthCard() {
 
   useEffect(() => {
     // Avoid useSearchParams() to keep /auth prerender/build happy in this Next version.
-    const value =
-      typeof window === "undefined"
-        ? null
-        : safeRedirectPath(new URLSearchParams(window.location.search).get("redirect"));
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const value = safeRedirectPath(searchParams.get("redirect"));
+    const requestedMode = searchParams.get("mode");
+
     setRedirectTo(value);
+    if (requestedMode === "signin" || requestedMode === "signup") {
+      setMode(requestedMode);
+    }
   }, []);
 
   const submitAuth = async () => {

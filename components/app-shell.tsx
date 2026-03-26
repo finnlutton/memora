@@ -27,7 +27,7 @@ export function AppShell({
     ? onboarding.onboardingComplete
       ? "/galleries/new"
       : getNextOnboardingRoute()
-    : "/auth";
+    : "/auth?mode=signup";
   const homeHref = onboarding.isAuthenticated
     ? onboarding.onboardingComplete
       ? "/galleries"
