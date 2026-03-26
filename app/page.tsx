@@ -44,15 +44,15 @@ export default function HomePage() {
 
   return (
     <AppShell accent="immersive">
-      <section className="border-b border-[color:var(--border)] pt-7 pb-7 md:pt-10 md:pb-8">
-        <div className="max-w-[66rem]">
+      <section className="relative flex min-h-[calc(100svh-72px)] items-center border-b border-[color:var(--border)] py-10 md:py-12">
+        <div className="mx-auto flex w-full max-w-5xl flex-col items-center justify-center">
           <p className="text-center text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)] sm:text-xs">
             Curated galleries, meaningful descriptions
           </p>
-          <h1 className="mt-3 w-full text-center font-serif text-[2rem] leading-[0.96] text-[color:var(--ink)] sm:text-[2.35rem] md:text-[2.8rem] lg:text-[3.25rem]">
+          <h1 className="mt-4 max-w-[18ch] text-center font-serif text-[2rem] leading-[0.95] text-[color:var(--ink)] sm:text-[2.45rem] md:max-w-[17ch] md:text-[3rem] lg:max-w-[16ch] lg:text-[3.55rem]">
             An intentional platform to share and revisit your memories
           </h1>
-          <div className="mt-5 flex justify-center">
+          <div className="mt-6 flex justify-center">
             <Button asChild>
               <Link href="/demo/create">
                 Explore demo
@@ -60,64 +60,66 @@ export default function HomePage() {
               </Link>
             </Button>
           </div>
-        </div>
-      </section>
 
-      <section className="py-7 md:py-8">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-0">
-          <StatementCard
-            index={0}
-            title="Not superficial"
-            description="Memora hopes to restore authenticity and maturity to modern social media."
-          />
-          <StatementCard
-            index={1}
-            title="Not generic storage"
-            description="The point is not to dump photos, it's to allow you and the people you care about to follow your journeys."
-          />
-          <StatementCard
-            index={2}
-            title="Built to last"
-            description="Enjoy a timeless organizational structure for your favorite moments."
-          />
-        </div>
-      </section>
-
-      <section className="grid gap-8 py-6 xl:grid-cols-[minmax(15rem,0.54fr)_minmax(0,1.46fr)] xl:items-start xl:gap-10">
-        <div className="max-w-md pt-2 xl:pt-6">
-          <p className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)]">
-            Creators Note
-          </p>
-          <h2 className="mt-2 font-serif text-xl leading-[1.12] text-[color:var(--ink)] sm:text-2xl md:text-[2rem]">
-            About the product
-          </h2>
-          <div className="mt-5 space-y-5 text-[15px] leading-7 text-[color:var(--ink-soft)] md:text-[15px] md:leading-7">
-            <p>
-              As many who have been fortunate enough to study abroad, I&apos;ve increasingly desired a better system to share and store my photos.
-            </p>
-            <p>
-              My camera roll is cluttered; lacking organization as well as a way to pair photos with written descriptions.
-            </p>
-            <p>
-              Additionally, sharing experiences authentically (Instagram doesn&apos;t fulfill this) with such a wide array of communication methods with friends and family is very challenging.
-            </p>
-            <p>
-              Memora takes this thoroughly into account, and promises to deliver a superior sharing / memory storage system.
-            </p>
+          <div className="mt-12 grid w-full grid-cols-1 gap-5 md:mt-16 md:grid-cols-3 md:gap-0">
+            <StatementCard
+              index={0}
+              title="Not superficial"
+              description="Memora hopes to restore authenticity and maturity to modern social media."
+            />
+            <StatementCard
+              index={1}
+              title="Not generic storage"
+              description="The point is not to dump photos, it's to allow you and the people you care about to follow your journeys."
+            />
+            <StatementCard
+              index={2}
+              title="Built to last"
+              description="Enjoy a timeless organizational structure for your favorite moments."
+            />
           </div>
         </div>
 
-        <div className="relative overflow-hidden bg-[linear-gradient(180deg,rgba(244,248,253,0.78),rgba(239,245,251,0.56))] px-1 py-4 md:px-2 md:py-5">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(22,35,56,0.14),transparent)]" />
-          <div className="pointer-events-none absolute inset-y-6 left-0 w-px bg-[linear-gradient(180deg,transparent,rgba(22,35,56,0.08),transparent)] xl:left-2" />
-          <SubgalleryCarousel
-            galleryId={previewGallery.id}
-            subgalleries={previewGallery.subgalleries}
-            eyebrow="Winter Olympics 2026"
-            title="Demo Gallery"
-            theme="light"
-            clickable={false}
-          />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-[linear-gradient(180deg,transparent,rgba(238,243,248,0.7))]" />
+        <div className="pointer-events-none absolute bottom-5 left-1/2 h-8 w-px -translate-x-1/2 bg-[linear-gradient(180deg,rgba(140,154,171,0),rgba(140,154,171,0.52),rgba(140,154,171,0))]" />
+      </section>
+
+      <section className="bg-[linear-gradient(180deg,rgba(241,246,251,0.4),rgba(245,248,252,0.92))] py-10 md:py-12">
+        <div className="grid gap-8 xl:grid-cols-[minmax(13rem,0.42fr)_minmax(0,1.58fr)] xl:items-start xl:gap-12">
+          <div className="max-w-[18rem] pt-2 xl:pt-6">
+            <p className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)]">
+              Creators Note
+            </p>
+            <h2 className="mt-2 font-serif text-xl leading-[1.12] text-[color:var(--ink)] sm:text-2xl md:text-[2rem]">
+              About the product
+            </h2>
+            <div className="mt-5 space-y-5 text-[15px] leading-7 text-[color:var(--ink-soft)] md:text-[15px] md:leading-7">
+              <p>
+                As many who have been fortunate enough to study abroad, I&apos;ve increasingly desired a better system to share and store my photos.
+              </p>
+              <p>
+                My camera roll is cluttered; lacking organization as well as a way to pair photos with written descriptions.
+              </p>
+              <p>
+                Additionally, sharing experiences authentically (Instagram doesn&apos;t fulfill this) with such a wide array of communication methods with friends and family is very challenging.
+              </p>
+              <p>
+                Memora takes this thoroughly into account, and promises to deliver a superior sharing / memory storage system.
+              </p>
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden bg-[linear-gradient(180deg,rgba(244,248,253,0.82),rgba(239,245,251,0.62))] px-1 py-4 md:px-2 md:py-5">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(22,35,56,0.14),transparent)]" />
+            <SubgalleryCarousel
+              galleryId={previewGallery.id}
+              subgalleries={previewGallery.subgalleries}
+              eyebrow="Winter Olympics 2026"
+              title="Demo Gallery"
+              theme="light"
+              clickable={false}
+            />
+          </div>
         </div>
       </section>
     </AppShell>
