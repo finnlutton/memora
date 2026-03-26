@@ -9,6 +9,7 @@ import {
 } from "react";
 import { demoGalleries } from "@/lib/demo-data";
 import { getMembershipPlan } from "@/lib/plans";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { createId } from "@/lib/utils";
 import type { Gallery, GalleryInput, Subgallery, SubgalleryInput } from "@/types/memora";
 
@@ -145,6 +146,39 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
     }
     window.localStorage.setItem(ONBOARDING_KEY, JSON.stringify(onboarding));
   }, [hydrated, onboarding]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+
+    const supabase = createSupabaseBrowserClient();
+
+    let cancelled = false;
+
+    const syncUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (cancelled) return;
+      const email = data.user?.email ?? null;
+
+      queueMicrotask(() => {
+        setOnboarding((current) => ({
+          ...current,
+          isAuthenticated: Boolean(data.user),
+          user: email ? { email } : null,
+        }));
+      });
+    };
+
+    void syncUser();
+
+    const { data: subscription } = supabase.auth.onAuthStateChange(() => {
+      void syncUser();
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.subscription.unsubscribe();
+    };
+  }, [hydrated]);
 
   const value = useMemo<MemoraStore>(() => {
     return {

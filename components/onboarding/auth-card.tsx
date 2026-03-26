@@ -6,6 +6,7 @@ import { Apple, ArrowRight, Chrome } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { useMemoraStore } from "@/hooks/use-memora-store";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const fieldClassName =
   "w-full rounded-sm border border-[color:var(--border)] bg-white px-4 py-3 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--accent)] focus:ring-1 focus:ring-[color:var(--accent)]/30";
@@ -17,14 +18,50 @@ export function AuthCard() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const submitAuth = () => {
-    if (mode === "signup" && password !== confirmPassword) {
-      return;
+  const submitAuth = async () => {
+    setError(null);
+    setBusy(true);
+
+    try {
+      const supabase = createSupabaseBrowserClient();
+
+      if (!email || !password) {
+        setError("Please enter an email and password.");
+        return;
+      }
+
+      if (mode === "signup") {
+        if (password !== confirmPassword) {
+          setError("Passwords do not match.");
+          return;
+        }
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        if (signUpError) {
+          setError(signUpError.message);
+          return;
+        }
+      } else {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (signInError) {
+          setError(signInError.message);
+          return;
+        }
+      }
+
+      signIn(email);
+      router.push("/pricing");
+    } finally {
+      setBusy(false);
     }
-
-    signIn(email);
-    router.push("/pricing");
   };
 
   return (
@@ -75,10 +112,7 @@ export function AuthCard() {
               type="button"
               variant="secondary"
               className="justify-center"
-              onClick={() => {
-                signIn("apple@memora.app");
-                router.push("/pricing");
-              }}
+              disabled
             >
               <Apple className="h-4 w-4" />
               Continue with Apple
@@ -87,10 +121,7 @@ export function AuthCard() {
               type="button"
               variant="secondary"
               className="justify-center"
-              onClick={() => {
-                signIn("google@memora.app");
-                router.push("/pricing");
-              }}
+              disabled
             >
               <Chrome className="h-4 w-4" />
               Continue with Google
@@ -102,7 +133,7 @@ export function AuthCard() {
           <form
             onSubmit={(event) => {
               event.preventDefault();
-              submitAuth();
+              void submitAuth();
             }}
             className="space-y-4"
           >
@@ -112,6 +143,7 @@ export function AuthCard() {
               </span>
               <input
                 type="email"
+                required
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="you@example.com"
@@ -126,6 +158,7 @@ export function AuthCard() {
                 </span>
                 <input
                   type="password"
+                  required
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="••••••••"
@@ -139,6 +172,7 @@ export function AuthCard() {
                   </span>
                     <input
                     type="password"
+                    required
                     value={confirmPassword}
                     onChange={(event) => setConfirmPassword(event.target.value)}
                     placeholder="••••••••"
@@ -148,7 +182,13 @@ export function AuthCard() {
               ) : null}
             </div>
 
-            <Button type="submit" className="mt-3 w-full justify-center">
+            {error ? (
+              <p className="rounded-sm border border-[#c98282] bg-[#fff7f7] px-3 py-2 text-sm leading-6 text-[#9a4545]">
+                {error}
+              </p>
+            ) : null}
+
+            <Button type="submit" className="mt-3 w-full justify-center" disabled={busy}>
               {mode === "signin" ? "Continue to membership" : "Create account"}
               <ArrowRight className="h-4 w-4" />
             </Button>

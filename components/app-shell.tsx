@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 import { getMembershipPlan, membershipPlans } from "@/lib/plans";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import memoraLogo from "../Logo/MemoraLogo.png";
@@ -80,8 +81,11 @@ export function AppShell({
                   void planId;
                 }}
                 onSignOut={() => {
-                  signOut();
-                  router.push("/");
+                  const supabase = createSupabaseBrowserClient();
+                  void supabase.auth.signOut().finally(() => {
+                    signOut();
+                    router.push("/");
+                  });
                 }}
               />
             ) : null}

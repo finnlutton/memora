@@ -9,7 +9,7 @@ import type { Subgallery } from "@/types/memora";
 
 export function SubgalleryCarousel({
   galleryId,
-  subgalleries,
+  subgalleries = [],
   title = "Subgalleries",
   eyebrow = "Browse the chapters",
   description,
@@ -18,7 +18,7 @@ export function SubgalleryCarousel({
   onActiveIndexChange,
 }: {
   galleryId: string;
-  subgalleries: Subgallery[];
+  subgalleries?: Subgallery[];
   title?: string;
   eyebrow?: string;
   description?: string;
@@ -176,7 +176,7 @@ export function SubgalleryCarousel({
               setActiveIndex(nextIndex);
               onActiveIndexChange?.(nextIndex);
             }}
-            disabled={activeIndex === subgalleries.length - 1}
+            disabled={subgalleries.length < 2 || activeIndex === subgalleries.length - 1}
             className={buttonClass}
           >
             <ChevronRight className="h-4 w-4" />
