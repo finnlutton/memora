@@ -50,11 +50,8 @@ export default function HomePage() {
             Curated galleries, meaningful descriptions
           </p>
           <h1 className="mt-4 max-w-[24ch] text-center font-serif text-[2rem] leading-[0.95] text-[color:var(--ink)] sm:text-[2.45rem] md:max-w-[22ch] md:text-[3rem] lg:max-w-[21ch] lg:text-[3.55rem]">
-            An intentional platform to organize, revisit, and share your experiences
+            An intentional platform to organize, revisit, and share your memories
           </h1>
-          <p className="mt-5 max-w-2xl text-center text-sm leading-7 text-[color:var(--ink-soft)] md:text-[15px]">
-            Memora brings structure, place, and story back to the memories worth preserving.
-          </p>
           <div className="mt-6 flex justify-center">
             <Button asChild>
               <Link href="/demo/create">

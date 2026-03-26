@@ -161,20 +161,23 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                             sizes="(max-width: 768px) 100vw, 28vw"
                             unoptimized={nextImageUnoptimizedForSrc(subgallery.coverImage)}
                           />
-                        </div>
-                        <div className="flex flex-1 flex-col bg-[rgba(255,255,255,0.92)] px-4 py-3 md:px-4 md:py-3.5">
-                          <h3 className="font-serif text-lg leading-tight text-[color:var(--ink)] md:text-[1.15rem]">
-                            {subgallery.title === "Zurich" ? "Landing in Zurich" : subgallery.title}
-                          </h3>
-                          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[9px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)] md:text-[9.5px]">
-                            <span className="inline-flex items-center gap-1.5">
-                              <MapPin className="h-3.5 w-3.5" />
-                              {subgallery.location}
-                            </span>
-                            <span className="inline-flex items-center gap-1.5">
-                              <CalendarDays className="h-3.5 w-3.5" />
-                              {subgallery.dateLabel}
-                            </span>
+                          <div className="absolute inset-0 bg-gradient-to-t from-[rgba(8,14,24,0.78)] via-[rgba(8,14,24,0.16)] to-transparent" />
+                          <div className="absolute inset-x-0 bottom-0 p-4 md:p-5">
+                            <div className="max-w-[18rem]">
+                              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[9px] uppercase tracking-[0.16em] text-white/68 md:text-[9.5px]">
+                                <span className="inline-flex items-center gap-1.5">
+                                  <MapPin className="h-3.5 w-3.5" />
+                                  {subgallery.location}
+                                </span>
+                                <span className="inline-flex items-center gap-1.5">
+                                  <CalendarDays className="h-3.5 w-3.5" />
+                                  {subgallery.dateLabel}
+                                </span>
+                              </div>
+                              <h3 className="mt-3 font-serif text-lg leading-tight text-white md:text-[1.18rem]">
+                                {subgallery.title === "Zurich" ? "Landing in Zurich" : subgallery.title}
+                              </h3>
+                            </div>
                           </div>
                         </div>
                       </motion.article>
