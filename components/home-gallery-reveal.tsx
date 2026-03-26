@@ -51,12 +51,12 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
             ) : null}
           </AnimatePresence>
 
-          <div className="relative min-h-[28rem] md:min-h-[34rem]">
+          <div className="relative min-h-[30rem] md:min-h-[42rem]">
             <AnimatePresence mode="wait" initial={false}>
               {!isOpen ? (
                 <motion.div
                   key="closed-gallery"
-                  className="flex min-h-[28rem] items-center justify-center md:min-h-[34rem]"
+                  className="flex min-h-[30rem] items-center justify-center md:min-h-[42rem]"
                   initial={{ opacity: 1 }}
                   exit={{ opacity: 0, scale: 1.02 }}
                   transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
@@ -109,7 +109,7 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-                  className="flex min-h-[28rem] flex-col justify-center md:min-h-[34rem]"
+                  className="flex min-h-[30rem] flex-col justify-center md:min-h-[42rem]"
                 >
                   <button
                     type="button"
@@ -138,7 +138,7 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.46, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-                    className="relative z-10 mx-auto mt-8 grid w-full max-w-6xl gap-4 sm:grid-cols-2 xl:grid-cols-4"
+                    className="relative z-10 mx-auto mt-10 grid w-full max-w-[88rem] gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:gap-5"
                   >
                     {subgalleries.map((subgallery, index) => (
                       <motion.article
@@ -152,21 +152,21 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                         }}
                         className="flex h-full min-w-0 flex-col overflow-hidden rounded-[8px] border border-white/18 bg-[rgba(248,251,255,0.84)] shadow-[0_12px_28px_rgba(13,21,34,0.08)] backdrop-blur-sm"
                       >
-                        <div className="relative aspect-[1.22/1] w-full overflow-hidden">
+                        <div className="relative aspect-[0.98/1] w-full overflow-hidden">
                           <Image
                             src={subgallery.coverImage}
                             alt={subgallery.title}
                             fill
                             className="object-cover"
-                            sizes="(max-width: 768px) 100vw, 24vw"
+                            sizes="(max-width: 768px) 100vw, 28vw"
                             unoptimized={nextImageUnoptimizedForSrc(subgallery.coverImage)}
                           />
                         </div>
-                        <div className="flex flex-1 flex-col bg-[rgba(255,255,255,0.92)] p-4 md:p-5">
-                          <h3 className="font-serif text-xl leading-tight text-[color:var(--ink)] md:text-[1.3rem]">
+                        <div className="flex flex-1 flex-col bg-[rgba(255,255,255,0.92)] px-4 py-3 md:px-4 md:py-3.5">
+                          <h3 className="font-serif text-lg leading-tight text-[color:var(--ink)] md:text-[1.15rem]">
                             {subgallery.title === "Zurich" ? "Landing in Zurich" : subgallery.title}
                           </h3>
-                          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">
+                          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[9px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)] md:text-[9.5px]">
                             <span className="inline-flex items-center gap-1.5">
                               <MapPin className="h-3.5 w-3.5" />
                               {subgallery.location}
