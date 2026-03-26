@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { PricingCard } from "@/components/onboarding/pricing-card";
@@ -9,16 +8,7 @@ import { membershipPlans } from "@/lib/plans";
 
 export default function PricingPage() {
   const router = useRouter();
-  const { hydrated, onboarding, completeCheckout } = useMemoraStore();
-
-  useEffect(() => {
-    if (!hydrated) {
-      return;
-    }
-    if (!onboarding.isAuthenticated) {
-      router.replace("/auth");
-    }
-  }, [hydrated, onboarding.isAuthenticated, router]);
+  const { onboarding, completeCheckout } = useMemoraStore();
 
   const orderedPlans = ["free", "lite", "plus", "pro"]
     .map((id) => membershipPlans.find((p) => p.id === id))

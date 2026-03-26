@@ -9,6 +9,7 @@ import {
 } from "react";
 import { demoGalleries } from "@/lib/demo-data";
 import {
+  type AuthUserLike,
   buildMembershipMetadata,
   getNextAuthenticatedRoute,
   readMembershipStateFromUser,
@@ -52,6 +53,7 @@ type MemoraStore = {
   getSubgallery: (galleryId: string, subgalleryId: string) => Subgallery | undefined;
   resetDemo: () => void;
   signOut: () => void;
+  syncOnboardingFromUser: (user: AuthUserLike) => void;
   completeCheckout: (planId: MembershipPlanId) => Promise<void>;
   resetOnboarding: () => void;
   getNextOnboardingRoute: () => string;
@@ -136,6 +138,17 @@ function loadLegacyOnboarding() {
   }
 }
 
+function buildOnboardingStateFromUser(user: AuthUserLike): OnboardingState {
+  const membershipState = readMembershipStateFromUser(user);
+
+  return {
+    isAuthenticated: Boolean(user),
+    selectedPlanId: membershipState.selectedPlanId,
+    onboardingComplete: membershipState.onboardingComplete,
+    user: user?.email ? { email: user.email } : null,
+  };
+}
+
 export function MemoraProvider({ children }: { children: React.ReactNode }) {
   // Same initial state on server and client so SSR markup matches the first client render.
   // Rehydrate from localStorage only after mount (client-only).
@@ -184,12 +197,16 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         queueMicrotask(() => {
           setDemoGalleryCollection(nextCollections.demo);
           setUserGalleryCollection(nextCollections.user);
-          setOnboarding({
-            isAuthenticated: Boolean(nextUser),
-            selectedPlanId: membershipState.selectedPlanId,
-            onboardingComplete: membershipState.onboardingComplete,
-            user: nextUser?.email ? { email: nextUser.email } : null,
-          });
+          setOnboarding(
+            buildOnboardingStateFromUser(
+              nextUser
+                ? {
+                    ...nextUser,
+                    user_metadata: buildMembershipMetadata(membershipState),
+                  }
+                : null,
+            ),
+          );
           if (typeof window !== "undefined") {
             window.localStorage.removeItem(LEGACY_ONBOARDING_KEY);
           }
@@ -241,32 +258,13 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
 
     const supabase = createSupabaseBrowserClient();
 
-    let cancelled = false;
-
-    const syncUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (cancelled) return;
-      const nextUser = data.user ?? null;
-      const membershipState = readMembershipStateFromUser(nextUser);
-
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
       queueMicrotask(() => {
-        setOnboarding({
-          isAuthenticated: Boolean(nextUser),
-          selectedPlanId: membershipState.selectedPlanId,
-          onboardingComplete: membershipState.onboardingComplete,
-          user: nextUser?.email ? { email: nextUser.email } : null,
-        });
+        setOnboarding(buildOnboardingStateFromUser(session?.user ?? null));
       });
-    };
-
-    void syncUser();
-
-    const { data: subscription } = supabase.auth.onAuthStateChange(() => {
-      void syncUser();
     });
 
     return () => {
-      cancelled = true;
       subscription.subscription.unsubscribe();
     };
   }, [hydrated]);
@@ -395,6 +393,9 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
       },
       signOut() {
         setOnboarding(defaultOnboardingState);
+      },
+      syncOnboardingFromUser(user) {
+        setOnboarding(buildOnboardingStateFromUser(user));
       },
       async completeCheckout(planId) {
         const membershipState = {

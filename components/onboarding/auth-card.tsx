@@ -10,6 +10,7 @@ import {
   readMembershipStateFromUser,
 } from "@/lib/onboarding";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { useMemoraStore } from "@/hooks/use-memora-store";
 
 const fieldClassName =
   "w-full rounded-sm border border-[color:var(--border)] bg-white px-4 py-3 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--accent)] focus:ring-1 focus:ring-[color:var(--accent)]/30";
@@ -23,6 +24,7 @@ function safeRedirectPath(value: string | null) {
 
 export function AuthCard() {
   const router = useRouter();
+  const { syncOnboardingFromUser } = useMemoraStore();
   const [mode, setMode] = useState<"signin" | "signup">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -86,7 +88,7 @@ export function AuthCard() {
 
         setIsTransitioning(true);
         setInfo("Creating your account...");
-        await new Promise((resolve) => window.setTimeout(resolve, 450));
+        syncOnboardingFromUser(data.user ?? null);
         router.replace(nextRoute);
         return;
       } else {
@@ -109,7 +111,7 @@ export function AuthCard() {
 
         setIsTransitioning(true);
         setInfo("Logging you in...");
-        await new Promise((resolve) => window.setTimeout(resolve, 450));
+        syncOnboardingFromUser(data.user ?? null);
         router.replace(nextRoute);
         return;
       }

@@ -36,10 +36,6 @@ export default function CheckoutPage() {
     if (!hydrated) {
       return;
     }
-    if (!onboarding.isAuthenticated) {
-      router.replace("/auth");
-      return;
-    }
     if (!plan) {
       router.replace("/pricing");
       return;
@@ -56,7 +52,7 @@ export default function CheckoutPage() {
     router,
   ]);
 
-  if (!plan) {
+  if (!hydrated || !onboarding.isAuthenticated || !plan) {
     return null;
   }
 

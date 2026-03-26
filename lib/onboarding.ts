@@ -8,11 +8,12 @@ export type MembershipState = {
   onboardingComplete: boolean;
 };
 
-type UserLike = {
+export type AuthUserLike = {
+  email?: string | null;
   user_metadata?: Record<string, unknown> | null;
 } | null;
 
-export function readMembershipStateFromUser(user: UserLike): MembershipState {
+export function readMembershipStateFromUser(user: AuthUserLike): MembershipState {
   const metadata = user?.user_metadata ?? {};
   const rawPlanId = metadata[PLAN_METADATA_KEY];
   const selectedPlanId =
