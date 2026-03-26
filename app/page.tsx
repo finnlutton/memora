@@ -49,13 +49,10 @@ export default function HomePage() {
           <p className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)] sm:text-xs">
             Curated galleries, meaningful descriptions
           </p>
-          <h1 className="mt-3 w-full max-w-[16ch] font-serif text-3xl leading-[0.92] text-[color:var(--ink)] sm:max-w-[17ch] sm:text-4xl md:max-w-[15ch] md:text-5xl lg:max-w-[16ch] lg:text-[4.1rem]">
+          <h1 className="mt-3 w-full font-serif text-[2rem] leading-[0.96] text-[color:var(--ink)] sm:text-[2.35rem] md:text-[2.8rem] lg:text-[3.25rem]">
             An intentional platform to share and revisit your memories
           </h1>
-          <p className="mt-4 max-w-[40rem] text-sm leading-7 text-[color:var(--ink-soft)] md:text-[15px]">
-            Memora gives shape to the moments that matter, so your archive feels composed, reflective, and worth returning to.
-          </p>
-          <div className="mt-6">
+          <div className="mt-5">
             <Button asChild>
               <Link href="/demo/create">
                 Explore demo
@@ -66,8 +63,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="py-8 md:py-10">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-0">
+      <section className="py-7 md:py-8">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-0">
           <StatementCard
             index={0}
             title="Not superficial"
@@ -142,10 +139,10 @@ function StatementCard({
         index > 0 ? "md:border-l md:border-[color:var(--border)]" : ""
       }`}
     >
-      <p className="text-balance break-words font-serif text-lg leading-[1.12] text-[color:var(--ink)] md:text-[1.45rem]">
+      <p className="text-balance break-words font-serif text-base leading-[1.12] text-[color:var(--ink)] md:text-[1.18rem]">
         {title}
       </p>
-      <p className="mt-3 max-w-sm text-sm leading-6 text-[color:var(--ink-soft)]">
+      <p className="mt-2 max-w-xs text-[13px] leading-5 text-[color:var(--ink-soft)] md:text-sm md:leading-6">
         {description}
       </p>
     </div>
