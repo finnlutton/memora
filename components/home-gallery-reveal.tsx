@@ -53,22 +53,21 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                   sizes="(max-width: 1024px) 100vw, 26rem"
                   unoptimized={nextImageUnoptimizedForSrc(gallery.coverImage)}
                 />
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0))]" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[rgba(8,14,24,0.76)] via-[rgba(8,14,24,0.16)] to-[rgba(255,255,255,0.04)]" />
+                <div className="absolute inset-0 bg-[rgba(255,255,255,0.06)]" />
                 <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
-                  <div className="max-w-sm rounded-[6px] bg-[rgba(246,249,253,0.74)] px-4 py-3 backdrop-blur-sm">
-                    <p className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
+                  <p className="text-[11px] uppercase tracking-[0.28em] text-white/62">
                     Gallery
-                    </p>
-                    <h3 className="mt-2 font-serif text-3xl leading-[1.02] text-[color:var(--ink)] md:text-[2.15rem]">
-                      Winter Olympics 2026
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-[color:var(--ink-soft)]">
-                      Open one archive to reveal the scenes that give it shape.
-                    </p>
-                    <div className="mt-4 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
-                      <ArrowUpRight className="h-3.5 w-3.5" />
-                      Click to open
-                    </div>
+                  </p>
+                  <h3 className="mt-3 font-serif text-3xl leading-[1.02] text-white md:text-[2.25rem]">
+                    Winter Olympics 2026
+                  </h3>
+                  <p className="mt-3 max-w-sm text-sm leading-6 text-white/82">
+                    Open one archive to reveal the scenes that give it shape.
+                  </p>
+                  <div className="mt-5 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/72">
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                    Click to open
                   </div>
                 </div>
               </div>
@@ -114,17 +113,16 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                                 <MapPin className="h-3.5 w-3.5" />
                                 {subgallery.location}
                               </span>
+                            </div>
+                            <h3 className="mt-3 font-serif text-xl leading-tight text-white md:text-[1.35rem]">
+                              {subgallery.title === "Zurich" ? "Landing in Zurich" : subgallery.title}
+                            </h3>
+                            <div className="mt-2 flex flex-wrap gap-3 text-[10px] uppercase tracking-[0.18em] text-white/74">
                               <span className="inline-flex items-center gap-1.5">
                                 <CalendarDays className="h-3.5 w-3.5" />
                                 {subgallery.dateLabel}
                               </span>
                             </div>
-                            <h3 className="mt-3 font-serif text-xl leading-tight text-white md:text-[1.35rem]">
-                              {subgallery.title}
-                            </h3>
-                            <p className="mt-2 text-sm leading-6 text-white/82">
-                              {subgallery.description}
-                            </p>
                           </div>
                         </div>
                       </div>

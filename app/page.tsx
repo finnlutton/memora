@@ -99,23 +99,19 @@ export default function HomePage() {
           <h2 className="mt-3 text-center font-serif text-2xl leading-[1.08] text-[color:var(--ink)] sm:text-3xl md:text-[2.5rem]">
             About the product
           </h2>
-          <div className="mt-7 grid gap-6 text-[15px] leading-7 text-[color:var(--ink-soft)] md:grid-cols-2 md:gap-10 md:text-[15px] md:leading-7">
-            <div className="space-y-5">
-              <p>
-                As many who have been fortunate enough to study abroad, I&apos;ve increasingly desired a better system to share and store my photos.
-              </p>
-              <p>
-                My camera roll is cluttered; lacking organization as well as a way to pair photos with written descriptions.
-              </p>
-            </div>
-            <div className="space-y-5">
-              <p>
-                Additionally, sharing experiences authentically (Instagram doesn&apos;t fulfill this) with such a wide array of communication methods with friends and family is very challenging.
-              </p>
-              <p>
-                Memora takes this thoroughly into account, and promises to deliver a superior sharing / memory storage system.
-              </p>
-            </div>
+          <div className="mt-7 space-y-5 text-[15px] leading-7 text-[color:var(--ink-soft)] md:text-[15px] md:leading-7">
+            <p>
+              As many who have been fortunate enough to study abroad, I&apos;ve increasingly desired a better system to share and store my photos.
+            </p>
+            <p>
+              My camera roll is cluttered; lacking organization as well as a way to pair photos with written descriptions.
+            </p>
+            <p>
+              Additionally, sharing experiences authentically (Instagram doesn&apos;t fulfill this) with such a wide array of communication methods with friends and family is very challenging.
+            </p>
+            <p>
+              Memora takes this thoroughly into account, and promises to deliver a superior sharing / memory storage system.
+            </p>
           </div>
         </div>
       </section>
