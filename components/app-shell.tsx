@@ -10,6 +10,7 @@ import { getMembershipPlan, membershipPlans } from "@/lib/plans";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { StorageCleanupDialog } from "@/components/storage-cleanup-dialog";
 import memoraLogo from "../Logo/MemoraLogo.png";
 
 export function AppShell({
@@ -237,6 +238,11 @@ function SettingsDropdown({
             >
               Recover password
             </button>
+            <StorageCleanupDialog
+              onAfterAction={() => {
+                setOpen(false);
+              }}
+            />
           </div>
 
           <div className="mt-5 border-t border-[color:var(--border)] pt-4">

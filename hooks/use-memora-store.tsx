@@ -58,6 +58,12 @@ type MemoraStore = {
   completeCheckout: (planId: MembershipPlanId) => Promise<void>;
   resetOnboarding: () => void;
   getNextOnboardingRoute: () => string;
+  scanOrphanedStorageObjects: () => Promise<{
+    totalObjects: number;
+    referencedObjects: number;
+    orphanedObjects: string[];
+  }>;
+  deleteOrphanedStorageObjects: (paths: string[]) => Promise<{ deleted: number }>;
 };
 
 type GalleryRow = {
@@ -109,6 +115,30 @@ function isLikelyStoragePath(path: string) {
   return !path.startsWith("data:") && !path.startsWith("blob:") && !path.startsWith("/") && !path.startsWith("http");
 }
 
+function storagePathFromSupabaseObjectUrl(url: string) {
+  if (!url.startsWith("http")) return null;
+  try {
+    const parsed = new URL(url);
+    const match = parsed.pathname.match(/\/storage\/v1\/object\/(?:sign|public)\/([^/]+)\/(.+)$/);
+    if (!match) return null;
+    const bucket = match[1];
+    const path = match[2];
+    if (bucket !== STORAGE_BUCKET) return null;
+    return decodeURIComponent(path);
+  } catch {
+    return null;
+  }
+}
+
+function normalizeToStoragePath(value: string) {
+  if (!value) return value;
+  return storagePathFromSupabaseObjectUrl(value) ?? value;
+}
+
+function isSupabaseObjectUrl(value: string) {
+  return Boolean(storagePathFromSupabaseObjectUrl(value));
+}
+
 function parseDateLabelToRange(dateLabel: string): { startDate: string | null; endDate: string | null } {
   const value = dateLabel.trim();
   if (!value) return { startDate: null, endDate: null };
@@ -138,8 +168,9 @@ async function uploadImageSourceIfNeeded(
   id: string,
 ) {
   if (!source) return source;
-  if (isLikelyStoragePath(source) || source.startsWith("/") || source.startsWith("http")) {
-    return source;
+  const normalized = normalizeToStoragePath(source);
+  if (isLikelyStoragePath(normalized) || normalized.startsWith("/") || normalized.startsWith("http")) {
+    return normalized;
   }
 
   const blob = await sourceToBlob(source);
@@ -158,8 +189,9 @@ async function resolveImageUrls(
   paths: string[],
 ) {
   const map = new Map<string, string>();
-  const storagePaths = paths.filter((path) => isLikelyStoragePath(path));
-  const directPaths = paths.filter((path) => !isLikelyStoragePath(path));
+  const normalizedPaths = paths.map((path) => normalizeToStoragePath(path));
+  const storagePaths = normalizedPaths.filter((path) => isLikelyStoragePath(path));
+  const directPaths = normalizedPaths.filter((path) => !isLikelyStoragePath(path));
 
   directPaths.forEach((path) => map.set(path, path));
 
@@ -220,20 +252,79 @@ async function loadUserGalleriesFromSupabase(
 
   const photoRows = (photosData ?? []) as PhotoRow[];
 
+  // If older versions accidentally persisted signed/public object URLs into the DB, normalize and self-heal best-effort.
+  const galleriesToHeal = galleryRows
+    .map((gallery) => ({
+      id: gallery.id,
+      original: gallery.cover_image_path,
+      normalized: gallery.cover_image_path ? normalizeToStoragePath(gallery.cover_image_path) : null,
+    }))
+    .filter((entry) => entry.original && entry.normalized && entry.original !== entry.normalized);
+
+  const subgalleriesToHeal = subgalleryRows
+    .map((subgallery) => ({
+      id: subgallery.id,
+      original: subgallery.cover_image_path,
+      normalized: subgallery.cover_image_path ? normalizeToStoragePath(subgallery.cover_image_path) : null,
+    }))
+    .filter((entry) => entry.original && entry.normalized && entry.original !== entry.normalized);
+
+  const photosToHeal = photoRows
+    .map((photo) => ({
+      id: photo.id,
+      original: photo.storage_path,
+      normalized: normalizeToStoragePath(photo.storage_path),
+    }))
+    .filter((entry) => entry.original && entry.normalized && entry.original !== entry.normalized);
+
+  if (galleriesToHeal.length || subgalleriesToHeal.length || photosToHeal.length) {
+    void (async () => {
+      try {
+        await Promise.all([
+          ...galleriesToHeal.map((entry) =>
+            supabase
+              .from("galleries")
+              .update({ cover_image_path: entry.normalized })
+              .eq("id", entry.id)
+              .eq("user_id", userId),
+          ),
+          ...subgalleriesToHeal.map((entry) =>
+            supabase
+              .from("subgalleries")
+              .update({ cover_image_path: entry.normalized })
+              .eq("id", entry.id)
+              .eq("user_id", userId),
+          ),
+          ...photosToHeal.map((entry) =>
+            supabase
+              .from("photos")
+              .update({ storage_path: entry.normalized })
+              .eq("id", entry.id)
+              .eq("user_id", userId),
+          ),
+        ]);
+      } catch (error) {
+        console.error("Memora: failed to heal storage paths", error);
+      }
+    })();
+  }
+
   const allPaths = [
     ...galleryRows.map((gallery) => gallery.cover_image_path ?? "").filter(Boolean),
     ...subgalleryRows.map((subgallery) => subgallery.cover_image_path ?? "").filter(Boolean),
     ...photoRows.map((photo) => photo.storage_path).filter(Boolean),
   ];
   const resolvedImageMap = await resolveImageUrls(supabase, allPaths);
+  const normalizeForLookup = (value: string) => normalizeToStoragePath(value);
 
   const photosBySubgallery = new Map<string, MemoryPhoto[]>();
   photoRows.forEach((photo) => {
     if (!photo.subgallery_id) return;
+    const normalizedPath = normalizeForLookup(photo.storage_path);
     const entry: MemoryPhoto = {
       id: photo.id,
       subgalleryId: photo.subgallery_id,
-      src: resolvedImageMap.get(photo.storage_path) ?? photo.storage_path,
+      src: resolvedImageMap.get(normalizedPath) ?? normalizedPath,
       caption: photo.caption ?? "",
       createdAt: photo.created_at,
       order: photo.display_order ?? 0,
@@ -244,11 +335,12 @@ async function loadUserGalleriesFromSupabase(
 
   const subgalleriesByGallery = new Map<string, Subgallery[]>();
   subgalleryRows.forEach((subgallery) => {
+    const normalizedCover = normalizeForLookup(subgallery.cover_image_path ?? "");
     const entry: Subgallery = {
       id: subgallery.id,
       galleryId: subgallery.gallery_id,
       title: subgallery.title,
-      coverImage: resolvedImageMap.get(subgallery.cover_image_path ?? "") ?? (subgallery.cover_image_path ?? ""),
+      coverImage: resolvedImageMap.get(normalizedCover) ?? normalizedCover,
       location: subgallery.location ?? "",
       dateLabel: dateLabelFromRange(subgallery.start_date, subgallery.end_date, subgallery.date_label),
       description: subgallery.description ?? "",
@@ -260,10 +352,12 @@ async function loadUserGalleriesFromSupabase(
     subgalleriesByGallery.set(subgallery.gallery_id, [...current, entry]);
   });
 
-  return galleryRows.map((gallery) => ({
-    id: gallery.id,
-    title: gallery.title,
-    coverImage: resolvedImageMap.get(gallery.cover_image_path ?? "") ?? (gallery.cover_image_path ?? ""),
+  return galleryRows.map((gallery) => {
+    const normalizedCover = normalizeForLookup(gallery.cover_image_path ?? "");
+    return {
+      id: gallery.id,
+      title: gallery.title,
+      coverImage: resolvedImageMap.get(normalizedCover) ?? normalizedCover,
     description: gallery.description ?? "",
     startDate: gallery.start_date ?? "",
     endDate: gallery.end_date ?? "",
@@ -274,7 +368,8 @@ async function loadUserGalleriesFromSupabase(
     createdAt: gallery.created_at,
     updatedAt: gallery.updated_at,
     subgalleries: subgalleriesByGallery.get(gallery.id) ?? [],
-  }));
+    };
+  });
 }
 
 const MemoraContext = createContext<MemoraStore | null>(null);
@@ -365,6 +460,73 @@ function buildOnboardingStateFromUser(user: AuthUserLike): OnboardingState {
     onboardingComplete: membershipState.onboardingComplete,
     user: user?.email ? { email: user.email } : null,
   };
+}
+
+async function deleteStorageObjectsSafe(
+  supabase: ReturnType<typeof createSupabaseBrowserClient>,
+  userId: string,
+  paths: Array<string | null | undefined>,
+) {
+  const toDelete = Array.from(
+    new Set(
+      paths
+        .filter((path): path is string => Boolean(path && path.trim()))
+        .map((path) => normalizeToStoragePath(path))
+        .filter((path) => isLikelyStoragePath(path) && path.startsWith(`${userId}/`)),
+    ),
+  );
+
+  if (toDelete.length === 0) return;
+  const { error } = await supabase.storage.from(STORAGE_BUCKET).remove(toDelete);
+  if (error) {
+    console.error("Memora: failed to delete storage objects", error);
+  }
+}
+
+type StorageListItem = {
+  name: string;
+  id?: string | null;
+  metadata?: unknown | null;
+};
+
+async function listAllStorageObjectsUnderPrefix(
+  supabase: ReturnType<typeof createSupabaseBrowserClient>,
+  prefix: string,
+) {
+  const files: string[] = [];
+  const queue: string[] = [prefix];
+
+  while (queue.length) {
+    const folder = queue.shift()!;
+    let offset = 0;
+
+    // Page through results to avoid missing large folders.
+    for (;;) {
+      const { data, error } = await supabase.storage.from(STORAGE_BUCKET).list(folder, {
+        limit: 1000,
+        offset,
+        sortBy: { column: "name", order: "asc" },
+      });
+      if (error) throw error;
+      const items = (data ?? []) as StorageListItem[];
+      if (items.length === 0) break;
+
+      for (const item of items) {
+        const isFolder = (item as StorageListItem).id == null && (item as StorageListItem).metadata == null;
+        const nextPath = folder ? `${folder}/${item.name}` : item.name;
+        if (isFolder) {
+          queue.push(nextPath);
+        } else {
+          files.push(nextPath);
+        }
+      }
+
+      if (items.length < 1000) break;
+      offset += items.length;
+    }
+  }
+
+  return files;
 }
 
 export function MemoraProvider({ children }: { children: React.ReactNode }) {
@@ -583,6 +745,9 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             throw new Error("Please sign in again to update this gallery.");
           }
 
+          const currentGallery = galleries.find((gallery) => gallery.id === galleryId);
+          const previousCover = currentGallery?.coverImage ?? null;
+
           persistedCover = await uploadImageSourceIfNeeded(
             supabase,
             userId,
@@ -608,6 +773,14 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             .eq("id", galleryId)
             .eq("user_id", userId);
           if (error) throw error;
+
+          if (
+            previousCover &&
+            normalizeToStoragePath(previousCover) !== normalizeToStoragePath(persistedCover) &&
+            (isSupabaseObjectUrl(previousCover) || isLikelyStoragePath(previousCover))
+          ) {
+            await deleteStorageObjectsSafe(supabase, userId, [previousCover]);
+          }
         }
 
         setActiveGalleries((current) =>
@@ -626,12 +799,40 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           if (!userId) {
             throw new Error("Please sign in again to delete this gallery.");
           }
+
+          // Fetch associated storage paths before deleting rows.
+          const { data: galleryRow } = await supabase
+            .from("galleries")
+            .select("cover_image_path")
+            .eq("id", galleryId)
+            .eq("user_id", userId)
+            .maybeSingle();
+          const { data: subRows } = await supabase
+            .from("subgalleries")
+            .select("id, cover_image_path")
+            .eq("gallery_id", galleryId)
+            .eq("user_id", userId);
+          const subIds = (subRows ?? []).map((s: { id: string }) => s.id);
+          const { data: photoRows } = subIds.length
+            ? await supabase
+                .from("photos")
+                .select("storage_path")
+                .eq("user_id", userId)
+                .in("subgallery_id", subIds)
+            : { data: [] as Array<{ storage_path: string }> };
+
           const { error } = await supabase
             .from("galleries")
             .delete()
             .eq("id", galleryId)
             .eq("user_id", userId);
           if (error) throw error;
+
+          await deleteStorageObjectsSafe(supabase, userId, [
+            galleryRow?.cover_image_path ?? null,
+            ...(subRows ?? []).map((s: { cover_image_path: string | null }) => s.cover_image_path),
+            ...(photoRows ?? []).map((p: { storage_path: string }) => p.storage_path),
+          ]);
         }
         setActiveGalleries((current) => current.filter((gallery) => gallery.id !== galleryId));
       },
@@ -767,6 +968,21 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             throw new Error("Please sign in again to update this subgallery.");
           }
 
+          const { data: existingSub } = await supabase
+            .from("subgalleries")
+            .select("cover_image_path")
+            .eq("id", subgalleryId)
+            .eq("gallery_id", galleryId)
+            .eq("user_id", userId)
+            .maybeSingle();
+          const previousCover = existingSub?.cover_image_path ?? null;
+          const { data: existingPhotos } = await supabase
+            .from("photos")
+            .select("storage_path")
+            .eq("subgallery_id", subgalleryId)
+            .eq("user_id", userId);
+          const previousPhotoPaths = (existingPhotos ?? []).map((p: { storage_path: string }) => p.storage_path);
+
           persistedCover = await uploadImageSourceIfNeeded(
             supabase,
             userId,
@@ -825,13 +1041,21 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
                 user_id: userId,
                 gallery_id: galleryId,
                 subgallery_id: subgalleryId,
-                storage_path: photo.src,
+                storage_path: normalizeToStoragePath(photo.src),
                 caption: photo.caption || null,
                 display_order: index,
                 taken_at: null,
               })),
             );
             if (photosError) throw photosError;
+          }
+
+          const nextPhotoPaths = persistedPhotos.map((photo) => normalizeToStoragePath(photo.src));
+          const toDelete = previousPhotoPaths.filter((path) => !nextPhotoPaths.includes(normalizeToStoragePath(path)));
+          await deleteStorageObjectsSafe(supabase, userId, toDelete);
+
+          if (previousCover && normalizeToStoragePath(previousCover) !== normalizeToStoragePath(persistedCover)) {
+            await deleteStorageObjectsSafe(supabase, userId, [previousCover]);
           }
         }
 
@@ -872,6 +1096,20 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           if (!userId) {
             throw new Error("Please sign in again to delete this subgallery.");
           }
+
+          const { data: subRow } = await supabase
+            .from("subgalleries")
+            .select("cover_image_path")
+            .eq("id", subgalleryId)
+            .eq("gallery_id", galleryId)
+            .eq("user_id", userId)
+            .maybeSingle();
+          const { data: photoRows } = await supabase
+            .from("photos")
+            .select("storage_path")
+            .eq("subgallery_id", subgalleryId)
+            .eq("user_id", userId);
+
           const { error } = await supabase
             .from("subgalleries")
             .delete()
@@ -879,6 +1117,11 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             .eq("gallery_id", galleryId)
             .eq("user_id", userId);
           if (error) throw error;
+
+          await deleteStorageObjectsSafe(supabase, userId, [
+            subRow?.cover_image_path ?? null,
+            ...(photoRows ?? []).map((p: { storage_path: string }) => p.storage_path),
+          ]);
         }
         setActiveGalleries((current) =>
           current.map((gallery) =>
@@ -943,6 +1186,84 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           selectedPlanId: onboarding.selectedPlanId,
           onboardingComplete: onboarding.onboardingComplete,
         });
+      },
+      async scanOrphanedStorageObjects() {
+        const supabase = createSupabaseBrowserClient();
+        const { data, error } = await supabase.auth.getUser();
+        if (error) throw error;
+        const userId = data.user?.id;
+        if (!userId) throw new Error("Please sign in again to scan storage.");
+
+        const [galleryRows, subgalleryRows, photoRows] = await Promise.all([
+          supabase
+            .from("galleries")
+            .select("cover_image_path")
+            .eq("user_id", userId)
+            .then((res) => {
+              if (res.error) throw res.error;
+              return (res.data ?? []) as Array<{ cover_image_path: string | null }>;
+            }),
+          supabase
+            .from("subgalleries")
+            .select("cover_image_path")
+            .eq("user_id", userId)
+            .then((res) => {
+              if (res.error) throw res.error;
+              return (res.data ?? []) as Array<{ cover_image_path: string | null }>;
+            }),
+          supabase
+            .from("photos")
+            .select("storage_path")
+            .eq("user_id", userId)
+            .then((res) => {
+              if (res.error) throw res.error;
+              return (res.data ?? []) as Array<{ storage_path: string }>;
+            }),
+        ]);
+
+        const referenced = new Set<string>();
+        for (const row of galleryRows) {
+          const p = row.cover_image_path ? normalizeToStoragePath(row.cover_image_path) : null;
+          if (p && isLikelyStoragePath(p) && p.startsWith(`${userId}/`)) referenced.add(p);
+        }
+        for (const row of subgalleryRows) {
+          const p = row.cover_image_path ? normalizeToStoragePath(row.cover_image_path) : null;
+          if (p && isLikelyStoragePath(p) && p.startsWith(`${userId}/`)) referenced.add(p);
+        }
+        for (const row of photoRows) {
+          const p = normalizeToStoragePath(row.storage_path);
+          if (p && isLikelyStoragePath(p) && p.startsWith(`${userId}/`)) referenced.add(p);
+        }
+
+        const allObjects = await listAllStorageObjectsUnderPrefix(supabase, userId);
+        const orphaned = allObjects
+          .map((p) => normalizeToStoragePath(p))
+          .filter((p) => p.startsWith(`${userId}/`) && !referenced.has(p));
+
+        return {
+          totalObjects: allObjects.length,
+          referencedObjects: referenced.size,
+          orphanedObjects: orphaned.sort(),
+        };
+      },
+      async deleteOrphanedStorageObjects(paths) {
+        const supabase = createSupabaseBrowserClient();
+        const { data, error } = await supabase.auth.getUser();
+        if (error) throw error;
+        const userId = data.user?.id;
+        if (!userId) throw new Error("Please sign in again to clean up storage.");
+
+        const safePaths = Array.from(
+          new Set(
+            paths
+              .map((p) => normalizeToStoragePath(p))
+              .filter((p) => isLikelyStoragePath(p) && p.startsWith(`${userId}/`)),
+          ),
+        );
+        if (safePaths.length === 0) return { deleted: 0 };
+        const { error: removeError } = await supabase.storage.from(STORAGE_BUCKET).remove(safePaths);
+        if (removeError) throw removeError;
+        return { deleted: safePaths.length };
       },
     };
   }, [
