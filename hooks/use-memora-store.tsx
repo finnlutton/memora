@@ -282,6 +282,15 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
       dismissStorageQuotaWarning: () => setStorageQuotaExceeded(false),
       onboarding,
       createGallery(input) {
+        const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);
+        if (
+          onboarding.isAuthenticated &&
+          selectedPlan &&
+          galleries.length >= selectedPlan.galleryCount
+        ) {
+          throw new Error("Gallery limit reached for current membership plan.");
+        }
+
         const timestamp = new Date().toISOString();
         const nextGallery: Gallery = {
           ...input,

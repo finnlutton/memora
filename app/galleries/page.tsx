@@ -21,6 +21,11 @@ export default function GalleriesPage() {
     [galleries],
   );
   const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);
+  const hasReachedGalleryLimit = Boolean(
+    onboarding.isAuthenticated &&
+      selectedPlan &&
+      sortedGalleries.length >= selectedPlan.galleryCount,
+  );
   const usageLabel = selectedPlan
     ? `${sortedGalleries.length} of ${selectedPlan.galleryCount} active galleries`
     : `${sortedGalleries.length} galleries in archive`;
@@ -39,12 +44,20 @@ export default function GalleriesPage() {
             Open existing galleries, continue building new ones, and keep your archive organized in your personal dashboard.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
-            <Button asChild>
-              <Link href="/galleries/new">
-                <Plus className="h-3 w-3" />
-                Create gallery
-              </Link>
-            </Button>
+            {hasReachedGalleryLimit ? (
+              <Button asChild variant="secondary">
+                <Link href="/pricing?source=gallery-limit">
+                  Upgrade membership to continue
+                </Link>
+              </Button>
+            ) : (
+              <Button asChild>
+                <Link href="/galleries/new">
+                  <Plus className="h-3 w-3" />
+                  Create gallery
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
 

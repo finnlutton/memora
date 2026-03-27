@@ -147,7 +147,7 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                                 {subgallery.title === "Zurich" ? "Landing in Zurich" : subgallery.title}
                               </h3>
                               <p className="mt-2 max-w-[18rem] text-sm leading-5 text-white/82">
-                                {toShortDescription(subgallery.description)}
+                                {toHomepageDescription(subgallery.title, subgallery.description)}
                               </p>
                             </div>
                           </div>
@@ -165,11 +165,12 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
   );
 }
 
-function toShortDescription(description: string) {
-  const [firstSentence] = description.split(". ");
-  if (!firstSentence) {
-    return description;
-  }
+function toHomepageDescription(title: string, description: string) {
+  const conciseDescriptions: Record<string, string> = {
+    Zermatt: "Blue hours, cedar interiors, and mountain light.",
+    "Lake Como": "Stone stairs, still water, and winter gardens.",
+    Zurich: "Blue tram reflections, bookstores, and a final long lunch.",
+  };
 
-  return firstSentence.endsWith(".") ? firstSentence : `${firstSentence}.`;
+  return conciseDescriptions[title] ?? description;
 }
