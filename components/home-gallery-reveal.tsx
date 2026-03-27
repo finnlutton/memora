@@ -121,7 +121,7 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                         }}
                         className="flex h-full min-w-0 flex-col overflow-hidden rounded-[8px] border border-[color:var(--border)] bg-[rgba(248,251,255,0.7)] shadow-[0_12px_28px_rgba(13,21,34,0.06)]"
                       >
-                        <div className="relative aspect-[0.72/1] w-full overflow-hidden">
+                        <div className="relative aspect-[1.14/1] w-full overflow-hidden">
                           <Image
                             src={subgallery.coverImage}
                             alt={subgallery.title}
