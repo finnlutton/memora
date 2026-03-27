@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -53,24 +52,30 @@ export default function HomePage() {
             An intentional platform to organize, revisit, and share your memories
           </h1>
           <div className="mt-6 flex justify-center">
-            <Button asChild>
-              <Link href="/demo/create">
-                Explore demo
-                <ArrowRight className="h-3 w-3" />
-              </Link>
+            <Button
+              type="button"
+              onClick={() => {
+                document.getElementById("home-gallery-demo")?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "start",
+                });
+              }}
+            >
+              Explore demo
+              <ArrowRight className="h-3 w-3" />
             </Button>
           </div>
 
           <div className="mt-12 grid w-full grid-cols-1 gap-5 md:mt-16 md:grid-cols-3 md:gap-0">
             <StatementCard
               index={0}
-              title="Not superficial"
-              description="Memora hopes to restore authenticity and maturity to modern social media."
+              title="Not generic storage"
+              description="The point is not to dump photos, it's to allow you and the people you care about to follow your journeys."
             />
             <StatementCard
               index={1}
-              title="Not generic storage"
-              description="The point is not to dump photos, it's to allow you and the people you care about to follow your journeys."
+              title="Not superficial"
+              description="Memora hopes to restore authenticity and maturity to modern social media."
             />
             <StatementCard
               index={2}
@@ -84,11 +89,17 @@ export default function HomePage() {
         <div className="pointer-events-none absolute bottom-5 left-1/2 h-8 w-px -translate-x-1/2 bg-[linear-gradient(180deg,rgba(140,154,171,0),rgba(140,154,171,0.52),rgba(140,154,171,0))]" />
       </section>
 
-      <section className="bg-[linear-gradient(180deg,rgba(241,246,251,0.44),rgba(244,248,252,0.9))]">
+      <section
+        id="home-gallery-demo"
+        className="bg-[linear-gradient(180deg,rgba(241,246,251,0.44),rgba(244,248,252,0.9))]"
+      >
         <HomeGalleryReveal gallery={previewGallery} />
       </section>
 
-      <section className="bg-[linear-gradient(180deg,rgba(244,248,252,0.9),rgba(245,248,252,1))] py-10 md:py-12">
+      <section
+        id="about-product"
+        className="bg-[linear-gradient(180deg,rgba(244,248,252,0.9),rgba(245,248,252,1))] py-10 md:py-12"
+      >
         <div className="mx-auto max-w-5xl">
           <p className="text-center text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)]">
             Creators Note

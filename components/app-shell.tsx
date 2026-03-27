@@ -62,9 +62,13 @@ export function AppShell({
             />
           </Link>
           <nav className="flex shrink-0 items-center gap-0.5 md:gap-1">
-            <NavLink href="/galleries">
-              {onboarding.isAuthenticated ? "Dashboard" : "Gallery"}
-            </NavLink>
+            {onboarding.isAuthenticated ? (
+              <NavLink href="/galleries">Dashboard</NavLink>
+            ) : isHomePage ? (
+              <NavLink href="/#about-product">About Us</NavLink>
+            ) : (
+              <NavLink href="/">About Us</NavLink>
+            )}
             {!onboarding.isAuthenticated ? (
               <Button
                 asChild

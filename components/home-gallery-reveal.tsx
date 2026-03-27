@@ -47,15 +47,15 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                       duration: 0.28,
                       ease: [0.22, 1, 0.36, 1],
                     }}
-                    className="group relative w-full max-w-[42rem] overflow-hidden rounded-[8px] border border-[color:var(--border)] bg-[rgba(255,255,255,0.78)] text-left shadow-[0_14px_42px_rgba(18,31,48,0.08)]"
+                    className="group relative w-full max-w-[50rem] overflow-hidden rounded-[8px] border border-[color:var(--border)] bg-[rgba(255,255,255,0.78)] text-left shadow-[0_14px_42px_rgba(18,31,48,0.08)]"
                   >
-                    <div className="relative aspect-[16/13] overflow-hidden">
+                    <div className="relative aspect-[1.34/1] overflow-hidden">
                       <Image
                         src={gallery.coverImage}
                         alt="Winter Olympics 2026"
                         fill
                         className="object-cover transition duration-500 group-hover:scale-[1.02]"
-                        sizes="(max-width: 1024px) 100vw, 42rem"
+                        sizes="(max-width: 1024px) 100vw, 50rem"
                         unoptimized={nextImageUnoptimizedForSrc(gallery.coverImage)}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-[rgba(8,14,24,0.76)] via-[rgba(8,14,24,0.16)] to-[rgba(255,255,255,0.04)]" />
