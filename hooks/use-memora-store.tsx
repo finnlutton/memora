@@ -752,6 +752,14 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             throw new Error("Please sign in again to create a gallery.");
           }
 
+          if (process.env.NODE_ENV !== "production") {
+            console.info("Memora: create gallery start", {
+              userId,
+              title: input.title,
+              hasCoverImage: Boolean(input.coverImage),
+            });
+          }
+
           persistedCover = await uploadImageSourceIfNeeded(
             supabase,
             userId,
@@ -759,6 +767,13 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             "galleries",
             nextGalleryId,
           );
+
+          if (process.env.NODE_ENV !== "production") {
+            console.info("Memora: create gallery upload complete", {
+              galleryId: nextGalleryId,
+              persistedCover,
+            });
+          }
 
           const { error } = await supabase.from("galleries").insert({
             id: nextGalleryId,
@@ -774,7 +789,14 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             mood_tags: input.moodTags,
             privacy: input.privacy,
           });
-          if (error) throw error;
+          if (error) {
+            console.error("Memora: create gallery insert failed", {
+              galleryId: nextGalleryId,
+              userId,
+              error,
+            });
+            throw error;
+          }
 
           persistedCover = await resolveSingleImageUrl(supabase, persistedCover);
         }
@@ -916,6 +938,16 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             throw new Error("Please sign in again to create a subgallery.");
           }
 
+          if (process.env.NODE_ENV !== "production") {
+            console.info("Memora: create subgallery start", {
+              galleryId,
+              subgalleryId,
+              userId,
+              title: input.title,
+              photoCount: input.photos.length,
+            });
+          }
+
           persistedCover = await uploadImageSourceIfNeeded(
             supabase,
             userId,
@@ -960,7 +992,15 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
               .find((gallery) => gallery.id === galleryId)
               ?.subgalleries.length ?? 0,
           });
-          if (subgalleryError) throw subgalleryError;
+          if (subgalleryError) {
+            console.error("Memora: create subgallery insert failed", {
+              galleryId,
+              subgalleryId,
+              userId,
+              error: subgalleryError,
+            });
+            throw subgalleryError;
+          }
 
           if (persistedPhotos.length) {
             const { error: photosError } = await supabase.from("photos").insert(
@@ -975,7 +1015,15 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
                 taken_at: null,
               })),
             );
-            if (photosError) throw photosError;
+            if (photosError) {
+              console.error("Memora: create subgallery photos insert failed", {
+                galleryId,
+                subgalleryId,
+                userId,
+                error: photosError,
+              });
+              throw photosError;
+            }
           }
 
           persistedCover = await resolveSingleImageUrl(supabase, persistedCover);

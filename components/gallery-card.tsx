@@ -8,6 +8,13 @@ export function GalleryCard({ gallery, index }: { gallery: Gallery; index: numbe
   // Prefer the persisted gallery cover. Only fall back to a subgallery cover if the gallery has no cover.
   const coverImage = gallery.coverImage || gallery.subgalleries[0]?.coverImage;
 
+  if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
+    console.info("Memora: gallery card image source", {
+      galleryId: gallery.id,
+      coverImage,
+    });
+  }
+
   return (
     <Link
       href={`/galleries/${gallery.id}`}

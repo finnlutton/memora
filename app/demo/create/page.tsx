@@ -4,24 +4,10 @@ import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { GalleryForm } from "@/components/gallery-form";
 import { useMemoraStore } from "@/hooks/use-memora-store";
-import { createId } from "@/lib/utils";
-import type { MemoryPhoto } from "@/types/memora";
-
-function formatSubgalleryDateLabel(startDate: string, endDate: string): string {
-  if (!startDate) return "Your journey";
-  const start = new Date(startDate);
-  const startStr = start.toLocaleDateString("en", { month: "short", day: "numeric" });
-  if (!endDate || startDate === endDate) return startStr;
-  const end = new Date(endDate);
-  const endStr = end.toLocaleDateString("en", { month: "short", day: "numeric" });
-  return start.getMonth() === end.getMonth()
-    ? `${startStr.split(" ")[0]} ${start.getDate()}-${end.getDate()}`
-    : `${startStr} - ${endStr}`;
-}
 
 export default function DemoCreatePage() {
   const router = useRouter();
-  const { createGallery, createSubgallery } = useMemoraStore();
+  const { createGallery } = useMemoraStore();
 
   return (
     <AppShell>
@@ -37,29 +23,7 @@ export default function DemoCreatePage() {
         backLabel="Back to home"
         defaultCoverImage="/demo/mountain-window.svg"
         onSubmit={async (value) => {
-          const galleryId = await createGallery(value);
-          const tempSubgalleryId = createId("temp-sub");
-          const now = new Date().toISOString();
-          const firstLocation = value.locations[0]?.trim() || "Your journey";
-          const locationDisplay = value.locations.length > 1
-            ? `${firstLocation} and ${value.locations.length - 1} more`
-            : firstLocation;
-          const coverPhoto: MemoryPhoto = {
-            id: createId("photo"),
-            subgalleryId: tempSubgalleryId,
-            src: value.coverImage,
-            caption: "",
-            createdAt: now,
-            order: 0,
-          };
-          await createSubgallery(galleryId, {
-            title: value.title,
-            coverImage: value.coverImage,
-            location: locationDisplay,
-            dateLabel: formatSubgalleryDateLabel(value.startDate, value.endDate),
-            description: value.description,
-            photos: [coverPhoto],
-          });
+          await createGallery(value);
           router.push("/galleries");
         }}
       />
