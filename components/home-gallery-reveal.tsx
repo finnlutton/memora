@@ -8,7 +8,9 @@ import { nextImageUnoptimizedForSrc } from "@/lib/utils";
 import type { Gallery } from "@/types/memora";
 
 export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
-  const subgalleries = gallery.subgalleries.slice(0, 4);
+  const subgalleries = gallery.subgalleries
+    .filter((subgallery) => subgallery.title !== "Train to Livigno")
+    .slice(0, 3);
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -27,12 +29,12 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
 
       <div className="mt-8">
         <div className="relative overflow-hidden rounded-[10px] bg-[linear-gradient(180deg,rgba(244,248,253,0.85),rgba(239,245,251,0.62))] px-4 py-5 md:px-5 md:py-6">
-          <div className="relative min-h-[30rem] md:min-h-[40rem]">
+          <div className="relative min-h-[30rem] md:min-h-[44rem]">
             <AnimatePresence mode="wait" initial={false}>
               {!isOpen ? (
                 <motion.div
                   key="closed-gallery"
-                  className="flex min-h-[30rem] items-center justify-center md:min-h-[40rem]"
+                  className="flex min-h-[30rem] items-center justify-center md:min-h-[44rem]"
                   initial={{ opacity: 1 }}
                   exit={{ opacity: 0, scale: 1.08 }}
                   transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
@@ -83,7 +85,7 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-                  className="flex min-h-[30rem] flex-col justify-center md:min-h-[40rem]"
+                  className="flex min-h-[30rem] flex-col justify-start pt-2 md:min-h-[44rem] md:pt-0"
                 >
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
@@ -105,7 +107,7 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.46, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-                    className="relative z-10 mx-auto mt-10 grid w-full max-w-[96rem] gap-5 sm:grid-cols-2 xl:grid-cols-4 xl:gap-6"
+                    className="relative z-10 mx-auto mt-6 grid w-full max-w-[104rem] gap-5 md:mt-8 xl:grid-cols-3 xl:gap-7"
                   >
                     {subgalleries.map((subgallery, index) => (
                       <motion.article
@@ -119,13 +121,13 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                         }}
                         className="flex h-full min-w-0 flex-col overflow-hidden rounded-[8px] border border-[color:var(--border)] bg-[rgba(248,251,255,0.7)] shadow-[0_12px_28px_rgba(13,21,34,0.06)]"
                       >
-                        <div className="relative aspect-[0.82/1] w-full overflow-hidden">
+                        <div className="relative aspect-[0.72/1] w-full overflow-hidden">
                           <Image
                             src={subgallery.coverImage}
                             alt={subgallery.title}
                             fill
                             className="object-cover"
-                            sizes="(max-width: 768px) 100vw, 30vw"
+                            sizes="(max-width: 1279px) 100vw, 33vw"
                             unoptimized={nextImageUnoptimizedForSrc(subgallery.coverImage)}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-[rgba(8,14,24,0.82)] via-[rgba(8,14,24,0.14)] to-transparent" />
