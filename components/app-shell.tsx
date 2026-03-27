@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 import { getMembershipPlan, membershipPlans } from "@/lib/plans";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -22,6 +22,7 @@ export function AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const isHomePage = pathname === "/";
+  const isProductRoute = pathname.startsWith("/galleries");
   const { onboarding, getNextOnboardingRoute, signOut } = useMemoraStore();
   const createHref = onboarding.isAuthenticated
     ? onboarding.onboardingComplete
@@ -34,6 +35,18 @@ export function AppShell({
       : getNextOnboardingRoute()
     : "/";
   const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);
+
+  useEffect(() => {
+    if (!isProductRoute || onboarding.isAuthenticated) {
+      return;
+    }
+
+    router.replace("/");
+  }, [isProductRoute, onboarding.isAuthenticated, router]);
+
+  if (isProductRoute && !onboarding.isAuthenticated) {
+    return null;
+  }
 
   return (
     <div
@@ -91,7 +104,7 @@ export function AppShell({
                   const supabase = createSupabaseBrowserClient();
                   void supabase.auth.signOut().finally(() => {
                     signOut();
-                    router.push("/");
+                    window.location.replace("/");
                   });
                 }}
               />
