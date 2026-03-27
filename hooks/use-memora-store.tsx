@@ -948,6 +948,14 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             });
           }
 
+          if (process.env.NODE_ENV !== "production") {
+            console.info("Memora: create subgallery cover upload start", {
+              galleryId,
+              subgalleryId,
+              coverSource: input.coverImage,
+            });
+          }
+
           persistedCover = await uploadImageSourceIfNeeded(
             supabase,
             userId,
@@ -956,9 +964,25 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             subgalleryId,
           );
 
+          if (process.env.NODE_ENV !== "production") {
+            console.info("Memora: create subgallery cover upload complete", {
+              galleryId,
+              subgalleryId,
+              persistedCover,
+            });
+          }
+
           persistedPhotos = await Promise.all(
             persistedPhotos.map(async (photo, index) => {
               const photoId = photo.id || (typeof crypto !== "undefined" ? crypto.randomUUID() : createId("photo"));
+              if (process.env.NODE_ENV !== "production") {
+                console.info("Memora: create subgallery photo upload start", {
+                  galleryId,
+                  subgalleryId,
+                  photoId,
+                  index,
+                });
+              }
               const persistedSrc = await uploadImageSourceIfNeeded(
                 supabase,
                 userId,
@@ -966,6 +990,15 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
                 "photos",
                 photoId,
               );
+              if (process.env.NODE_ENV !== "production") {
+                console.info("Memora: create subgallery photo upload complete", {
+                  galleryId,
+                  subgalleryId,
+                  photoId,
+                  index,
+                  persistedSrc,
+                });
+              }
               return {
                 ...photo,
                 id: photoId,
@@ -976,6 +1009,16 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           );
 
           const range = parseDateLabelToRange(input.dateLabel);
+
+          if (process.env.NODE_ENV !== "production") {
+            console.info("Memora: create subgallery insert start", {
+              galleryId,
+              subgalleryId,
+              userId,
+              location: input.location,
+              dateLabel: input.dateLabel,
+            });
+          }
 
           const { error: subgalleryError } = await supabase.from("subgalleries").insert({
             id: subgalleryId,
@@ -1002,7 +1045,22 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             throw subgalleryError;
           }
 
+          if (process.env.NODE_ENV !== "production") {
+            console.info("Memora: create subgallery insert complete", {
+              galleryId,
+              subgalleryId,
+            });
+          }
+
           if (persistedPhotos.length) {
+            if (process.env.NODE_ENV !== "production") {
+              console.info("Memora: create subgallery photos insert start", {
+                galleryId,
+                subgalleryId,
+                count: persistedPhotos.length,
+              });
+            }
+
             const { error: photosError } = await supabase.from("photos").insert(
               persistedPhotos.map((photo, index) => ({
                 id: photo.id,
@@ -1024,31 +1082,45 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
               });
               throw photosError;
             }
-          }
 
-          persistedCover = await resolveSingleImageUrl(supabase, persistedCover);
-          persistedPhotos = await Promise.all(
-            persistedPhotos.map(async (photo) => ({
-              ...photo,
-              src: await resolveSingleImageUrl(supabase, photo.src),
-            })),
-          );
+            if (process.env.NODE_ENV !== "production") {
+              console.info("Memora: create subgallery photos insert complete", {
+                galleryId,
+                subgalleryId,
+                count: persistedPhotos.length,
+              });
+            }
+          }
         }
+
+        const localPhotos = sortPhotos(
+          persistedPhotos.map((photo, index) => ({
+            ...photo,
+            src: input.photos[index]?.src ?? photo.src,
+            subgalleryId,
+            order: index,
+          })),
+        );
 
         const nextSubgallery: Subgallery = {
           ...input,
-          coverImage: persistedCover,
-          photos: sortPhotos(
-            persistedPhotos.map((photo) => ({
-              ...photo,
-              subgalleryId,
-            })),
-          ),
+          coverImage: input.coverImage || persistedCover,
+          photos: localPhotos,
           id: subgalleryId,
           galleryId,
           createdAt: timestamp,
           updatedAt: timestamp,
         };
+
+        if (process.env.NODE_ENV !== "production") {
+          console.info("Memora: create subgallery local state update", {
+            galleryId,
+            subgalleryId,
+            coverImage: nextSubgallery.coverImage,
+            photoCount: nextSubgallery.photos.length,
+          });
+        }
+
         setActiveGalleries((current) =>
           current.map((gallery) =>
             gallery.id === galleryId
