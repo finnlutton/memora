@@ -24,7 +24,7 @@ export function GalleryForm({
   defaultCoverImage = "",
 }: {
   initialValue?: Gallery;
-  onSubmit: (value: GalleryInput) => void;
+  onSubmit: (value: GalleryInput) => Promise<void> | void;
   createLabel?: string;
   backHref?: string;
   backLabel?: string;
@@ -48,7 +48,7 @@ export function GalleryForm({
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     startTransition(() => {
-      onSubmit({
+      void onSubmit({
         title,
         coverImage,
         description,

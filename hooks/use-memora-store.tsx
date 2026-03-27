@@ -17,12 +17,13 @@ import {
 import { getMembershipPlan, type MembershipPlanId } from "@/lib/plans";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { createId } from "@/lib/utils";
-import type { Gallery, GalleryInput, Subgallery, SubgalleryInput } from "@/types/memora";
+import type { Gallery, GalleryInput, MemoryPhoto, Subgallery, SubgalleryInput } from "@/types/memora";
 
 const LEGACY_STORAGE_KEY = "memora::galleries:v1";
 const DEMO_STORAGE_KEY = "memora::demo-galleries:v1";
 const USER_STORAGE_KEY = "memora::user-galleries:v1";
 const LEGACY_ONBOARDING_KEY = "memora::onboarding:v1";
+const STORAGE_BUCKET = "gallery-images";
 
 type OnboardingState = {
   isAuthenticated: boolean;
@@ -39,16 +40,16 @@ type MemoraStore = {
   storageQuotaExceeded: boolean;
   dismissStorageQuotaWarning: () => void;
   onboarding: OnboardingState;
-  createGallery: (input: GalleryInput) => string;
-  updateGallery: (galleryId: string, input: GalleryInput) => void;
-  deleteGallery: (galleryId: string) => void;
-  createSubgallery: (galleryId: string, input: SubgalleryInput) => string;
+  createGallery: (input: GalleryInput) => Promise<string>;
+  updateGallery: (galleryId: string, input: GalleryInput) => Promise<void>;
+  deleteGallery: (galleryId: string) => Promise<void>;
+  createSubgallery: (galleryId: string, input: SubgalleryInput) => Promise<string>;
   updateSubgallery: (
     galleryId: string,
     subgalleryId: string,
     input: SubgalleryInput,
-  ) => void;
-  deleteSubgallery: (galleryId: string, subgalleryId: string) => void;
+  ) => Promise<void>;
+  deleteSubgallery: (galleryId: string, subgalleryId: string) => Promise<void>;
   getGallery: (galleryId: string) => Gallery | undefined;
   getSubgallery: (galleryId: string, subgalleryId: string) => Subgallery | undefined;
   resetDemo: () => void;
@@ -58,6 +59,223 @@ type MemoraStore = {
   resetOnboarding: () => void;
   getNextOnboardingRoute: () => string;
 };
+
+type GalleryRow = {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  cover_image_path: string | null;
+  location: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  created_at: string;
+  updated_at: string;
+  locations?: string[] | null;
+  people?: string[] | null;
+  mood_tags?: string[] | null;
+  privacy?: "private" | "public" | null;
+};
+
+type SubgalleryRow = {
+  id: string;
+  gallery_id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  cover_image_path: string | null;
+  location: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  date_label?: string | null;
+  display_order: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type PhotoRow = {
+  id: string;
+  user_id: string;
+  gallery_id: string | null;
+  subgallery_id: string | null;
+  storage_path: string;
+  caption: string | null;
+  display_order: number | null;
+  taken_at: string | null;
+  created_at: string;
+};
+
+function isLikelyStoragePath(path: string) {
+  return !path.startsWith("data:") && !path.startsWith("blob:") && !path.startsWith("/") && !path.startsWith("http");
+}
+
+function parseDateLabelToRange(dateLabel: string): { startDate: string | null; endDate: string | null } {
+  const value = dateLabel.trim();
+  if (!value) return { startDate: null, endDate: null };
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return { startDate: value, endDate: value };
+  }
+  return { startDate: null, endDate: null };
+}
+
+function dateLabelFromRange(startDate: string | null, endDate: string | null, fallback?: string | null) {
+  if (fallback?.trim()) return fallback;
+  if (!startDate) return "";
+  if (!endDate || endDate === startDate) return startDate;
+  return `${startDate} - ${endDate}`;
+}
+
+async function sourceToBlob(source: string) {
+  const response = await fetch(source);
+  return response.blob();
+}
+
+async function uploadImageSourceIfNeeded(
+  supabase: ReturnType<typeof createSupabaseBrowserClient>,
+  userId: string,
+  source: string,
+  folder: "galleries" | "subgalleries" | "photos",
+  id: string,
+) {
+  if (!source) return source;
+  if (isLikelyStoragePath(source) || source.startsWith("/") || source.startsWith("http")) {
+    return source;
+  }
+
+  const blob = await sourceToBlob(source);
+  const extension = blob.type.includes("png") ? "png" : "jpg";
+  const storagePath = `${userId}/${folder}/${id}-${Date.now()}.${extension}`;
+  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(storagePath, blob, {
+    contentType: blob.type || "image/jpeg",
+    upsert: true,
+  });
+  if (error) throw error;
+  return storagePath;
+}
+
+async function resolveImageUrls(
+  supabase: ReturnType<typeof createSupabaseBrowserClient>,
+  paths: string[],
+) {
+  const map = new Map<string, string>();
+  const storagePaths = paths.filter((path) => isLikelyStoragePath(path));
+  const directPaths = paths.filter((path) => !isLikelyStoragePath(path));
+
+  directPaths.forEach((path) => map.set(path, path));
+
+  if (storagePaths.length === 0) return map;
+
+  const uniqueStoragePaths = Array.from(new Set(storagePaths));
+  const { data, error } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .createSignedUrls(uniqueStoragePaths, 60 * 60);
+
+  if (error) {
+    uniqueStoragePaths.forEach((path) => map.set(path, path));
+    return map;
+  }
+
+  data.forEach((entry, index) => {
+    const originalPath = uniqueStoragePaths[index];
+    map.set(originalPath, entry.signedUrl ?? originalPath);
+  });
+
+  return map;
+}
+
+async function loadUserGalleriesFromSupabase(
+  supabase: ReturnType<typeof createSupabaseBrowserClient>,
+  userId: string,
+) {
+  const { data: galleriesData, error: galleriesError } = await supabase
+    .from("galleries")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  if (galleriesError) throw galleriesError;
+
+  const galleryRows = (galleriesData ?? []) as GalleryRow[];
+  if (galleryRows.length === 0) return [] as Gallery[];
+
+  const galleryIds = galleryRows.map((gallery) => gallery.id);
+  const { data: subgalleriesData, error: subgalleriesError } = await supabase
+    .from("subgalleries")
+    .select("*")
+    .eq("user_id", userId)
+    .in("gallery_id", galleryIds)
+    .order("display_order", { ascending: true });
+  if (subgalleriesError) throw subgalleriesError;
+
+  const subgalleryRows = (subgalleriesData ?? []) as SubgalleryRow[];
+  const subgalleryIds = subgalleryRows.map((subgallery) => subgallery.id);
+  const { data: photosData, error: photosError } = subgalleryIds.length
+    ? await supabase
+        .from("photos")
+        .select("*")
+        .eq("user_id", userId)
+        .in("subgallery_id", subgalleryIds)
+        .order("display_order", { ascending: true })
+    : { data: [] as PhotoRow[], error: null as unknown };
+  if (photosError) throw photosError;
+
+  const photoRows = (photosData ?? []) as PhotoRow[];
+
+  const allPaths = [
+    ...galleryRows.map((gallery) => gallery.cover_image_path ?? "").filter(Boolean),
+    ...subgalleryRows.map((subgallery) => subgallery.cover_image_path ?? "").filter(Boolean),
+    ...photoRows.map((photo) => photo.storage_path).filter(Boolean),
+  ];
+  const resolvedImageMap = await resolveImageUrls(supabase, allPaths);
+
+  const photosBySubgallery = new Map<string, MemoryPhoto[]>();
+  photoRows.forEach((photo) => {
+    if (!photo.subgallery_id) return;
+    const entry: MemoryPhoto = {
+      id: photo.id,
+      subgalleryId: photo.subgallery_id,
+      src: resolvedImageMap.get(photo.storage_path) ?? photo.storage_path,
+      caption: photo.caption ?? "",
+      createdAt: photo.created_at,
+      order: photo.display_order ?? 0,
+    };
+    const current = photosBySubgallery.get(photo.subgallery_id) ?? [];
+    photosBySubgallery.set(photo.subgallery_id, [...current, entry]);
+  });
+
+  const subgalleriesByGallery = new Map<string, Subgallery[]>();
+  subgalleryRows.forEach((subgallery) => {
+    const entry: Subgallery = {
+      id: subgallery.id,
+      galleryId: subgallery.gallery_id,
+      title: subgallery.title,
+      coverImage: resolvedImageMap.get(subgallery.cover_image_path ?? "") ?? (subgallery.cover_image_path ?? ""),
+      location: subgallery.location ?? "",
+      dateLabel: dateLabelFromRange(subgallery.start_date, subgallery.end_date, subgallery.date_label),
+      description: subgallery.description ?? "",
+      photos: sortPhotos(photosBySubgallery.get(subgallery.id) ?? []),
+      createdAt: subgallery.created_at,
+      updatedAt: subgallery.updated_at,
+    };
+    const current = subgalleriesByGallery.get(subgallery.gallery_id) ?? [];
+    subgalleriesByGallery.set(subgallery.gallery_id, [...current, entry]);
+  });
+
+  return galleryRows.map((gallery) => ({
+    id: gallery.id,
+    title: gallery.title,
+    coverImage: resolvedImageMap.get(gallery.cover_image_path ?? "") ?? (gallery.cover_image_path ?? ""),
+    description: gallery.description ?? "",
+    startDate: gallery.start_date ?? "",
+    endDate: gallery.end_date ?? "",
+    locations: gallery.locations ?? (gallery.location ? [gallery.location] : []),
+    people: gallery.people ?? [],
+    moodTags: gallery.mood_tags ?? [],
+    privacy: gallery.privacy ?? "private",
+    createdAt: gallery.created_at,
+    updatedAt: gallery.updated_at,
+    subgalleries: subgalleriesByGallery.get(gallery.id) ?? [],
+  }));
+}
 
 const MemoraContext = createContext<MemoraStore | null>(null);
 
@@ -194,9 +412,13 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
+        const persistedUserGalleries = nextUser
+          ? await loadUserGalleriesFromSupabase(supabase, nextUser.id)
+          : nextCollections.user;
+
         queueMicrotask(() => {
           setDemoGalleryCollection(nextCollections.demo);
-          setUserGalleryCollection(nextCollections.user);
+          setUserGalleryCollection(persistedUserGalleries);
           setOnboarding(
             buildOnboardingStateFromUser(
               nextUser
@@ -258,9 +480,18 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
 
     const supabase = createSupabaseBrowserClient();
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const user = session?.user ?? null;
+      const nextUserGalleries = user
+        ? await loadUserGalleriesFromSupabase(supabase, user.id).catch((error) => {
+            console.error("Memora: failed to load persisted galleries", error);
+            return [] as Gallery[];
+          })
+        : [];
+
       queueMicrotask(() => {
-        setOnboarding(buildOnboardingStateFromUser(session?.user ?? null));
+        setOnboarding(buildOnboardingStateFromUser(user));
+        setUserGalleryCollection(nextUserGalleries);
       });
     });
 
@@ -281,7 +512,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
       storageQuotaExceeded,
       dismissStorageQuotaWarning: () => setStorageQuotaExceeded(false),
       onboarding,
-      createGallery(input) {
+      async createGallery(input) {
         const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);
         if (
           onboarding.isAuthenticated &&
@@ -292,9 +523,49 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         }
 
         const timestamp = new Date().toISOString();
+        const nextGalleryId =
+          onboarding.isAuthenticated && typeof crypto !== "undefined"
+            ? crypto.randomUUID()
+            : createId("gallery");
+        let persistedCover = input.coverImage;
+
+        if (onboarding.isAuthenticated) {
+          const supabase = createSupabaseBrowserClient();
+          const { data } = await supabase.auth.getUser();
+          const userId = data.user?.id;
+          if (!userId) {
+            throw new Error("Please sign in again to create a gallery.");
+          }
+
+          persistedCover = await uploadImageSourceIfNeeded(
+            supabase,
+            userId,
+            input.coverImage,
+            "galleries",
+            nextGalleryId,
+          );
+
+          const { error } = await supabase.from("galleries").insert({
+            id: nextGalleryId,
+            user_id: userId,
+            title: input.title,
+            description: input.description || null,
+            cover_image_path: persistedCover || null,
+            location: input.locations.join(", ") || null,
+            start_date: input.startDate || null,
+            end_date: input.endDate || null,
+            locations: input.locations,
+            people: input.people,
+            mood_tags: input.moodTags,
+            privacy: input.privacy,
+          });
+          if (error) throw error;
+        }
+
         const nextGallery: Gallery = {
           ...input,
-          id: createId("gallery"),
+          id: nextGalleryId,
+          coverImage: persistedCover,
           createdAt: timestamp,
           updatedAt: timestamp,
           subgalleries: [],
@@ -302,28 +573,161 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         setActiveGalleries((current) => [nextGallery, ...current]);
         return nextGallery.id;
       },
-      updateGallery(galleryId, input) {
+      async updateGallery(galleryId, input) {
+        let persistedCover = input.coverImage;
+        if (onboarding.isAuthenticated) {
+          const supabase = createSupabaseBrowserClient();
+          const { data } = await supabase.auth.getUser();
+          const userId = data.user?.id;
+          if (!userId) {
+            throw new Error("Please sign in again to update this gallery.");
+          }
+
+          persistedCover = await uploadImageSourceIfNeeded(
+            supabase,
+            userId,
+            input.coverImage,
+            "galleries",
+            galleryId,
+          );
+          const { error } = await supabase
+            .from("galleries")
+            .update({
+              title: input.title,
+              description: input.description || null,
+              cover_image_path: persistedCover || null,
+              location: input.locations.join(", ") || null,
+              start_date: input.startDate || null,
+              end_date: input.endDate || null,
+              locations: input.locations,
+              people: input.people,
+              mood_tags: input.moodTags,
+              privacy: input.privacy,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", galleryId)
+            .eq("user_id", userId);
+          if (error) throw error;
+        }
+
         setActiveGalleries((current) =>
           current.map((gallery) =>
             gallery.id === galleryId
-              ? { ...gallery, ...input, updatedAt: new Date().toISOString() }
+              ? { ...gallery, ...input, coverImage: persistedCover, updatedAt: new Date().toISOString() }
               : gallery,
           ),
         );
       },
-      deleteGallery(galleryId) {
+      async deleteGallery(galleryId) {
+        if (onboarding.isAuthenticated) {
+          const supabase = createSupabaseBrowserClient();
+          const { data } = await supabase.auth.getUser();
+          const userId = data.user?.id;
+          if (!userId) {
+            throw new Error("Please sign in again to delete this gallery.");
+          }
+          const { error } = await supabase
+            .from("galleries")
+            .delete()
+            .eq("id", galleryId)
+            .eq("user_id", userId);
+          if (error) throw error;
+        }
         setActiveGalleries((current) => current.filter((gallery) => gallery.id !== galleryId));
       },
-      createSubgallery(galleryId, input) {
+      async createSubgallery(galleryId, input) {
         const timestamp = new Date().toISOString();
-        const subgalleryId = createId("subgallery");
+        const subgalleryId =
+          onboarding.isAuthenticated && typeof crypto !== "undefined"
+            ? crypto.randomUUID()
+            : createId("subgallery");
+        let persistedCover = input.coverImage;
+        let persistedPhotos = sortPhotos(
+          input.photos.map((photo, index) => ({
+            ...photo,
+            subgalleryId,
+            order: index,
+          })),
+        );
+
+        if (onboarding.isAuthenticated) {
+          const supabase = createSupabaseBrowserClient();
+          const { data } = await supabase.auth.getUser();
+          const userId = data.user?.id;
+          if (!userId) {
+            throw new Error("Please sign in again to create a subgallery.");
+          }
+
+          persistedCover = await uploadImageSourceIfNeeded(
+            supabase,
+            userId,
+            input.coverImage,
+            "subgalleries",
+            subgalleryId,
+          );
+
+          persistedPhotos = await Promise.all(
+            persistedPhotos.map(async (photo, index) => {
+              const photoId = photo.id || (typeof crypto !== "undefined" ? crypto.randomUUID() : createId("photo"));
+              const persistedSrc = await uploadImageSourceIfNeeded(
+                supabase,
+                userId,
+                photo.src,
+                "photos",
+                photoId,
+              );
+              return {
+                ...photo,
+                id: photoId,
+                src: persistedSrc,
+                order: index,
+              };
+            }),
+          );
+
+          const range = parseDateLabelToRange(input.dateLabel);
+
+          const { error: subgalleryError } = await supabase.from("subgalleries").insert({
+            id: subgalleryId,
+            gallery_id: galleryId,
+            user_id: userId,
+            title: input.title,
+            description: input.description || null,
+            cover_image_path: persistedCover || null,
+            location: input.location || null,
+            start_date: range.startDate,
+            end_date: range.endDate,
+            date_label: input.dateLabel || null,
+            display_order: galleries
+              .find((gallery) => gallery.id === galleryId)
+              ?.subgalleries.length ?? 0,
+          });
+          if (subgalleryError) throw subgalleryError;
+
+          if (persistedPhotos.length) {
+            const { error: photosError } = await supabase.from("photos").insert(
+              persistedPhotos.map((photo, index) => ({
+                id: photo.id,
+                user_id: userId,
+                gallery_id: galleryId,
+                subgallery_id: subgalleryId,
+                storage_path: photo.src,
+                caption: photo.caption || null,
+                display_order: index,
+                taken_at: null,
+              })),
+            );
+            if (photosError) throw photosError;
+          }
+        }
+
         const nextSubgallery: Subgallery = {
           ...input,
+          coverImage: persistedCover,
           photos: sortPhotos(
-            input.photos.map((photo, index) => ({
+            persistedPhotos.map((photo) => ({
               ...photo,
               subgalleryId,
-              order: index,
             })),
           ),
           id: subgalleryId,
@@ -344,8 +748,93 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         );
         return nextSubgallery.id;
       },
-      updateSubgallery(galleryId, subgalleryId, input) {
+      async updateSubgallery(galleryId, subgalleryId, input) {
         const timestamp = new Date().toISOString();
+        let persistedCover = input.coverImage;
+        let persistedPhotos = sortPhotos(
+          input.photos.map((photo, index) => ({
+            ...photo,
+            subgalleryId,
+            order: index,
+          })),
+        );
+
+        if (onboarding.isAuthenticated) {
+          const supabase = createSupabaseBrowserClient();
+          const { data } = await supabase.auth.getUser();
+          const userId = data.user?.id;
+          if (!userId) {
+            throw new Error("Please sign in again to update this subgallery.");
+          }
+
+          persistedCover = await uploadImageSourceIfNeeded(
+            supabase,
+            userId,
+            input.coverImage,
+            "subgalleries",
+            subgalleryId,
+          );
+          persistedPhotos = await Promise.all(
+            persistedPhotos.map(async (photo, index) => {
+              const photoId = photo.id || (typeof crypto !== "undefined" ? crypto.randomUUID() : createId("photo"));
+              const persistedSrc = await uploadImageSourceIfNeeded(
+                supabase,
+                userId,
+                photo.src,
+                "photos",
+                photoId,
+              );
+              return {
+                ...photo,
+                id: photoId,
+                src: persistedSrc,
+                order: index,
+              };
+            }),
+          );
+
+          const range = parseDateLabelToRange(input.dateLabel);
+          const { error: subgalleryError } = await supabase
+            .from("subgalleries")
+            .update({
+              title: input.title,
+              description: input.description || null,
+              cover_image_path: persistedCover || null,
+              location: input.location || null,
+              start_date: range.startDate,
+              end_date: range.endDate,
+              date_label: input.dateLabel || null,
+              updated_at: timestamp,
+            })
+            .eq("id", subgalleryId)
+            .eq("gallery_id", galleryId)
+            .eq("user_id", userId);
+          if (subgalleryError) throw subgalleryError;
+
+          const { error: deletePhotosError } = await supabase
+            .from("photos")
+            .delete()
+            .eq("subgallery_id", subgalleryId)
+            .eq("user_id", userId);
+          if (deletePhotosError) throw deletePhotosError;
+
+          if (persistedPhotos.length) {
+            const { error: photosError } = await supabase.from("photos").insert(
+              persistedPhotos.map((photo, index) => ({
+                id: photo.id,
+                user_id: userId,
+                gallery_id: galleryId,
+                subgallery_id: subgalleryId,
+                storage_path: photo.src,
+                caption: photo.caption || null,
+                display_order: index,
+                taken_at: null,
+              })),
+            );
+            if (photosError) throw photosError;
+          }
+        }
+
         setActiveGalleries((current) =>
           current.map((gallery) =>
             gallery.id === galleryId
@@ -357,8 +846,9 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
                       ? {
                           ...subgallery,
                           ...input,
+                          coverImage: persistedCover,
                           photos: sortPhotos(
-                            input.photos.map((photo, index) => ({
+                            persistedPhotos.map((photo, index) => ({
                               ...photo,
                               subgalleryId,
                               order: index,
@@ -373,8 +863,23 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           ),
         );
       },
-      deleteSubgallery(galleryId, subgalleryId) {
+      async deleteSubgallery(galleryId, subgalleryId) {
         const timestamp = new Date().toISOString();
+        if (onboarding.isAuthenticated) {
+          const supabase = createSupabaseBrowserClient();
+          const { data } = await supabase.auth.getUser();
+          const userId = data.user?.id;
+          if (!userId) {
+            throw new Error("Please sign in again to delete this subgallery.");
+          }
+          const { error } = await supabase
+            .from("subgalleries")
+            .delete()
+            .eq("id", subgalleryId)
+            .eq("gallery_id", galleryId)
+            .eq("user_id", userId);
+          if (error) throw error;
+        }
         setActiveGalleries((current) =>
           current.map((gallery) =>
             gallery.id === galleryId

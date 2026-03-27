@@ -36,8 +36,8 @@ export default function DemoCreatePage() {
         backHref="/"
         backLabel="Back to home"
         defaultCoverImage="/demo/mountain-window.svg"
-        onSubmit={(value) => {
-          const galleryId = createGallery(value);
+        onSubmit={async (value) => {
+          const galleryId = await createGallery(value);
           const tempSubgalleryId = createId("temp-sub");
           const now = new Date().toISOString();
           const firstLocation = value.locations[0]?.trim() || "Your journey";
@@ -52,7 +52,7 @@ export default function DemoCreatePage() {
             createdAt: now,
             order: 0,
           };
-          createSubgallery(galleryId, {
+          await createSubgallery(galleryId, {
             title: value.title,
             coverImage: value.coverImage,
             location: locationDisplay,

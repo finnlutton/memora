@@ -68,8 +68,9 @@ export default function GalleryDetailPage() {
             description="This removes the gallery and every subgallery inside it from local storage."
             triggerLabel="Delete gallery"
             onConfirm={() => {
-              deleteGallery(gallery.id);
-              router.push("/galleries");
+              void deleteGallery(gallery.id).then(() => {
+                router.push("/galleries");
+              });
             }}
           />
         </div>

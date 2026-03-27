@@ -53,8 +53,9 @@ export default function SubgalleryDetailPage() {
             description="This removes the chapter and every photo inside it from local storage."
             triggerLabel="Delete subgallery"
             onConfirm={() => {
-              deleteSubgallery(gallery.id, subgallery.id);
-              router.push(`/galleries/${gallery.id}`);
+              void deleteSubgallery(gallery.id, subgallery.id).then(() => {
+                router.push(`/galleries/${gallery.id}`);
+              });
             }}
           />
         </div>

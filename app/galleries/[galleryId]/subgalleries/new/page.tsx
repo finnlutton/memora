@@ -39,8 +39,8 @@ export default function NewSubgalleryPage() {
       </section>
       <SubgalleryForm
         galleryId={params.galleryId}
-        onSubmit={(value) => {
-          const subgalleryId = createSubgallery(params.galleryId, value);
+        onSubmit={async (value) => {
+          const subgalleryId = await createSubgallery(params.galleryId, value);
           router.push(`/galleries/${params.galleryId}/subgalleries/${subgalleryId}`);
         }}
       />

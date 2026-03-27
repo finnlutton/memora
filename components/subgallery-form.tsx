@@ -22,7 +22,7 @@ export function SubgalleryForm({
 }: {
   galleryId: string;
   initialValue?: Subgallery;
-  onSubmit: (value: SubgalleryInput) => void;
+  onSubmit: (value: SubgalleryInput) => Promise<void> | void;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -38,7 +38,7 @@ export function SubgalleryForm({
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     startTransition(() => {
-      onSubmit({
+      void onSubmit({
         title,
         coverImage,
         location,

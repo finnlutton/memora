@@ -37,8 +37,8 @@ export default function EditGalleryPage() {
       </section>
       <GalleryForm
         initialValue={gallery}
-        onSubmit={(value) => {
-          updateGallery(gallery.id, value);
+        onSubmit={async (value) => {
+          await updateGallery(gallery.id, value);
           router.push(`/galleries/${gallery.id}`);
         }}
       />

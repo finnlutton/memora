@@ -38,8 +38,8 @@ export default function EditSubgalleryPage() {
       <SubgalleryForm
         galleryId={params.galleryId}
         initialValue={subgallery}
-        onSubmit={(value) => {
-          updateSubgallery(params.galleryId, params.subgalleryId, value);
+        onSubmit={async (value) => {
+          await updateSubgallery(params.galleryId, params.subgalleryId, value);
           router.push(`/galleries/${params.galleryId}/subgalleries/${params.subgalleryId}`);
         }}
       />
