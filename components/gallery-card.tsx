@@ -5,8 +5,8 @@ import { formatDateRange, formatUpdatedLabel, countPhotos, nextImageUnoptimizedF
 import type { Gallery } from "@/types/memora";
 
 export function GalleryCard({ gallery, index }: { gallery: Gallery; index: number }) {
-  const coverImage =
-    gallery.subgalleries[0]?.coverImage ?? gallery.coverImage;
+  // Prefer the persisted gallery cover. Only fall back to a subgallery cover if the gallery has no cover.
+  const coverImage = gallery.coverImage || gallery.subgalleries[0]?.coverImage;
 
   return (
     <Link
