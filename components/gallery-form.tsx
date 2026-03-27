@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { ArrowLeft, Save } from "lucide-react";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,8 @@ export function GalleryForm({
   defaultCoverImage?: string;
 }) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [coverImage, setCoverImage] = useState(
     initialValue?.coverImage ?? defaultCoverImage ?? "",
   );
@@ -45,10 +46,14 @@ export function GalleryForm({
   const [privacy, setPrivacy] = useState<Gallery["privacy"]>(initialValue?.privacy ?? "private");
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    startTransition(() => {
-      void onSubmit({
+    if (isSubmitting) return;
+
+    setSubmitError("");
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
         title,
         coverImage,
         description,
@@ -59,7 +64,11 @@ export function GalleryForm({
         moodTags: splitCommaSeparated(moodTags),
         privacy,
       });
-    });
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Unable to save gallery.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -195,14 +204,23 @@ export function GalleryForm({
               A strong gallery reads like the opening page of a journal: broad enough to hold the whole trip, specific enough to remember how it felt.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Button type="submit" disabled={isPending || !coverImage}>
+              <Button type="submit" disabled={isSubmitting || isUploading || !coverImage}>
                 <Save className="h-4 w-4" />
-                {initialValue ? "Save gallery" : createLabel}
+                {isSubmitting
+                  ? initialValue
+                    ? "Saving gallery..."
+                    : "Creating gallery..."
+                  : initialValue
+                    ? "Save gallery"
+                    : createLabel}
               </Button>
-              <Button type="button" variant="secondary" onClick={() => router.back()}>
+              <Button type="button" variant="secondary" disabled={isSubmitting} onClick={() => router.back()}>
                 Cancel
               </Button>
             </div>
+            {submitError ? (
+              <p className="mt-3 text-sm text-[#9a4545]">{submitError}</p>
+            ) : null}
           </section>
         </aside>
       </div>

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { ArrowLeft, GripHorizontal, Save, Sparkles } from "lucide-react";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,8 @@ export function SubgalleryForm({
   onSubmit: (value: SubgalleryInput) => Promise<void> | void;
 }) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [title, setTitle] = useState(initialValue?.title ?? "");
   const [coverImage, setCoverImage] = useState(initialValue?.coverImage ?? "/demo/mountain-window.svg");
   const [location, setLocation] = useState(initialValue?.location ?? "");
@@ -35,10 +36,14 @@ export function SubgalleryForm({
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    startTransition(() => {
-      void onSubmit({
+    if (isSubmitting) return;
+
+    setSubmitError("");
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
         title,
         coverImage,
         location,
@@ -46,7 +51,11 @@ export function SubgalleryForm({
         description,
         photos,
       });
-    });
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Unable to save subgallery.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -145,14 +154,26 @@ export function SubgalleryForm({
               Add the visual sequence for this memory, then lightly reorder it so the page reads in the right rhythm.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Button type="submit" disabled={isPending || !coverImage || photos.length === 0}>
+              <Button
+                type="submit"
+                disabled={isSubmitting || isUploadingCover || isUploadingPhotos || !coverImage || photos.length === 0}
+              >
                 <Save className="h-4 w-4" />
-                {initialValue ? "Save subgallery" : "Create subgallery"}
+                {isSubmitting
+                  ? initialValue
+                    ? "Saving subgallery..."
+                    : "Creating subgallery..."
+                  : initialValue
+                    ? "Save subgallery"
+                    : "Create subgallery"}
               </Button>
-              <Button type="button" variant="secondary" onClick={() => router.back()}>
+              <Button type="button" variant="secondary" disabled={isSubmitting} onClick={() => router.back()}>
                 Cancel
               </Button>
             </div>
+            {submitError ? (
+              <p className="mt-3 text-sm text-[#9a4545]">{submitError}</p>
+            ) : null}
           </section>
         </aside>
       </div>

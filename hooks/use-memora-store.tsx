@@ -203,16 +203,58 @@ async function resolveImageUrls(
     .createSignedUrls(uniqueStoragePaths, 60 * 60);
 
   if (error) {
-    uniqueStoragePaths.forEach((path) => map.set(path, path));
+    console.error("Memora: batch signed URL generation failed", {
+      bucket: STORAGE_BUCKET,
+      paths: uniqueStoragePaths,
+      error,
+    });
+
+    await Promise.all(
+      uniqueStoragePaths.map(async (path) => {
+        const { data: fallbackData, error: fallbackError } = await supabase.storage
+          .from(STORAGE_BUCKET)
+          .createSignedUrl(path, 60 * 60);
+
+        if (fallbackError) {
+          console.error("Memora: fallback signed URL generation failed", {
+            bucket: STORAGE_BUCKET,
+            path,
+            error: fallbackError,
+          });
+          map.set(path, path);
+          return;
+        }
+
+        map.set(path, fallbackData.signedUrl ?? path);
+      }),
+    );
     return map;
   }
 
   data.forEach((entry, index) => {
     const originalPath = uniqueStoragePaths[index];
+    if (!entry.signedUrl) {
+      console.warn("Memora: signed URL missing for storage path", {
+        bucket: STORAGE_BUCKET,
+        path: originalPath,
+        entry,
+      });
+    }
     map.set(originalPath, entry.signedUrl ?? originalPath);
   });
 
   return map;
+}
+
+async function resolveSingleImageUrl(
+  supabase: ReturnType<typeof createSupabaseBrowserClient>,
+  path: string,
+) {
+  if (!path) return path;
+
+  const normalizedPath = normalizeToStoragePath(path);
+  const map = await resolveImageUrls(supabase, [normalizedPath]);
+  return map.get(normalizedPath) ?? normalizedPath;
 }
 
 async function loadUserGalleriesFromSupabase(
@@ -316,6 +358,17 @@ async function loadUserGalleriesFromSupabase(
   ];
   const resolvedImageMap = await resolveImageUrls(supabase, allPaths);
   const normalizeForLookup = (value: string) => normalizeToStoragePath(value);
+
+  if (process.env.NODE_ENV !== "production" && galleryRows[0]) {
+    const sampleGallery = galleryRows[0];
+    const normalizedCover = normalizeForLookup(sampleGallery.cover_image_path ?? "");
+    console.info("Memora: gallery cover pipeline", {
+      galleryId: sampleGallery.id,
+      cover_image_path: sampleGallery.cover_image_path,
+      normalizedCover,
+      signedUrl: resolvedImageMap.get(normalizedCover) ?? null,
+    });
+  }
 
   const photosBySubgallery = new Map<string, MemoryPhoto[]>();
   photoRows.forEach((photo) => {
@@ -722,6 +775,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             privacy: input.privacy,
           });
           if (error) throw error;
+
+          persistedCover = await resolveSingleImageUrl(supabase, persistedCover);
         }
 
         const nextGallery: Gallery = {
@@ -773,6 +828,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             .eq("id", galleryId)
             .eq("user_id", userId);
           if (error) throw error;
+
+          persistedCover = await resolveSingleImageUrl(supabase, persistedCover);
 
           if (
             previousCover &&
@@ -920,6 +977,14 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             );
             if (photosError) throw photosError;
           }
+
+          persistedCover = await resolveSingleImageUrl(supabase, persistedCover);
+          persistedPhotos = await Promise.all(
+            persistedPhotos.map(async (photo) => ({
+              ...photo,
+              src: await resolveSingleImageUrl(supabase, photo.src),
+            })),
+          );
         }
 
         const nextSubgallery: Subgallery = {
@@ -1057,6 +1122,14 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           if (previousCover && normalizeToStoragePath(previousCover) !== normalizeToStoragePath(persistedCover)) {
             await deleteStorageObjectsSafe(supabase, userId, [previousCover]);
           }
+
+          persistedCover = await resolveSingleImageUrl(supabase, persistedCover);
+          persistedPhotos = await Promise.all(
+            persistedPhotos.map(async (photo) => ({
+              ...photo,
+              src: await resolveSingleImageUrl(supabase, photo.src),
+            })),
+          );
         }
 
         setActiveGalleries((current) =>
