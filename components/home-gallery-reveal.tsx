@@ -27,47 +27,21 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
 
       <div className="mt-8">
         <div className="relative overflow-hidden rounded-[10px] bg-[linear-gradient(180deg,rgba(244,248,253,0.85),rgba(239,245,251,0.62))] px-4 py-5 md:px-5 md:py-6">
-          <AnimatePresence initial={false}>
-            {isOpen ? (
-              <motion.div
-                key="gallery-atmosphere"
-                layoutId="home-gallery-shell"
-                className="absolute inset-0"
-                transition={{ duration: 0.58, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <div className="absolute inset-0 overflow-hidden">
-                  <Image
-                    src={gallery.coverImage}
-                    alt="Winter Olympics 2026 background"
-                    fill
-                    className="scale-[1.08] object-cover blur-[2px] brightness-[0.82] saturate-[0.88]"
-                    sizes="100vw"
-                    unoptimized={nextImageUnoptimizedForSrc(gallery.coverImage)}
-                  />
-                </div>
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(242,246,250,0.44),rgba(10,18,28,0.36))]" />
-                <div className="absolute inset-0 bg-[rgba(238,244,250,0.22)]" />
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-
-          <div className="relative min-h-[30rem] md:min-h-[42rem]">
+          <div className="relative min-h-[30rem] md:min-h-[40rem]">
             <AnimatePresence mode="wait" initial={false}>
               {!isOpen ? (
                 <motion.div
                   key="closed-gallery"
-                  className="flex min-h-[30rem] items-center justify-center md:min-h-[42rem]"
+                  className="flex min-h-[30rem] items-center justify-center md:min-h-[40rem]"
                   initial={{ opacity: 1 }}
-                  exit={{ opacity: 0, scale: 1.02 }}
-                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  exit={{ opacity: 0, scale: 1.08 }}
+                  transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
                 >
                   <motion.button
                     type="button"
-                    layoutId="home-gallery-shell"
                     onClick={() => setIsOpen(true)}
                     whileHover={{ y: -2 }}
                     transition={{
-                      layout: { duration: 0.58, ease: [0.22, 1, 0.36, 1] },
                       duration: 0.28,
                       ease: [0.22, 1, 0.36, 1],
                     }}
@@ -109,15 +83,8 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-                  className="flex min-h-[30rem] flex-col justify-center md:min-h-[42rem]"
+                  className="flex min-h-[30rem] flex-col justify-center md:min-h-[40rem]"
                 >
-                  <button
-                    type="button"
-                    aria-label="Close gallery"
-                    onClick={() => setIsOpen(false)}
-                    className="absolute inset-0 z-0"
-                  />
-
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -125,10 +92,10 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                     className="relative z-10 mx-auto w-full max-w-6xl px-1 text-center"
                   >
                     <button type="button" onClick={() => setIsOpen(false)} className="text-center">
-                      <p className="text-[11px] uppercase tracking-[0.28em] text-white/64">
-                        Gallery
+                      <p className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
+                        Open gallery
                       </p>
-                      <h3 className="mt-3 font-serif text-3xl leading-[1.02] text-white md:text-[2.35rem]">
+                      <h3 className="mt-3 font-serif text-3xl leading-[1.02] text-[color:var(--ink)] md:text-[2.35rem]">
                         Winter Olympics 2026
                       </h3>
                     </button>
@@ -138,7 +105,7 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.46, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-                    className="relative z-10 mx-auto mt-10 grid w-full max-w-[88rem] gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:gap-5"
+                    className="relative z-10 mx-auto mt-10 grid w-full max-w-[96rem] gap-5 sm:grid-cols-2 xl:grid-cols-4 xl:gap-6"
                   >
                     {subgalleries.map((subgallery, index) => (
                       <motion.article
@@ -150,20 +117,20 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                           delay: 0.12 + index * 0.05,
                           ease: [0.22, 1, 0.36, 1],
                         }}
-                        className="flex h-full min-w-0 flex-col overflow-hidden rounded-[8px] border border-white/18 bg-[rgba(248,251,255,0.84)] shadow-[0_12px_28px_rgba(13,21,34,0.08)] backdrop-blur-sm"
+                        className="flex h-full min-w-0 flex-col overflow-hidden rounded-[8px] border border-[color:var(--border)] bg-[rgba(248,251,255,0.7)] shadow-[0_12px_28px_rgba(13,21,34,0.06)]"
                       >
-                        <div className="relative aspect-[0.98/1] w-full overflow-hidden">
+                        <div className="relative aspect-[0.82/1] w-full overflow-hidden">
                           <Image
                             src={subgallery.coverImage}
                             alt={subgallery.title}
                             fill
                             className="object-cover"
-                            sizes="(max-width: 768px) 100vw, 28vw"
+                            sizes="(max-width: 768px) 100vw, 30vw"
                             unoptimized={nextImageUnoptimizedForSrc(subgallery.coverImage)}
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-[rgba(8,14,24,0.78)] via-[rgba(8,14,24,0.16)] to-transparent" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[rgba(8,14,24,0.82)] via-[rgba(8,14,24,0.14)] to-transparent" />
                           <div className="absolute inset-x-0 bottom-0 p-4 md:p-5">
-                            <div className="max-w-[18rem]">
+                            <div className="max-w-[20rem]">
                               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[9px] uppercase tracking-[0.16em] text-white/68 md:text-[9.5px]">
                                 <span className="inline-flex items-center gap-1.5">
                                   <MapPin className="h-3.5 w-3.5" />
@@ -177,6 +144,9 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                               <h3 className="mt-3 font-serif text-lg leading-tight text-white md:text-[1.18rem]">
                                 {subgallery.title === "Zurich" ? "Landing in Zurich" : subgallery.title}
                               </h3>
+                              <p className="mt-2 max-w-[18rem] text-sm leading-5 text-white/82">
+                                {toShortDescription(subgallery.description)}
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -191,4 +161,13 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
       </div>
     </section>
   );
+}
+
+function toShortDescription(description: string) {
+  const [firstSentence] = description.split(". ");
+  if (!firstSentence) {
+    return description;
+  }
+
+  return firstSentence.endsWith(".") ? firstSentence : `${firstSentence}.`;
 }
