@@ -156,6 +156,28 @@ function dateLabelFromRange(startDate: string | null, endDate: string | null, fa
 }
 
 async function sourceToBlob(source: string) {
+  if (source.startsWith("data:")) {
+    const [header, payload] = source.split(",", 2);
+    if (!header || payload === undefined) {
+      throw new Error("Invalid data URL.");
+    }
+
+    const mimeMatch = header.match(/^data:([^;]+)(;base64)?$/);
+    const mimeType = mimeMatch?.[1] ?? "application/octet-stream";
+    const isBase64 = header.includes(";base64");
+
+    if (isBase64) {
+      const binary = atob(payload);
+      const bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index += 1) {
+        bytes[index] = binary.charCodeAt(index);
+      }
+      return new Blob([bytes], { type: mimeType });
+    }
+
+    return new Blob([decodeURIComponent(payload)], { type: mimeType });
+  }
+
   const response = await fetch(source);
   return response.blob();
 }
@@ -972,41 +994,42 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             });
           }
 
-          persistedPhotos = await Promise.all(
-            persistedPhotos.map(async (photo, index) => {
-              const photoId = photo.id || (typeof crypto !== "undefined" ? crypto.randomUUID() : createId("photo"));
-              if (process.env.NODE_ENV !== "production") {
-                console.info("Memora: create subgallery photo upload start", {
-                  galleryId,
-                  subgalleryId,
-                  photoId,
-                  index,
-                });
-              }
-              const persistedSrc = await uploadImageSourceIfNeeded(
-                supabase,
-                userId,
-                photo.src,
-                "photos",
+          const uploadedPhotos: typeof persistedPhotos = [];
+          for (let index = 0; index < persistedPhotos.length; index += 1) {
+            const photo = persistedPhotos[index];
+            const photoId = photo.id || (typeof crypto !== "undefined" ? crypto.randomUUID() : createId("photo"));
+            if (process.env.NODE_ENV !== "production") {
+              console.info("Memora: create subgallery photo upload start", {
+                galleryId,
+                subgalleryId,
                 photoId,
-              );
-              if (process.env.NODE_ENV !== "production") {
-                console.info("Memora: create subgallery photo upload complete", {
-                  galleryId,
-                  subgalleryId,
-                  photoId,
-                  index,
-                  persistedSrc,
-                });
-              }
-              return {
-                ...photo,
-                id: photoId,
-                src: persistedSrc,
-                order: index,
-              };
-            }),
-          );
+                index,
+              });
+            }
+            const persistedSrc = await uploadImageSourceIfNeeded(
+              supabase,
+              userId,
+              photo.src,
+              "photos",
+              photoId,
+            );
+            if (process.env.NODE_ENV !== "production") {
+              console.info("Memora: create subgallery photo upload complete", {
+                galleryId,
+                subgalleryId,
+                photoId,
+                index,
+                persistedSrc,
+              });
+            }
+            uploadedPhotos.push({
+              ...photo,
+              id: photoId,
+              src: persistedSrc,
+              order: index,
+            });
+          }
+          persistedPhotos = uploadedPhotos;
 
           const range = parseDateLabelToRange(input.dateLabel);
 
