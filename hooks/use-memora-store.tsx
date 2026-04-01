@@ -139,6 +139,12 @@ function isSupabaseObjectUrl(value: string) {
   return Boolean(storagePathFromSupabaseObjectUrl(value));
 }
 
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
+}
+
 function parseDateLabelToRange(dateLabel: string): { startDate: string | null; endDate: string | null } {
   const value = dateLabel.trim();
   if (!value) return { startDate: null, endDate: null };
@@ -997,7 +1003,12 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           const uploadedPhotos: typeof persistedPhotos = [];
           for (let index = 0; index < persistedPhotos.length; index += 1) {
             const photo = persistedPhotos[index];
-            const photoId = photo.id || (typeof crypto !== "undefined" ? crypto.randomUUID() : createId("photo"));
+            const photoId =
+              photo.id && isUuid(photo.id)
+                ? photo.id
+                : typeof crypto !== "undefined"
+                  ? crypto.randomUUID()
+                  : createId("photo");
             if (process.env.NODE_ENV !== "production") {
               console.info("Memora: create subgallery photo upload start", {
                 galleryId,
@@ -1200,7 +1211,12 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           );
           persistedPhotos = await Promise.all(
             persistedPhotos.map(async (photo, index) => {
-              const photoId = photo.id || (typeof crypto !== "undefined" ? crypto.randomUUID() : createId("photo"));
+              const photoId =
+                photo.id && isUuid(photo.id)
+                  ? photo.id
+                  : typeof crypto !== "undefined"
+                    ? crypto.randomUUID()
+                    : createId("photo");
               const persistedSrc = await uploadImageSourceIfNeeded(
                 supabase,
                 userId,
