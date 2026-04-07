@@ -22,12 +22,30 @@ function safeInternalPath(value: string | null) {
   return value;
 }
 
+function getAppOrigin() {
+  const configuredAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (configuredAppUrl) {
+    try {
+      return new URL(configuredAppUrl).origin;
+    } catch {
+      console.warn("Memora: NEXT_PUBLIC_APP_URL is invalid. Falling back to window origin.");
+    }
+  }
+
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+
+  return null;
+}
+
 function buildEmailRedirectUrl(redirectTo: string | null) {
-  if (typeof window === "undefined") {
+  const appOrigin = getAppOrigin();
+  if (!appOrigin) {
     return undefined;
   }
 
-  const callbackUrl = new URL("/auth/callback", window.location.origin);
+  const callbackUrl = new URL("/auth/callback", appOrigin);
   callbackUrl.searchParams.set("next", redirectTo ?? "/welcome");
   return callbackUrl.toString();
 }
