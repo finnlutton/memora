@@ -3,11 +3,19 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getNextAuthenticatedRoute, readMembershipStateFromUser } from "@/lib/onboarding";
 
-function safeRedirectPath(value: string | null) {
+function safeInternalPath(value: string | null) {
   if (!value) return null;
   if (!value.startsWith("/")) return null;
   if (value.startsWith("//")) return null;
   return value;
+}
+
+function applyInternalRedirect(url: URL, nextPath: string | null, fallbackPath: string) {
+  const target = safeInternalPath(nextPath) ?? fallbackPath;
+  const targetUrl = new URL(target, url.origin);
+  url.pathname = targetUrl.pathname;
+  url.search = targetUrl.search;
+  url.hash = "";
 }
 
 function errorRedirect(request: NextRequest, message: string) {
@@ -25,7 +33,9 @@ export async function GET(request: NextRequest) {
   const code = requestUrl.searchParams.get("code");
   const tokenHash = requestUrl.searchParams.get("token_hash");
   const type = requestUrl.searchParams.get("type");
-  const redirect = safeRedirectPath(requestUrl.searchParams.get("redirect"));
+  const next = safeInternalPath(
+    requestUrl.searchParams.get("next") ?? requestUrl.searchParams.get("redirect"),
+  );
   const supabase = await createSupabaseServerClient();
 
   if (code) {
@@ -64,15 +74,19 @@ export async function GET(request: NextRequest) {
     .maybeSingle();
 
   const welcomeStepCompleted = profile ? Boolean(profile.welcome_step_completed) : true;
-  const nextRoute = welcomeStepCompleted
-    ? redirect ??
-      getNextAuthenticatedRoute({
-        ...readMembershipStateFromUser(user),
-        welcomeStepCompleted,
-      })
-    : "/welcome";
   const url = request.nextUrl.clone();
-  url.pathname = nextRoute;
-  url.search = "";
+  if (!welcomeStepCompleted) {
+    applyInternalRedirect(url, next, "/welcome");
+    if (url.pathname !== "/welcome") {
+      applyInternalRedirect(url, "/welcome", "/welcome");
+    }
+    return NextResponse.redirect(url);
+  }
+
+  const fallbackRoute = getNextAuthenticatedRoute({
+    ...readMembershipStateFromUser(user),
+    welcomeStepCompleted,
+  });
+  applyInternalRedirect(url, next, fallbackRoute);
   return NextResponse.redirect(url);
 }

@@ -15,7 +15,7 @@ import { useMemoraStore } from "@/hooks/use-memora-store";
 const fieldClassName =
   "w-full rounded-sm border border-[color:var(--border)] bg-white px-4 py-3 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--accent)] focus:ring-1 focus:ring-[color:var(--accent)]/30";
 
-function safeRedirectPath(value: string | null) {
+function safeInternalPath(value: string | null) {
   if (!value) return null;
   if (!value.startsWith("/")) return null;
   if (value.startsWith("//")) return null;
@@ -28,9 +28,7 @@ function buildEmailRedirectUrl(redirectTo: string | null) {
   }
 
   const callbackUrl = new URL("/auth/callback", window.location.origin);
-  if (redirectTo) {
-    callbackUrl.searchParams.set("redirect", redirectTo);
-  }
+  callbackUrl.searchParams.set("next", redirectTo ?? "/welcome");
   return callbackUrl.toString();
 }
 
@@ -81,7 +79,7 @@ export function AuthCard() {
     }
 
     const searchParams = new URLSearchParams(window.location.search);
-    const value = safeRedirectPath(searchParams.get("redirect"));
+    const value = safeInternalPath(searchParams.get("redirect"));
     const requestedMode = searchParams.get("mode");
     const callbackError = searchParams.get("error");
     const callbackMessage = searchParams.get("message");
