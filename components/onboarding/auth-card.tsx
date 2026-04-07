@@ -43,6 +43,23 @@ function navigateAfterAuth(nextRoute: string, router: ReturnType<typeof useRoute
   router.replace(nextRoute);
 }
 
+async function loadWelcomeStepCompleted(
+  supabase: ReturnType<typeof createSupabaseBrowserClient>,
+  userId: string,
+) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("welcome_step_completed")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data ? Boolean(data.welcome_step_completed) : true;
+}
+
 export function AuthCard() {
   const router = useRouter();
   const { syncOnboardingFromUser } = useMemoraStore();
@@ -119,13 +136,17 @@ export function AuthCard() {
           return;
         }
         const membershipState = readMembershipStateFromUser(data.user ?? null);
-        const nextRoute = membershipState.onboardingComplete
-          ? redirectTo ?? getNextAuthenticatedRoute(membershipState)
-          : getNextAuthenticatedRoute(membershipState);
+        const welcomeStepCompleted = data.user
+          ? await loadWelcomeStepCompleted(supabase, data.user.id)
+          : false;
+        const nextRoute = getNextAuthenticatedRoute({
+          ...membershipState,
+          welcomeStepCompleted,
+        });
 
         setIsTransitioning(true);
         setInfo("Creating your account...");
-        syncOnboardingFromUser(data.user ?? null);
+        syncOnboardingFromUser(data.user ?? null, welcomeStepCompleted);
         navigateAfterAuth(nextRoute, router);
         return;
       } else {
@@ -142,13 +163,16 @@ export function AuthCard() {
           return;
         }
         const membershipState = readMembershipStateFromUser(data.user ?? null);
+        const welcomeStepCompleted = data.user
+          ? await loadWelcomeStepCompleted(supabase, data.user.id)
+          : false;
         const nextRoute = membershipState.onboardingComplete
-          ? redirectTo ?? getNextAuthenticatedRoute(membershipState)
-          : getNextAuthenticatedRoute(membershipState);
+          ? redirectTo ?? getNextAuthenticatedRoute({ ...membershipState, welcomeStepCompleted })
+          : getNextAuthenticatedRoute({ ...membershipState, welcomeStepCompleted });
 
         setIsTransitioning(true);
         setInfo("Logging you in...");
-        syncOnboardingFromUser(data.user ?? null);
+        syncOnboardingFromUser(data.user ?? null, welcomeStepCompleted);
         navigateAfterAuth(nextRoute, router);
         return;
       }

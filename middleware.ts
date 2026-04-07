@@ -8,6 +8,7 @@ import {
 function isProtectedPath(pathname: string) {
   return (
     pathname === "/" ||
+    pathname.startsWith("/welcome") ||
     pathname.startsWith("/galleries") ||
     pathname.startsWith("/pricing") ||
     pathname.startsWith("/checkout")
@@ -55,9 +56,17 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname === "/auth" && user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("welcome_step_completed")
+      .eq("id", (user as { id: string }).id)
+      .maybeSingle();
     const url = request.nextUrl.clone();
     url.pathname = getNextAuthenticatedRoute(
-      readMembershipStateFromUser(user as { user_metadata?: Record<string, unknown> | null }),
+      {
+        ...readMembershipStateFromUser(user as { user_metadata?: Record<string, unknown> | null }),
+        welcomeStepCompleted: profile ? Boolean(profile.welcome_step_completed) : true,
+      },
     );
     return NextResponse.redirect(url);
   }
@@ -70,12 +79,27 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("welcome_step_completed")
+      .eq("id", (user as { id: string }).id)
+      .maybeSingle();
     const membershipState = readMembershipStateFromUser(
       user as { user_metadata?: Record<string, unknown> | null },
     );
-    const nextRoute = getNextAuthenticatedRoute(membershipState);
+    const nextRoute = getNextAuthenticatedRoute({
+      ...membershipState,
+      welcomeStepCompleted: profile ? Boolean(profile.welcome_step_completed) : true,
+    });
 
     if (pathname.startsWith("/galleries") && nextRoute !== "/galleries") {
+      const url = request.nextUrl.clone();
+      url.pathname = nextRoute;
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+
+    if (pathname.startsWith("/welcome") && nextRoute !== "/welcome") {
       const url = request.nextUrl.clone();
       url.pathname = nextRoute;
       url.search = "";
@@ -90,6 +114,12 @@ export async function middleware(request: NextRequest) {
     }
 
     if (pathname.startsWith("/checkout")) {
+      if (nextRoute === "/welcome") {
+        const url = request.nextUrl.clone();
+        url.pathname = "/welcome";
+        url.search = "";
+        return NextResponse.redirect(url);
+      }
       const requestedPlanId = request.nextUrl.searchParams.get("plan");
       if (!requestedPlanId && membershipState.onboardingComplete) {
         const url = request.nextUrl.clone();
@@ -104,6 +134,13 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url);
       }
     }
+
+    if (pathname.startsWith("/pricing") && nextRoute === "/welcome") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/welcome";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
   }
 
   return response;
@@ -112,5 +149,5 @@ export async function middleware(request: NextRequest) {
 export const config = {
   // Only run middleware for routes that should be auth-aware.
   // Keep marketing pages fully public.
-  matcher: ["/", "/auth", "/pricing/:path*", "/galleries/:path*", "/checkout/:path*"],
+  matcher: ["/", "/auth", "/welcome/:path*", "/pricing/:path*", "/galleries/:path*", "/checkout/:path*"],
 };

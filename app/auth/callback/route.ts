@@ -57,7 +57,20 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const nextRoute = redirect ?? getNextAuthenticatedRoute(readMembershipStateFromUser(user));
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("welcome_step_completed")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const welcomeStepCompleted = profile ? Boolean(profile.welcome_step_completed) : true;
+  const nextRoute = welcomeStepCompleted
+    ? redirect ??
+      getNextAuthenticatedRoute({
+        ...readMembershipStateFromUser(user),
+        welcomeStepCompleted,
+      })
+    : "/welcome";
   const url = request.nextUrl.clone();
   url.pathname = nextRoute;
   url.search = "";

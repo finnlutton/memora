@@ -8,7 +8,12 @@ export type MembershipState = {
   onboardingComplete: boolean;
 };
 
+export type AuthenticatedRouteState = MembershipState & {
+  welcomeStepCompleted: boolean;
+};
+
 export type AuthUserLike = {
+  id?: string;
   email?: string | null;
   user_metadata?: Record<string, unknown> | null;
 } | null;
@@ -31,7 +36,11 @@ export function readMembershipStateFromUser(user: AuthUserLike): MembershipState
   };
 }
 
-export function getNextAuthenticatedRoute(state: MembershipState) {
+export function getNextAuthenticatedRoute(state: AuthenticatedRouteState) {
+  if (!state.welcomeStepCompleted) {
+    return "/welcome";
+  }
+
   if (!state.selectedPlanId) {
     return "/pricing";
   }

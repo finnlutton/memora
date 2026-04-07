@@ -29,6 +29,7 @@ type OnboardingState = {
   isAuthenticated: boolean;
   selectedPlanId: MembershipPlanId | null;
   onboardingComplete: boolean;
+  welcomeStepCompleted: boolean;
   user: {
     email: string;
   } | null;
@@ -54,8 +55,9 @@ type MemoraStore = {
   getSubgallery: (galleryId: string, subgalleryId: string) => Subgallery | undefined;
   resetDemo: () => void;
   signOut: () => void;
-  syncOnboardingFromUser: (user: AuthUserLike) => void;
+  syncOnboardingFromUser: (user: AuthUserLike, welcomeStepCompleted?: boolean) => void;
   completeCheckout: (planId: MembershipPlanId) => Promise<void>;
+  completeWelcomeStep: () => Promise<void>;
   resetOnboarding: () => void;
   getNextOnboardingRoute: () => string;
   scanOrphanedStorageObjects: () => Promise<{
@@ -459,6 +461,7 @@ const defaultOnboardingState: OnboardingState = {
   isAuthenticated: false,
   selectedPlanId: null,
   onboardingComplete: false,
+  welcomeStepCompleted: false,
   user: null,
 };
 
@@ -532,13 +535,43 @@ function loadLegacyOnboarding() {
   }
 }
 
-function buildOnboardingStateFromUser(user: AuthUserLike): OnboardingState {
+async function loadWelcomeStepCompleted(
+  supabase: ReturnType<typeof createSupabaseBrowserClient>,
+  user: AuthUserLike,
+) {
+  if (!user || !("id" in user) || !user.id) {
+    return false;
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("welcome_step_completed")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Memora: failed to load welcome step state", error);
+    return true;
+  }
+
+  if (!data) {
+    return true;
+  }
+
+  return Boolean(data.welcome_step_completed);
+}
+
+function buildOnboardingStateFromUser(
+  user: AuthUserLike,
+  welcomeStepCompleted = false,
+): OnboardingState {
   const membershipState = readMembershipStateFromUser(user);
 
   return {
     isAuthenticated: Boolean(user),
     selectedPlanId: membershipState.selectedPlanId,
     onboardingComplete: membershipState.onboardingComplete,
+    welcomeStepCompleted: Boolean(user) ? welcomeStepCompleted : false,
     user: user?.email ? { email: user.email } : null,
   };
 }
@@ -655,6 +688,9 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
+        const welcomeStepCompleted = nextUser
+          ? await loadWelcomeStepCompleted(supabase, nextUser as AuthUserLike)
+          : false;
         const persistedUserGalleries = nextUser
           ? await loadUserGalleriesFromSupabase(supabase, nextUser.id)
           : nextCollections.user;
@@ -670,6 +706,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
                     user_metadata: buildMembershipMetadata(membershipState),
                   }
                 : null,
+              welcomeStepCompleted,
             ),
           );
           if (typeof window !== "undefined") {
@@ -725,6 +762,9 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
 
     const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const user = session?.user ?? null;
+      const welcomeStepCompleted = user
+        ? await loadWelcomeStepCompleted(supabase, user as AuthUserLike)
+        : false;
       const nextUserGalleries = user
         ? await loadUserGalleriesFromSupabase(supabase, user.id).catch((error) => {
             console.error("Memora: failed to load persisted galleries", error);
@@ -733,7 +773,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         : [];
 
       queueMicrotask(() => {
-        setOnboarding(buildOnboardingStateFromUser(user));
+        setOnboarding(buildOnboardingStateFromUser(user, welcomeStepCompleted));
         setUserGalleryCollection(nextUserGalleries);
       });
     });
@@ -1383,8 +1423,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
       signOut() {
         setOnboarding(defaultOnboardingState);
       },
-      syncOnboardingFromUser(user) {
-        setOnboarding(buildOnboardingStateFromUser(user));
+      syncOnboardingFromUser(user, welcomeStepCompleted = true) {
+        setOnboarding(buildOnboardingStateFromUser(user, welcomeStepCompleted));
       },
       async completeCheckout(planId) {
         const membershipState = {
@@ -1414,6 +1454,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           id: user.id,
           email: user.email ?? null,
           membership_tier: planId,
+          welcome_step_completed: true,
         });
 
         if (profileError) {
@@ -1424,6 +1465,33 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           ...current,
           selectedPlanId: membershipState.selectedPlanId,
           onboardingComplete: membershipState.onboardingComplete,
+          welcomeStepCompleted: true,
+        }));
+      },
+      async completeWelcomeStep() {
+        const supabase = createSupabaseBrowserClient();
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
+
+        if (error || !user) {
+          throw new Error("Please sign in again before continuing.");
+        }
+
+        const { error: profileError } = await supabase.from("profiles").upsert({
+          id: user.id,
+          email: user.email ?? null,
+          welcome_step_completed: true,
+        });
+
+        if (profileError) {
+          throw profileError;
+        }
+
+        setOnboarding((current) => ({
+          ...current,
+          welcomeStepCompleted: true,
         }));
       },
       resetOnboarding() {
@@ -1434,6 +1502,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           return "/auth";
         }
         return getNextAuthenticatedRoute({
+          welcomeStepCompleted: onboarding.welcomeStepCompleted,
           selectedPlanId: onboarding.selectedPlanId,
           onboardingComplete: onboarding.onboardingComplete,
         });
