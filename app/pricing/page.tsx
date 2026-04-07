@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { PricingCard } from "@/components/onboarding/pricing-card";
@@ -9,6 +10,8 @@ import { membershipPlans } from "@/lib/plans";
 export default function PricingPage() {
   const router = useRouter();
   const { onboarding, completeCheckout } = useMemoraStore();
+  const [busyPlanId, setBusyPlanId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const orderedPlans = ["free", "lite", "plus", "pro"]
     .map((id) => membershipPlans.find((p) => p.id === id))
@@ -40,28 +43,56 @@ export default function PricingPage() {
               buttonLabel={
                 onboarding.onboardingComplete && onboarding.selectedPlanId === plan.id
                   ? "Current plan"
+                  : busyPlanId === plan.id
+                    ? plan.id === "free"
+                      ? "Starting free plan..."
+                      : "Continuing..."
                   : plan.id === "free"
                     ? "Start Free"
                     : "Select Plan"
               }
-              onSelect={(selectedPlan) => {
+              isBusy={busyPlanId === plan.id}
+              onSelect={async (selectedPlan) => {
+                setError(null);
+
+                if (!onboarding.isAuthenticated) {
+                  router.push("/auth?redirect=/pricing");
+                  return;
+                }
+
                 if (onboarding.onboardingComplete && onboarding.selectedPlanId === selectedPlan.id) {
                   router.push("/galleries");
                   return;
                 }
 
                 if (selectedPlan.id === "free") {
-                  void completeCheckout(selectedPlan.id).then(() => {
+                  setBusyPlanId(selectedPlan.id);
+                  try {
+                    await completeCheckout(selectedPlan.id);
                     router.push("/galleries");
-                  });
+                  } catch (checkoutError) {
+                    setError(
+                      checkoutError instanceof Error
+                        ? checkoutError.message
+                        : "We couldn't save your plan. Please try again.",
+                    );
+                  } finally {
+                    setBusyPlanId(null);
+                  }
                   return;
                 }
 
+                setBusyPlanId(selectedPlan.id);
                 router.push(`/checkout?plan=${selectedPlan.id}`);
               }}
             />
           ))}
         </div>
+        {error ? (
+          <p className="max-w-2xl rounded-sm border border-[#c98282] bg-[#fff7f7] px-3 py-2 text-sm leading-6 text-[#9a4545]">
+            {error}
+          </p>
+        ) : null}
       </section>
     </AppShell>
   );

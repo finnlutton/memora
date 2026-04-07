@@ -1393,12 +1393,31 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         } satisfies ReturnType<typeof readMembershipStateFromUser>;
 
         const supabase = createSupabaseBrowserClient();
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError || !user) {
+          throw new Error("Please sign in again before choosing a plan.");
+        }
+
         const { error } = await supabase.auth.updateUser({
           data: buildMembershipMetadata(membershipState),
         });
 
         if (error) {
           throw error;
+        }
+
+        const { error: profileError } = await supabase.from("profiles").upsert({
+          id: user.id,
+          email: user.email ?? null,
+          membership_tier: planId,
+        });
+
+        if (profileError) {
+          throw profileError;
         }
 
         setOnboarding((current) => ({

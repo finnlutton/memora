@@ -5,11 +5,13 @@ import type { MembershipPlan } from "@/lib/plans";
 export function PricingCard({
   plan,
   isCurrent = false,
+  isBusy = false,
   buttonLabel,
   onSelect,
 }: {
   plan: MembershipPlan;
   isCurrent?: boolean;
+  isBusy?: boolean;
   buttonLabel?: string;
   onSelect: (plan: MembershipPlan) => void;
 }) {
@@ -56,7 +58,7 @@ export function PricingCard({
             type="button"
             className="w-full justify-center"
             variant={isCurrent ? "secondary" : "primary"}
-            disabled={isCurrent}
+            disabled={isCurrent || isBusy}
             onClick={() => onSelect(plan)}
           >
             {ctaText}

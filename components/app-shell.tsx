@@ -11,6 +11,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { StorageCleanupDialog } from "@/components/storage-cleanup-dialog";
+import { DeleteAccountDialog } from "@/components/delete-account-dialog";
 import memoraLogo from "../Logo/MemoraLogo.png";
 
 export function AppShell({
@@ -290,6 +291,11 @@ function SettingsDropdown({
           >
             Sign out
           </button>
+          <DeleteAccountDialog
+            onAfterDelete={() => {
+              setOpen(false);
+            }}
+          />
         </div>
       ) : null}
     </div>

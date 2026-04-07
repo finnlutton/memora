@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, MapPin, PenLine } from "lucide-react";
+import { ArrowLeft, PenLine } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { PhotoGrid } from "@/components/photo-grid";
@@ -67,14 +67,12 @@ export default function SubgalleryDetailPage() {
             Inside {gallery.title}
           </p>
           <h1 className="mt-3 font-serif text-5xl text-[color:var(--ink)]">{subgallery.title}</h1>
-          <div className="mt-5 flex flex-wrap gap-3 text-sm text-[color:var(--ink-soft)]">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border)] bg-white/75 px-3 py-1.5">
-              <MapPin className="h-4 w-4 text-[color:var(--accent)]" />
-              {subgallery.location}
-            </span>
-            <span className="rounded-full border border-[color:var(--border)] bg-white/75 px-3 py-1.5">
-              {subgallery.dateLabel}
-            </span>
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[color:var(--ink-soft)]">
+            {subgallery.location ? <span>{subgallery.location}</span> : null}
+            {subgallery.location && subgallery.dateLabel ? (
+              <span className="text-[color:var(--ink-faint)]">/</span>
+            ) : null}
+            {subgallery.dateLabel ? <span>{subgallery.dateLabel}</span> : null}
           </div>
           <p className="mt-6 text-base leading-8 text-[color:var(--ink-soft)]">
             {subgallery.description}

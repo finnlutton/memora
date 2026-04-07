@@ -22,6 +22,18 @@ function safeRedirectPath(value: string | null) {
   return value;
 }
 
+function buildEmailRedirectUrl(redirectTo: string | null) {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  const callbackUrl = new URL("/auth/callback", window.location.origin);
+  if (redirectTo) {
+    callbackUrl.searchParams.set("redirect", redirectTo);
+  }
+  return callbackUrl.toString();
+}
+
 function navigateAfterAuth(nextRoute: string, router: ReturnType<typeof useRouter>) {
   if (typeof window !== "undefined") {
     window.location.replace(nextRoute);
@@ -54,10 +66,16 @@ export function AuthCard() {
     const searchParams = new URLSearchParams(window.location.search);
     const value = safeRedirectPath(searchParams.get("redirect"));
     const requestedMode = searchParams.get("mode");
+    const callbackError = searchParams.get("error");
+    const callbackMessage = searchParams.get("message");
 
     setRedirectTo(value);
     if (requestedMode === "signin" || requestedMode === "signup") {
       setMode(requestedMode);
+    }
+    if (callbackError) {
+      setError(callbackMessage ?? "We couldn't complete that sign-in step. Please try again.");
+      setMode("signin");
     }
   }, []);
 
@@ -83,6 +101,9 @@ export function AuthCard() {
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            emailRedirectTo: buildEmailRedirectUrl(redirectTo),
+          },
         });
         if (signUpError) {
           setError(signUpError.message);
@@ -169,6 +190,9 @@ export function AuthCard() {
                       const { error: resendError } = await supabase.auth.resend({
                         type: "signup",
                         email,
+                        options: {
+                          emailRedirectTo: buildEmailRedirectUrl(redirectTo),
+                        },
                       });
                       if (resendError) {
                         setError(resendError.message);
