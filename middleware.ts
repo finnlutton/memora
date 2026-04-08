@@ -1,13 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import {
-  getNextAuthenticatedRoute,
-  readMembershipStateFromUser,
-} from "@/lib/onboarding";
-import { loadHasSeenWelcomeFromProfile } from "@/lib/profile-state";
+import { createMembershipState, getNextAuthenticatedRoute } from "@/lib/onboarding";
+import { loadProfileState } from "@/lib/profile-state";
 import { getServerSiteOrigin } from "@/lib/site-url";
 
-type ProfileQueryClient = Parameters<typeof loadHasSeenWelcomeFromProfile>[0];
+type ProfileQueryClient = Parameters<typeof loadProfileState>[0];
 
 function isProtectedPath(pathname: string) {
   return (
@@ -69,7 +66,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname === "/auth" && user) {
-    const welcomeStepCompleted = await loadHasSeenWelcomeFromProfile(
+    const profileState = await loadProfileState(
       supabase as unknown as ProfileQueryClient,
       {
         id: (user as { id: string }).id,
@@ -80,8 +77,8 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = getNextAuthenticatedRoute(
       {
-        ...readMembershipStateFromUser(user as { user_metadata?: Record<string, unknown> | null }),
-        welcomeStepCompleted,
+        ...createMembershipState(profileState.selectedPlanId),
+        welcomeStepCompleted: profileState.hasSeenWelcome,
       },
     );
     return NextResponse.redirect(url);
@@ -95,7 +92,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user) {
-    const welcomeStepCompleted = await loadHasSeenWelcomeFromProfile(
+    const profileState = await loadProfileState(
       supabase as unknown as ProfileQueryClient,
       {
         id: (user as { id: string }).id,
@@ -103,12 +100,10 @@ export async function middleware(request: NextRequest) {
       },
       `middleware:${pathname}`,
     );
-    const membershipState = readMembershipStateFromUser(
-      user as { user_metadata?: Record<string, unknown> | null },
-    );
+    const membershipState = createMembershipState(profileState.selectedPlanId);
     const nextRoute = getNextAuthenticatedRoute({
       ...membershipState,
-      welcomeStepCompleted,
+      welcomeStepCompleted: profileState.hasSeenWelcome,
     });
 
     if (pathname.startsWith("/galleries") && nextRoute !== "/galleries") {

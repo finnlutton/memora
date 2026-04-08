@@ -12,9 +12,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { hydrated, onboarding } = useMemoraStore();
   const [normalizedPlanId, setNormalizedPlanId] = useState<MembershipPlanId | null>(null);
-  const plan = getMembershipPlan(
-    normalizedPlanId ?? (!onboarding.onboardingComplete ? onboarding.selectedPlanId : null),
-  );
+  const plan = getMembershipPlan(normalizedPlanId);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -40,17 +38,7 @@ export default function CheckoutPage() {
       router.replace("/pricing");
       return;
     }
-    if (onboarding.onboardingComplete && !normalizedPlanId) {
-      router.replace("/galleries");
-    }
-  }, [
-    hydrated,
-    normalizedPlanId,
-    onboarding.isAuthenticated,
-    onboarding.onboardingComplete,
-    plan,
-    router,
-  ]);
+  }, [hydrated, plan, router]);
 
   if (!hydrated || !onboarding.isAuthenticated || !plan) {
     return null;

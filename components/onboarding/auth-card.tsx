@@ -5,13 +5,10 @@ import { useRouter } from "next/navigation";
 import { Apple, ArrowRight, Chrome } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
-import {
-  getNextAuthenticatedRoute,
-  readMembershipStateFromUser,
-} from "@/lib/onboarding";
+import { createMembershipState, getNextAuthenticatedRoute } from "@/lib/onboarding";
 import {
   ensureProfileRow,
-  loadHasSeenWelcomeFromProfile,
+  loadProfileState,
 } from "@/lib/profile-state";
 import { buildAbsoluteAppUrl, getClientSiteOrigin } from "@/lib/site-url";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -120,9 +117,8 @@ export function AuthCard() {
           setConfirmPassword("");
           return;
         }
-        const membershipState = readMembershipStateFromUser(data.user ?? null);
-        const welcomeStepCompleted = data.user
-          ? await loadHasSeenWelcomeFromProfile(
+        const profileState = data.user
+          ? await loadProfileState(
               supabase,
               {
                 id: data.user.id,
@@ -130,15 +126,15 @@ export function AuthCard() {
               },
               "auth-card:signup",
             )
-          : false;
+          : { hasSeenWelcome: false, selectedPlanId: null };
         const nextRoute = getNextAuthenticatedRoute({
-          ...membershipState,
-          welcomeStepCompleted,
+          ...createMembershipState(profileState.selectedPlanId),
+          welcomeStepCompleted: profileState.hasSeenWelcome,
         });
 
         setIsTransitioning(true);
         setInfo("Creating your account...");
-        syncOnboardingFromUser(data.user ?? null, welcomeStepCompleted);
+        syncOnboardingFromUser(data.user ?? null, profileState);
         navigateAfterAuth(nextRoute, router);
         return;
       } else {
@@ -164,9 +160,8 @@ export function AuthCard() {
             "auth-card:signin:ensure-profile",
           );
         }
-        const membershipState = readMembershipStateFromUser(data.user ?? null);
-        const welcomeStepCompleted = data.user
-          ? await loadHasSeenWelcomeFromProfile(
+        const profileState = data.user
+          ? await loadProfileState(
               supabase,
               {
                 id: data.user.id,
@@ -174,14 +169,15 @@ export function AuthCard() {
               },
               "auth-card:signin",
             )
-          : false;
+          : { hasSeenWelcome: false, selectedPlanId: null };
+        const membershipState = createMembershipState(profileState.selectedPlanId);
         const nextRoute = membershipState.onboardingComplete
-          ? redirectTo ?? getNextAuthenticatedRoute({ ...membershipState, welcomeStepCompleted })
-          : getNextAuthenticatedRoute({ ...membershipState, welcomeStepCompleted });
+          ? redirectTo ?? getNextAuthenticatedRoute({ ...membershipState, welcomeStepCompleted: profileState.hasSeenWelcome })
+          : getNextAuthenticatedRoute({ ...membershipState, welcomeStepCompleted: profileState.hasSeenWelcome });
 
         setIsTransitioning(true);
         setInfo("Logging you in...");
-        syncOnboardingFromUser(data.user ?? null, welcomeStepCompleted);
+        syncOnboardingFromUser(data.user ?? null, profileState);
         navigateAfterAuth(nextRoute, router);
         return;
       }

@@ -1,9 +1,10 @@
 import type { PostgrestError } from "@supabase/supabase-js";
+import { getMembershipPlan, type MembershipPlanId } from "@/lib/plans";
 
 export type ProfileStateRow = {
   id: string;
   email?: string | null;
-  membership_tier?: string | null;
+  selected_plan?: string | null;
   has_seen_welcome?: boolean | null;
 } | null;
 
@@ -37,13 +38,17 @@ export type ProfileIdentity = {
   email?: string | null;
 };
 
-function isMissingHasSeenWelcomeColumnError(error: PostgrestError | null | undefined) {
-  if (!error) {
-    return false;
+export type ResolvedProfileState = {
+  hasSeenWelcome: boolean;
+  selectedPlanId: MembershipPlanId | null;
+};
+
+function normalizePlanId(value: string | null | undefined) {
+  if (!value) {
+    return null;
   }
 
-  const detail = `${error.message ?? ""} ${error.details ?? ""} ${error.hint ?? ""}`.toLowerCase();
-  return detail.includes("has_seen_welcome");
+  return getMembershipPlan(value as MembershipPlanId) ? (value as MembershipPlanId) : null;
 }
 
 export async function ensureProfileRow(
@@ -74,96 +79,51 @@ export async function ensureProfileRow(
     error,
   });
 
-  if (isMissingHasSeenWelcomeColumnError(error)) {
-    const { error: fallbackError } = await supabase.from("profiles").upsert({
-      id: user.id,
-      email: user.email ?? null,
-    });
-
-    if (!fallbackError) {
-      return true;
-    }
-
-    console.error("Memora: failed to ensure profile row without has_seen_welcome", {
-      context,
-      userId: user.id,
-      error: fallbackError,
-    });
-  }
-
   return false;
 }
 
-export async function loadHasSeenWelcomeFromProfile(
+export async function loadProfileState(
   supabase: ProfileQueryClient,
   user: ProfileIdentity | null | undefined,
   context: string,
 ) {
   if (!user?.id) {
-    console.warn("Memora: skipped welcome query because user id was missing", {
+    console.warn("Memora: skipped profile query because user id was missing", {
       context,
       user,
     });
-    return false;
+    return {
+      hasSeenWelcome: false,
+      selectedPlanId: null,
+    } satisfies ResolvedProfileState;
   }
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, membership_tier, has_seen_welcome")
+    .select("id, selected_plan, has_seen_welcome")
     .eq("id", user.id)
     .maybeSingle();
 
   if (error) {
-    console.error("Memora: failed to load onboarding profile state", {
+    console.error("Memora: failed to load profile state", {
       context,
       userId: user.id,
       error,
     });
-    return false;
+    throw error;
   }
 
   if (!data) {
-    return false;
+    return {
+      hasSeenWelcome: false,
+      selectedPlanId: null,
+    } satisfies ResolvedProfileState;
   }
 
-  return Boolean(data.has_seen_welcome);
-}
-
-export async function upsertProfileState(
-  supabase: ProfileQueryClient,
-  values: Record<string, unknown>,
-  context: string,
-) {
-  const { error } = await supabase.from("profiles").upsert(values);
-
-  if (!error) {
-    return { ok: true as const, error: null };
-  }
-
-  console.error("Memora: failed to write profile state", {
-    context,
-    values,
-    error,
-  });
-
-  if (isMissingHasSeenWelcomeColumnError(error) && "has_seen_welcome" in values) {
-    const { has_seen_welcome, ...fallbackValues } = values;
-    void has_seen_welcome;
-    const { error: fallbackError } = await supabase.from("profiles").upsert(fallbackValues);
-
-    if (!fallbackError) {
-      return { ok: true as const, error: null };
-    }
-
-    console.error("Memora: failed profile write without has_seen_welcome", {
-      context,
-      values: fallbackValues,
-      error: fallbackError,
-    });
-    return { ok: false as const, error: fallbackError };
-  }
-
-  return { ok: false as const, error };
+  return {
+    hasSeenWelcome: Boolean(data.has_seen_welcome),
+    selectedPlanId: normalizePlanId(data.selected_plan),
+  } satisfies ResolvedProfileState;
 }
 
 export async function setHasSeenWelcome(
@@ -198,6 +158,45 @@ export async function setHasSeenWelcome(
     context,
     userId: user.id,
     hasSeenWelcome,
+    error,
+  });
+
+  return { ok: false as const, error };
+}
+
+export async function setSelectedPlan(
+  supabase: ProfileQueryClient,
+  user: ProfileIdentity | null | undefined,
+  planId: MembershipPlanId,
+  context: string,
+) {
+  if (!user?.id) {
+    const error = new Error("User id missing for selected_plan update.");
+    console.error("Memora: failed to update selected_plan", {
+      context,
+      user,
+      planId,
+      error,
+    });
+    return { ok: false as const, error };
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      selected_plan: planId,
+      email: user.email ?? null,
+    })
+    .eq("id", user.id);
+
+  if (!error) {
+    return { ok: true as const, error: null };
+  }
+
+  console.error("Memora: failed to update selected_plan", {
+    context,
+    userId: user.id,
+    planId,
     error,
   });
 

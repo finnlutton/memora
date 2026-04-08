@@ -8,7 +8,7 @@ create table if not exists public.profiles (
   email text,
   username text,
   role text not null default 'user',
-  membership_tier text not null default 'free',
+  selected_plan text,
   created_at timestamptz not null default now()
 );
 

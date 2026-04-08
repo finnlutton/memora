@@ -1,11 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getNextAuthenticatedRoute, readMembershipStateFromUser } from "@/lib/onboarding";
-import { ensureProfileRow, loadHasSeenWelcomeFromProfile } from "@/lib/profile-state";
+import { createMembershipState, getNextAuthenticatedRoute } from "@/lib/onboarding";
+import { ensureProfileRow, loadProfileState } from "@/lib/profile-state";
 import { getServerSiteOrigin } from "@/lib/site-url";
 
-type ProfileQueryClient = Parameters<typeof loadHasSeenWelcomeFromProfile>[0];
+type ProfileQueryClient = Parameters<typeof loadProfileState>[0];
 
 function safeInternalPath(value: string | null) {
   if (!value) return null;
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
     "auth-callback:ensure-profile",
   );
 
-  const welcomeStepCompleted = await loadHasSeenWelcomeFromProfile(
+  const profileState = await loadProfileState(
     supabase as unknown as ProfileQueryClient,
     {
       id: user.id,
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
   const normalizedOrigin = new URL(requestOrigin);
   url.protocol = normalizedOrigin.protocol;
   url.host = normalizedOrigin.host;
-  if (!welcomeStepCompleted) {
+  if (!profileState.hasSeenWelcome) {
     applyInternalRedirect(url, next, "/welcome");
     if (url.pathname !== "/welcome") {
       applyInternalRedirect(url, "/welcome", "/welcome");
@@ -107,8 +107,8 @@ export async function GET(request: NextRequest) {
   }
 
   const fallbackRoute = getNextAuthenticatedRoute({
-    ...readMembershipStateFromUser(user),
-    welcomeStepCompleted,
+    ...createMembershipState(profileState.selectedPlanId),
+    welcomeStepCompleted: profileState.hasSeenWelcome,
   });
   applyInternalRedirect(url, next, fallbackRoute);
   return NextResponse.redirect(url);

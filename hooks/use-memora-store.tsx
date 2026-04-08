@@ -12,15 +12,14 @@ import {
 import { demoGalleries } from "@/lib/demo-data";
 import {
   type AuthUserLike,
-  buildMembershipMetadata,
+  createMembershipState,
   getNextAuthenticatedRoute,
-  readMembershipStateFromUser,
 } from "@/lib/onboarding";
 import {
   ensureProfileRow,
-  loadHasSeenWelcomeFromProfile,
+  loadProfileState,
   setHasSeenWelcome,
-  upsertProfileState,
+  setSelectedPlan,
 } from "@/lib/profile-state";
 import { getMembershipPlan, type MembershipPlanId } from "@/lib/plans";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -30,7 +29,6 @@ import type { Gallery, GalleryInput, MemoryPhoto, Subgallery, SubgalleryInput } 
 const LEGACY_STORAGE_KEY = "memora::galleries:v1";
 const DEMO_STORAGE_KEY = "memora::demo-galleries:v1";
 const USER_STORAGE_KEY = "memora::user-galleries:v1";
-const LEGACY_ONBOARDING_KEY = "memora::onboarding:v1";
 const STORAGE_BUCKET = "gallery-images";
 
 type OnboardingState = {
@@ -64,7 +62,10 @@ type MemoraStore = {
   getSubgallery: (galleryId: string, subgalleryId: string) => Subgallery | undefined;
   resetDemo: () => void;
   signOut: () => void;
-  syncOnboardingFromUser: (user: AuthUserLike, welcomeStepCompleted?: boolean) => void;
+  syncOnboardingFromUser: (
+    user: AuthUserLike,
+    profileState?: { hasSeenWelcome: boolean; selectedPlanId: MembershipPlanId | null },
+  ) => void;
   completeCheckout: (planId: MembershipPlanId) => Promise<void>;
   completeWelcomeStep: () => Promise<void>;
   resetOnboarding: () => void;
@@ -529,15 +530,15 @@ function loadStoredGalleryCollections() {
 
 function buildOnboardingStateFromUser(
   user: AuthUserLike,
-  welcomeStepCompleted = false,
+  profileState = { hasSeenWelcome: false, selectedPlanId: null as MembershipPlanId | null },
 ): OnboardingState {
-  const membershipState = readMembershipStateFromUser(user);
+  const membershipState = createMembershipState(profileState.selectedPlanId);
 
   return {
     isAuthenticated: Boolean(user),
     selectedPlanId: membershipState.selectedPlanId,
     onboardingComplete: membershipState.onboardingComplete,
-    welcomeStepCompleted: Boolean(user) ? welcomeStepCompleted : false,
+    welcomeStepCompleted: Boolean(user) ? profileState.hasSeenWelcome : false,
     user: user?.id ? { id: user.id, email: user.email ?? "" } : null,
   };
 }
@@ -655,8 +656,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             "store:initial-sync:ensure-profile",
           );
         }
-        const welcomeStepCompleted = nextUser
-          ? await loadHasSeenWelcomeFromProfile(
+        const profileState = nextUser
+          ? await loadProfileState(
               supabase,
               {
                 id: nextUser.id,
@@ -664,7 +665,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
               },
               "store:initial-sync",
             )
-          : false;
+          : { hasSeenWelcome: false, selectedPlanId: null };
         const persistedUserGalleries = nextUser
           ? await loadUserGalleriesFromSupabase(supabase, nextUser.id)
           : nextCollections.user;
@@ -675,12 +676,9 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           setOnboarding(
             buildOnboardingStateFromUser(
               nextUser,
-              welcomeStepCompleted,
+              profileState,
             ),
           );
-          if (typeof window !== "undefined") {
-            window.localStorage.removeItem(LEGACY_ONBOARDING_KEY);
-          }
           setHydrated(true);
         });
       } catch (error) {
@@ -750,8 +748,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           "store:auth-state-change:ensure-profile",
         );
       }
-      const welcomeStepCompleted = user
-        ? await loadHasSeenWelcomeFromProfile(
+      const profileState = user
+        ? await loadProfileState(
             supabase,
             {
               id: user.id,
@@ -759,7 +757,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             },
             "store:auth-state-change",
           )
-        : false;
+        : { hasSeenWelcome: false, selectedPlanId: null };
       const nextUserGalleries = user
         ? await loadUserGalleriesFromSupabase(supabase, user.id).catch((error) => {
             console.error("Memora: failed to load persisted galleries", error);
@@ -768,7 +766,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         : [];
 
       queueMicrotask(() => {
-        setOnboarding(buildOnboardingStateFromUser(user, welcomeStepCompleted));
+        setOnboarding(buildOnboardingStateFromUser(user, profileState));
         setUserGalleryCollection(nextUserGalleries);
       });
       },
@@ -1423,15 +1421,15 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
       signOut() {
         setOnboarding(defaultOnboardingState);
       },
-      syncOnboardingFromUser(user, welcomeStepCompleted = true) {
-        setOnboarding(buildOnboardingStateFromUser(user, welcomeStepCompleted));
+      syncOnboardingFromUser(
+        user,
+        profileState = { hasSeenWelcome: true, selectedPlanId: null },
+      ) {
+        setOnboarding(
+          buildOnboardingStateFromUser(user, profileState),
+        );
       },
       async completeCheckout(planId) {
-        const membershipState = {
-          selectedPlanId: planId,
-          onboardingComplete: true,
-        } satisfies ReturnType<typeof readMembershipStateFromUser>;
-
         const supabase = supabaseRef.current;
         const userId = onboarding.user?.id;
         const userEmail = onboarding.user?.email ?? null;
@@ -1440,38 +1438,43 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           throw new Error("Please sign in again before choosing a plan.");
         }
 
-        const { error } = await supabase.auth.updateUser({
-          data: buildMembershipMetadata(membershipState),
-        });
-
-        if (error) {
-          throw error;
-        }
-
-        const profileWrite = await upsertProfileState(
+        const ensured = await ensureProfileRow(
           supabase,
           {
             id: userId,
             email: userEmail,
-            membership_tier: planId,
-            has_seen_welcome: true,
           },
+          "store:complete-checkout:ensure-profile",
+        );
+
+        if (!ensured) {
+          throw new Error("Unable to create your profile row right now.");
+        }
+
+        const planWrite = await setSelectedPlan(
+          supabase,
+          {
+            id: userId,
+            email: userEmail,
+          },
+          planId,
           "store:complete-checkout",
         );
 
-        if (!profileWrite.ok) {
-          console.warn("Memora: plan metadata write succeeded but profile sync failed", {
+        if (!planWrite.ok) {
+          console.error("Memora: selected_plan write failed", {
             context: "store:complete-checkout",
             userId,
             planId,
-            error: profileWrite.error,
+            error: planWrite.error,
           });
+          throw planWrite.error ?? new Error("Unable to save your plan right now.");
         }
 
         setOnboarding((current) => ({
           ...current,
-          selectedPlanId: membershipState.selectedPlanId,
-          onboardingComplete: membershipState.onboardingComplete,
+          selectedPlanId: planId,
+          onboardingComplete: true,
           welcomeStepCompleted: true,
         }));
       },

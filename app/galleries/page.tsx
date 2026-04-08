@@ -62,7 +62,7 @@ export default function GalleriesPage() {
         </div>
 
         <div className="grid gap-px border border-[color:var(--border)] bg-[color:var(--border)] md:grid-cols-3 xl:grid-cols-1">
-          <DashboardPanel label="Membership" value={selectedPlan?.name ?? "Preview mode"} />
+          <DashboardPanel label="Membership" value={selectedPlan?.name ?? "No plan selected"} />
           <DashboardPanel label="Archive usage" value={usageLabel} />
           <DashboardPanel
             label="Next step"
