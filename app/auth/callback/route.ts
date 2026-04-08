@@ -2,6 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getNextAuthenticatedRoute, readMembershipStateFromUser } from "@/lib/onboarding";
+import { loadWelcomeStepCompletedFromProfile } from "@/lib/profile-state";
+
+type ProfileQueryClient = Parameters<typeof loadWelcomeStepCompletedFromProfile>[0];
 
 function safeInternalPath(value: string | null) {
   if (!value) return null;
@@ -67,13 +70,11 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("welcome_step_completed")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const welcomeStepCompleted = profile ? Boolean(profile.welcome_step_completed) : true;
+  const welcomeStepCompleted = await loadWelcomeStepCompletedFromProfile(
+    supabase as unknown as ProfileQueryClient,
+    user.id,
+    "auth-callback",
+  );
   const url = request.nextUrl.clone();
   if (!welcomeStepCompleted) {
     applyInternalRedirect(url, next, "/welcome");

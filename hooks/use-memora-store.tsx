@@ -16,6 +16,10 @@ import {
   getNextAuthenticatedRoute,
   readMembershipStateFromUser,
 } from "@/lib/onboarding";
+import {
+  loadWelcomeStepCompletedFromProfile,
+  upsertProfileState,
+} from "@/lib/profile-state";
 import { getMembershipPlan, type MembershipPlanId } from "@/lib/plans";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { createId } from "@/lib/utils";
@@ -538,32 +542,6 @@ function loadLegacyOnboarding() {
   }
 }
 
-async function loadWelcomeStepCompleted(
-  supabase: ReturnType<typeof createSupabaseBrowserClient>,
-  user: AuthUserLike,
-) {
-  if (!user || !("id" in user) || !user.id) {
-    return false;
-  }
-
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("welcome_step_completed")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (error) {
-    console.error("Memora: failed to load welcome step state", error);
-    return true;
-  }
-
-  if (!data) {
-    return true;
-  }
-
-  return Boolean(data.welcome_step_completed);
-}
-
 function buildOnboardingStateFromUser(
   user: AuthUserLike,
   welcomeStepCompleted = false,
@@ -670,12 +648,18 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
 
     const syncInitialState = async () => {
       try {
-        const { data } = await supabase.auth.getUser();
+        const { data, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+          console.error("Memora: failed to load auth session", {
+            context: "store:initial-session",
+            error: sessionError,
+          });
+        }
         if (cancelled) {
           return;
         }
 
-        const nextUser = data.user ?? null;
+        const nextUser = data.session?.user ?? null;
         let membershipState = readMembershipStateFromUser(nextUser);
 
         if (
@@ -699,7 +683,11 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         }
 
         const welcomeStepCompleted = nextUser
-          ? await loadWelcomeStepCompleted(supabase, nextUser as AuthUserLike)
+          ? await loadWelcomeStepCompletedFromProfile(
+              supabase,
+              nextUser.id,
+              "store:initial-sync",
+            )
           : false;
         const persistedUserGalleries = nextUser
           ? await loadUserGalleriesFromSupabase(supabase, nextUser.id)
@@ -782,7 +770,11 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
 
       const user = session?.user ?? null;
       const welcomeStepCompleted = user
-        ? await loadWelcomeStepCompleted(supabase, user as AuthUserLike)
+        ? await loadWelcomeStepCompletedFromProfile(
+            supabase,
+            user.id,
+            "store:auth-state-change",
+          )
         : false;
       const nextUserGalleries = user
         ? await loadUserGalleriesFromSupabase(supabase, user.id).catch((error) => {
@@ -1472,16 +1464,16 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           throw error;
         }
 
-        const { error: profileError } = await supabase.from("profiles").upsert({
+        await upsertProfileState(
+          supabase,
+          {
           id: userId,
           email: userEmail,
           membership_tier: planId,
           welcome_step_completed: true,
-        });
-
-        if (profileError) {
-          throw profileError;
-        }
+          },
+          "store:complete-checkout",
+        );
 
         setOnboarding((current) => ({
           ...current,
@@ -1499,15 +1491,15 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           throw new Error("Please sign in again before continuing.");
         }
 
-        const { error: profileError } = await supabase.from("profiles").upsert({
+        await upsertProfileState(
+          supabase,
+          {
           id: userId,
           email: userEmail,
           welcome_step_completed: true,
-        });
-
-        if (profileError) {
-          throw profileError;
-        }
+          },
+          "store:complete-welcome-step",
+        );
 
         setOnboarding((current) => ({
           ...current,

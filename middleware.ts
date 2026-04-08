@@ -4,6 +4,9 @@ import {
   getNextAuthenticatedRoute,
   readMembershipStateFromUser,
 } from "@/lib/onboarding";
+import { loadWelcomeStepCompletedFromProfile } from "@/lib/profile-state";
+
+type ProfileQueryClient = Parameters<typeof loadWelcomeStepCompletedFromProfile>[0];
 
 function isProtectedPath(pathname: string) {
   return (
@@ -56,16 +59,16 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname === "/auth" && user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("welcome_step_completed")
-      .eq("id", (user as { id: string }).id)
-      .maybeSingle();
+    const welcomeStepCompleted = await loadWelcomeStepCompletedFromProfile(
+      supabase as unknown as ProfileQueryClient,
+      (user as { id: string }).id,
+      "middleware:/auth",
+    );
     const url = request.nextUrl.clone();
     url.pathname = getNextAuthenticatedRoute(
       {
         ...readMembershipStateFromUser(user as { user_metadata?: Record<string, unknown> | null }),
-        welcomeStepCompleted: profile ? Boolean(profile.welcome_step_completed) : true,
+        welcomeStepCompleted,
       },
     );
     return NextResponse.redirect(url);
@@ -79,17 +82,17 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("welcome_step_completed")
-      .eq("id", (user as { id: string }).id)
-      .maybeSingle();
+    const welcomeStepCompleted = await loadWelcomeStepCompletedFromProfile(
+      supabase as unknown as ProfileQueryClient,
+      (user as { id: string }).id,
+      `middleware:${pathname}`,
+    );
     const membershipState = readMembershipStateFromUser(
       user as { user_metadata?: Record<string, unknown> | null },
     );
     const nextRoute = getNextAuthenticatedRoute({
       ...membershipState,
-      welcomeStepCompleted: profile ? Boolean(profile.welcome_step_completed) : true,
+      welcomeStepCompleted,
     });
 
     if (pathname.startsWith("/galleries") && nextRoute !== "/galleries") {

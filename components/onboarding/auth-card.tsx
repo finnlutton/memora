@@ -9,6 +9,7 @@ import {
   getNextAuthenticatedRoute,
   readMembershipStateFromUser,
 } from "@/lib/onboarding";
+import { loadWelcomeStepCompletedFromProfile } from "@/lib/profile-state";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 
@@ -55,23 +56,6 @@ function navigateAfterAuth(nextRoute: string, router: ReturnType<typeof useRoute
   }
 
   router.replace(nextRoute);
-}
-
-async function loadWelcomeStepCompleted(
-  supabase: ReturnType<typeof createSupabaseBrowserClient>,
-  userId: string,
-) {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("welcome_step_completed")
-    .eq("id", userId)
-    .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-
-  return data ? Boolean(data.welcome_step_completed) : true;
 }
 
 export function AuthCard() {
@@ -151,7 +135,11 @@ export function AuthCard() {
         }
         const membershipState = readMembershipStateFromUser(data.user ?? null);
         const welcomeStepCompleted = data.user
-          ? await loadWelcomeStepCompleted(supabase, data.user.id)
+          ? await loadWelcomeStepCompletedFromProfile(
+              supabase,
+              data.user.id,
+              "auth-card:signup",
+            )
           : false;
         const nextRoute = getNextAuthenticatedRoute({
           ...membershipState,
@@ -178,7 +166,11 @@ export function AuthCard() {
         }
         const membershipState = readMembershipStateFromUser(data.user ?? null);
         const welcomeStepCompleted = data.user
-          ? await loadWelcomeStepCompleted(supabase, data.user.id)
+          ? await loadWelcomeStepCompletedFromProfile(
+              supabase,
+              data.user.id,
+              "auth-card:signin",
+            )
           : false;
         const nextRoute = membershipState.onboardingComplete
           ? redirectTo ?? getNextAuthenticatedRoute({ ...membershipState, welcomeStepCompleted })

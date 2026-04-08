@@ -62,7 +62,8 @@ export default function PricingPage() {
 
                 setError(null);
 
-                if (!onboarding.isAuthenticated) {
+                if (!onboarding.isAuthenticated || !onboarding.user?.id) {
+                  setError("Please log in again before choosing a plan.");
                   router.push("/auth?redirect=/pricing");
                   submitLockRef.current = false;
                   return;
