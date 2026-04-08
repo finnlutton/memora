@@ -1,10 +1,12 @@
 "use client";
 
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import {
   createContext,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { demoGalleries } from "@/lib/demo-data";
@@ -31,6 +33,7 @@ type OnboardingState = {
   onboardingComplete: boolean;
   welcomeStepCompleted: boolean;
   user: {
+    id: string;
     email: string;
   } | null;
 };
@@ -261,7 +264,7 @@ async function resolveImageUrls(
     return map;
   }
 
-  data.forEach((entry, index) => {
+  (data as Array<{ signedUrl?: string | null }>).forEach((entry, index) => {
     const originalPath = uniqueStoragePaths[index];
     if (!entry.signedUrl) {
       console.warn("Memora: signed URL missing for storage path", {
@@ -572,7 +575,7 @@ function buildOnboardingStateFromUser(
     selectedPlanId: membershipState.selectedPlanId,
     onboardingComplete: membershipState.onboardingComplete,
     welcomeStepCompleted: Boolean(user) ? welcomeStepCompleted : false,
-    user: user?.email ? { email: user.email } : null,
+    user: user?.id ? { id: user.id, email: user.email ?? "" } : null,
   };
 }
 
@@ -651,11 +654,18 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
   const [onboarding, setOnboarding] = useState<OnboardingState>(defaultOnboardingState);
   const [hydrated, setHydrated] = useState(false);
   const [storageQuotaExceeded, setStorageQuotaExceeded] = useState(false);
+  const supabaseRef = useRef(createSupabaseBrowserClient());
+  const hasBootstrappedAuthRef = useRef(false);
 
   useEffect(() => {
+    if (hasBootstrappedAuthRef.current) {
+      return;
+    }
+    hasBootstrappedAuthRef.current = true;
+
     const nextCollections = loadStoredGalleryCollections();
     const legacyOnboarding = loadLegacyOnboarding();
-    const supabase = createSupabaseBrowserClient();
+    const supabase = supabaseRef.current;
     let cancelled = false;
 
     const syncInitialState = async () => {
@@ -758,9 +768,18 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!hydrated) return;
 
-    const supabase = createSupabaseBrowserClient();
+    const supabase = supabaseRef.current;
 
-    const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange(
+      async (event: AuthChangeEvent, session: Session | null) => {
+      if (
+        event === "INITIAL_SESSION" ||
+        event === "TOKEN_REFRESHED" ||
+        event === "USER_UPDATED"
+      ) {
+        return;
+      }
+
       const user = session?.user ?? null;
       const welcomeStepCompleted = user
         ? await loadWelcomeStepCompleted(supabase, user as AuthUserLike)
@@ -776,7 +795,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         setOnboarding(buildOnboardingStateFromUser(user, welcomeStepCompleted));
         setUserGalleryCollection(nextUserGalleries);
       });
-    });
+      },
+    );
 
     return () => {
       subscription.subscription.unsubscribe();
@@ -1314,8 +1334,12 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             if (photosError) throw photosError;
           }
 
-          const nextPhotoPaths = persistedPhotos.map((photo) => normalizeToStoragePath(photo.src));
-          const toDelete = previousPhotoPaths.filter((path) => !nextPhotoPaths.includes(normalizeToStoragePath(path)));
+          const nextPhotoPaths: string[] = persistedPhotos.map((photo) =>
+            normalizeToStoragePath(photo.src),
+          );
+          const toDelete = previousPhotoPaths.filter(
+            (path: string) => !nextPhotoPaths.includes(normalizeToStoragePath(path)),
+          );
           await deleteStorageObjectsSafe(supabase, userId, toDelete);
 
           if (previousCover && normalizeToStoragePath(previousCover) !== normalizeToStoragePath(persistedCover)) {
@@ -1432,13 +1456,11 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           onboardingComplete: true,
         } satisfies ReturnType<typeof readMembershipStateFromUser>;
 
-        const supabase = createSupabaseBrowserClient();
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
+        const supabase = supabaseRef.current;
+        const userId = onboarding.user?.id;
+        const userEmail = onboarding.user?.email ?? null;
 
-        if (userError || !user) {
+        if (!userId) {
           throw new Error("Please sign in again before choosing a plan.");
         }
 
@@ -1451,8 +1473,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         }
 
         const { error: profileError } = await supabase.from("profiles").upsert({
-          id: user.id,
-          email: user.email ?? null,
+          id: userId,
+          email: userEmail,
           membership_tier: planId,
           welcome_step_completed: true,
         });
@@ -1469,19 +1491,17 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         }));
       },
       async completeWelcomeStep() {
-        const supabase = createSupabaseBrowserClient();
-        const {
-          data: { user },
-          error,
-        } = await supabase.auth.getUser();
+        const supabase = supabaseRef.current;
+        const userId = onboarding.user?.id;
+        const userEmail = onboarding.user?.email ?? null;
 
-        if (error || !user) {
+        if (!userId) {
           throw new Error("Please sign in again before continuing.");
         }
 
         const { error: profileError } = await supabase.from("profiles").upsert({
-          id: user.id,
-          email: user.email ?? null,
+          id: userId,
+          email: userEmail,
           welcome_step_completed: true,
         });
 
@@ -1514,32 +1534,23 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         const userId = data.user?.id;
         if (!userId) throw new Error("Please sign in again to scan storage.");
 
-        const [galleryRows, subgalleryRows, photoRows] = await Promise.all([
-          supabase
-            .from("galleries")
-            .select("cover_image_path")
-            .eq("user_id", userId)
-            .then((res) => {
-              if (res.error) throw res.error;
-              return (res.data ?? []) as Array<{ cover_image_path: string | null }>;
-            }),
-          supabase
-            .from("subgalleries")
-            .select("cover_image_path")
-            .eq("user_id", userId)
-            .then((res) => {
-              if (res.error) throw res.error;
-              return (res.data ?? []) as Array<{ cover_image_path: string | null }>;
-            }),
-          supabase
-            .from("photos")
-            .select("storage_path")
-            .eq("user_id", userId)
-            .then((res) => {
-              if (res.error) throw res.error;
-              return (res.data ?? []) as Array<{ storage_path: string }>;
-            }),
+        const [galleryRowsResult, subgalleryRowsResult, photoRowsResult] = await Promise.all([
+          supabase.from("galleries").select("cover_image_path").eq("user_id", userId),
+          supabase.from("subgalleries").select("cover_image_path").eq("user_id", userId),
+          supabase.from("photos").select("storage_path").eq("user_id", userId),
         ]);
+
+        if (galleryRowsResult.error) throw galleryRowsResult.error;
+        if (subgalleryRowsResult.error) throw subgalleryRowsResult.error;
+        if (photoRowsResult.error) throw photoRowsResult.error;
+
+        const galleryRows = (galleryRowsResult.data ?? []) as Array<{
+          cover_image_path: string | null;
+        }>;
+        const subgalleryRows = (subgalleryRowsResult.data ?? []) as Array<{
+          cover_image_path: string | null;
+        }>;
+        const photoRows = (photoRowsResult.data ?? []) as Array<{ storage_path: string }>;
 
         const referenced = new Set<string>();
         for (const row of galleryRows) {

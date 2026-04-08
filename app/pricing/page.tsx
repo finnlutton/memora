@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { PricingCard } from "@/components/onboarding/pricing-card";
@@ -12,6 +12,7 @@ export default function PricingPage() {
   const { onboarding, completeCheckout } = useMemoraStore();
   const [busyPlanId, setBusyPlanId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const submitLockRef = useRef(false);
 
   const orderedPlans = ["free", "lite", "plus", "pro"]
     .map((id) => membershipPlans.find((p) => p.id === id))
@@ -53,15 +54,23 @@ export default function PricingPage() {
               }
               isBusy={busyPlanId === plan.id}
               onSelect={async (selectedPlan) => {
+                if (busyPlanId || submitLockRef.current) {
+                  return;
+                }
+
+                submitLockRef.current = true;
+
                 setError(null);
 
                 if (!onboarding.isAuthenticated) {
                   router.push("/auth?redirect=/pricing");
+                  submitLockRef.current = false;
                   return;
                 }
 
                 if (onboarding.onboardingComplete && onboarding.selectedPlanId === selectedPlan.id) {
                   router.push("/galleries");
+                  submitLockRef.current = false;
                   return;
                 }
 
@@ -78,12 +87,14 @@ export default function PricingPage() {
                     );
                   } finally {
                     setBusyPlanId(null);
+                    submitLockRef.current = false;
                   }
                   return;
                 }
 
                 setBusyPlanId(selectedPlan.id);
                 router.push(`/checkout?plan=${selectedPlan.id}`);
+                submitLockRef.current = false;
               }}
             />
           ))}

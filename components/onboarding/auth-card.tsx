@@ -39,15 +39,13 @@ function getAppOrigin() {
   return null;
 }
 
-function buildEmailRedirectUrl(redirectTo: string | null) {
+function buildEmailRedirectUrl() {
   const appOrigin = getAppOrigin();
   if (!appOrigin) {
     return undefined;
   }
 
-  const callbackUrl = new URL("/auth/callback", appOrigin);
-  callbackUrl.searchParams.set("next", redirectTo ?? "/welcome");
-  return callbackUrl.toString();
+  return new URL("/email-confirmed", appOrigin).toString();
 }
 
 function navigateAfterAuth(nextRoute: string, router: ReturnType<typeof useRouter>) {
@@ -135,7 +133,7 @@ export function AuthCard() {
           email,
           password,
           options: {
-            emailRedirectTo: buildEmailRedirectUrl(redirectTo),
+            emailRedirectTo: buildEmailRedirectUrl(),
           },
         });
         if (signUpError) {
@@ -231,7 +229,7 @@ export function AuthCard() {
                         type: "signup",
                         email,
                         options: {
-                          emailRedirectTo: buildEmailRedirectUrl(redirectTo),
+                          emailRedirectTo: buildEmailRedirectUrl(),
                         },
                       });
                       if (resendError) {
