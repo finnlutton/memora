@@ -17,7 +17,8 @@ import {
   readMembershipStateFromUser,
 } from "@/lib/onboarding";
 import {
-  loadWelcomeStepCompletedFromProfile,
+  ensureProfileRow,
+  loadHasSeenWelcomeFromProfile,
   upsertProfileState,
 } from "@/lib/profile-state";
 import { getMembershipPlan, type MembershipPlanId } from "@/lib/plans";
@@ -682,10 +683,23 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
+        if (nextUser) {
+          await ensureProfileRow(
+            supabase,
+            {
+              id: nextUser.id,
+              email: nextUser.email ?? null,
+            },
+            "store:initial-sync:ensure-profile",
+          );
+        }
         const welcomeStepCompleted = nextUser
-          ? await loadWelcomeStepCompletedFromProfile(
+          ? await loadHasSeenWelcomeFromProfile(
               supabase,
-              nextUser.id,
+              {
+                id: nextUser.id,
+                email: nextUser.email ?? null,
+              },
               "store:initial-sync",
             )
           : false;
@@ -769,10 +783,23 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
       }
 
       const user = session?.user ?? null;
+      if (user) {
+        await ensureProfileRow(
+          supabase,
+          {
+            id: user.id,
+            email: user.email ?? null,
+          },
+          "store:auth-state-change:ensure-profile",
+        );
+      }
       const welcomeStepCompleted = user
-        ? await loadWelcomeStepCompletedFromProfile(
+        ? await loadHasSeenWelcomeFromProfile(
             supabase,
-            user.id,
+            {
+              id: user.id,
+              email: user.email ?? null,
+            },
             "store:auth-state-change",
           )
         : false;
@@ -1464,16 +1491,25 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           throw error;
         }
 
-        await upsertProfileState(
+        const profileWrite = await upsertProfileState(
           supabase,
           {
-          id: userId,
-          email: userEmail,
-          membership_tier: planId,
-          welcome_step_completed: true,
+            id: userId,
+            email: userEmail,
+            membership_tier: planId,
+            has_seen_welcome: true,
           },
           "store:complete-checkout",
         );
+
+        if (!profileWrite.ok) {
+          console.warn("Memora: plan metadata write succeeded but profile sync failed", {
+            context: "store:complete-checkout",
+            userId,
+            planId,
+            error: profileWrite.error,
+          });
+        }
 
         setOnboarding((current) => ({
           ...current,
@@ -1491,15 +1527,19 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           throw new Error("Please sign in again before continuing.");
         }
 
-        await upsertProfileState(
+        const profileWrite = await upsertProfileState(
           supabase,
           {
-          id: userId,
-          email: userEmail,
-          welcome_step_completed: true,
+            id: userId,
+            email: userEmail,
+            has_seen_welcome: true,
           },
           "store:complete-welcome-step",
         );
+
+        if (!profileWrite.ok) {
+          throw profileWrite.error ?? new Error("Unable to update your welcome status.");
+        }
 
         setOnboarding((current) => ({
           ...current,

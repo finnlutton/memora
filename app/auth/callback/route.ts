@@ -2,9 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getNextAuthenticatedRoute, readMembershipStateFromUser } from "@/lib/onboarding";
-import { loadWelcomeStepCompletedFromProfile } from "@/lib/profile-state";
+import { ensureProfileRow, loadHasSeenWelcomeFromProfile } from "@/lib/profile-state";
 
-type ProfileQueryClient = Parameters<typeof loadWelcomeStepCompletedFromProfile>[0];
+type ProfileQueryClient = Parameters<typeof loadHasSeenWelcomeFromProfile>[0];
 
 function safeInternalPath(value: string | null) {
   if (!value) return null;
@@ -70,9 +70,21 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const welcomeStepCompleted = await loadWelcomeStepCompletedFromProfile(
+  await ensureProfileRow(
     supabase as unknown as ProfileQueryClient,
-    user.id,
+    {
+      id: user.id,
+      email: user.email ?? null,
+    },
+    "auth-callback:ensure-profile",
+  );
+
+  const welcomeStepCompleted = await loadHasSeenWelcomeFromProfile(
+    supabase as unknown as ProfileQueryClient,
+    {
+      id: user.id,
+      email: user.email ?? null,
+    },
     "auth-callback",
   );
   const url = request.nextUrl.clone();

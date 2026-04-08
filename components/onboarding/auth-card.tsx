@@ -9,7 +9,10 @@ import {
   getNextAuthenticatedRoute,
   readMembershipStateFromUser,
 } from "@/lib/onboarding";
-import { loadWelcomeStepCompletedFromProfile } from "@/lib/profile-state";
+import {
+  ensureProfileRow,
+  loadHasSeenWelcomeFromProfile,
+} from "@/lib/profile-state";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 
@@ -135,9 +138,12 @@ export function AuthCard() {
         }
         const membershipState = readMembershipStateFromUser(data.user ?? null);
         const welcomeStepCompleted = data.user
-          ? await loadWelcomeStepCompletedFromProfile(
+          ? await loadHasSeenWelcomeFromProfile(
               supabase,
-              data.user.id,
+              {
+                id: data.user.id,
+                email: data.user.email ?? null,
+              },
               "auth-card:signup",
             )
           : false;
@@ -164,11 +170,24 @@ export function AuthCard() {
           }
           return;
         }
+        if (data.user) {
+          await ensureProfileRow(
+            supabase,
+            {
+              id: data.user.id,
+              email: data.user.email ?? null,
+            },
+            "auth-card:signin:ensure-profile",
+          );
+        }
         const membershipState = readMembershipStateFromUser(data.user ?? null);
         const welcomeStepCompleted = data.user
-          ? await loadWelcomeStepCompletedFromProfile(
+          ? await loadHasSeenWelcomeFromProfile(
               supabase,
-              data.user.id,
+              {
+                id: data.user.id,
+                email: data.user.email ?? null,
+              },
               "auth-card:signin",
             )
           : false;

@@ -1,7 +1,10 @@
 import type { PostgrestError } from "@supabase/supabase-js";
 
-type WelcomeStepRow = {
-  welcome_step_completed?: boolean | null;
+export type ProfileStateRow = {
+  id: string;
+  email?: string | null;
+  membership_tier?: string | null;
+  has_seen_welcome?: boolean | null;
 } | null;
 
 type ProfileQueryClient = {
@@ -9,7 +12,7 @@ type ProfileQueryClient = {
     select: (columns: string) => {
       eq: (column: string, value: string) => {
         maybeSingle: () => PromiseLike<{
-          data: WelcomeStepRow;
+          data: ProfileStateRow;
           error: PostgrestError | null;
         }>;
       };
@@ -22,51 +25,102 @@ type ProfileQueryClient = {
   };
 };
 
-export function isMissingWelcomeStepCompletedColumnError(error: PostgrestError | null | undefined) {
+export type ProfileIdentity = {
+  id: string;
+  email?: string | null;
+};
+
+function isMissingHasSeenWelcomeColumnError(error: PostgrestError | null | undefined) {
   if (!error) {
     return false;
   }
 
   const detail = `${error.message ?? ""} ${error.details ?? ""} ${error.hint ?? ""}`.toLowerCase();
-  return detail.includes("welcome_step_completed");
+  return detail.includes("has_seen_welcome");
 }
 
-export async function loadWelcomeStepCompletedFromProfile(
+export async function ensureProfileRow(
   supabase: ProfileQueryClient,
-  userId: string | null | undefined,
+  user: ProfileIdentity | null | undefined,
   context: string,
 ) {
-  if (!userId) {
-    console.warn("Memora: skipped welcome step query because user id was missing", {
+  if (!user?.id) {
+    console.warn("Memora: skipped profile ensure because user id was missing", {
       context,
-      userId,
+      user,
+    });
+    return false;
+  }
+
+  const { error } = await supabase.from("profiles").upsert({
+    id: user.id,
+    email: user.email ?? null,
+    has_seen_welcome: false,
+  });
+
+  if (!error) {
+    return true;
+  }
+
+  console.error("Memora: failed to ensure profile row", {
+    context,
+    userId: user.id,
+    error,
+  });
+
+  if (isMissingHasSeenWelcomeColumnError(error)) {
+    const { error: fallbackError } = await supabase.from("profiles").upsert({
+      id: user.id,
+      email: user.email ?? null,
+    });
+
+    if (!fallbackError) {
+      return true;
+    }
+
+    console.error("Memora: failed to ensure profile row without has_seen_welcome", {
+      context,
+      userId: user.id,
+      error: fallbackError,
+    });
+  }
+
+  return false;
+}
+
+export async function loadHasSeenWelcomeFromProfile(
+  supabase: ProfileQueryClient,
+  user: ProfileIdentity | null | undefined,
+  context: string,
+) {
+  if (!user?.id) {
+    console.warn("Memora: skipped welcome query because user id was missing", {
+      context,
+      user,
     });
     return false;
   }
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("welcome_step_completed")
-    .eq("id", userId)
+    .select("id, membership_tier, has_seen_welcome")
+    .eq("id", user.id)
     .maybeSingle();
 
   if (error) {
-    console.error("Memora: failed to load welcome step state", {
+    console.error("Memora: failed to load onboarding profile state", {
       context,
-      userId,
+      userId: user.id,
       error,
     });
-
-    // If the migration has not been applied yet, avoid breaking pricing/login.
-    // This keeps the app usable while still exposing the exact schema issue.
-    if (isMissingWelcomeStepCompletedColumnError(error)) {
-      return true;
-    }
-
-    return true;
+    return false;
   }
 
-  return data ? Boolean(data.welcome_step_completed) : true;
+  if (!data) {
+    return false;
+  }
+
+  return Boolean(data.has_seen_welcome);
 }
 
 export async function upsertProfileState(
@@ -77,31 +131,31 @@ export async function upsertProfileState(
   const { error } = await supabase.from("profiles").upsert(values);
 
   if (!error) {
-    return;
+    return { ok: true as const, error: null };
   }
 
-  console.error("Memora: failed to upsert profile state", {
+  console.error("Memora: failed to write profile state", {
     context,
     values,
     error,
   });
 
-  if (isMissingWelcomeStepCompletedColumnError(error) && "welcome_step_completed" in values) {
-    const { welcome_step_completed, ...fallbackValues } = values;
-    void welcome_step_completed;
+  if (isMissingHasSeenWelcomeColumnError(error) && "has_seen_welcome" in values) {
+    const { has_seen_welcome, ...fallbackValues } = values;
+    void has_seen_welcome;
     const { error: fallbackError } = await supabase.from("profiles").upsert(fallbackValues);
 
     if (!fallbackError) {
-      return;
+      return { ok: true as const, error: null };
     }
 
-    console.error("Memora: failed to upsert profile state without welcome step field", {
+    console.error("Memora: failed profile write without has_seen_welcome", {
       context,
       values: fallbackValues,
       error: fallbackError,
     });
-    throw fallbackError;
+    return { ok: false as const, error: fallbackError };
   }
 
-  throw error;
+  return { ok: false as const, error };
 }

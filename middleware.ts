@@ -4,9 +4,9 @@ import {
   getNextAuthenticatedRoute,
   readMembershipStateFromUser,
 } from "@/lib/onboarding";
-import { loadWelcomeStepCompletedFromProfile } from "@/lib/profile-state";
+import { loadHasSeenWelcomeFromProfile } from "@/lib/profile-state";
 
-type ProfileQueryClient = Parameters<typeof loadWelcomeStepCompletedFromProfile>[0];
+type ProfileQueryClient = Parameters<typeof loadHasSeenWelcomeFromProfile>[0];
 
 function isProtectedPath(pathname: string) {
   return (
@@ -59,9 +59,12 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname === "/auth" && user) {
-    const welcomeStepCompleted = await loadWelcomeStepCompletedFromProfile(
+    const welcomeStepCompleted = await loadHasSeenWelcomeFromProfile(
       supabase as unknown as ProfileQueryClient,
-      (user as { id: string }).id,
+      {
+        id: (user as { id: string }).id,
+        email: (user as { email?: string | null }).email ?? null,
+      },
       "middleware:/auth",
     );
     const url = request.nextUrl.clone();
@@ -82,9 +85,12 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user) {
-    const welcomeStepCompleted = await loadWelcomeStepCompletedFromProfile(
+    const welcomeStepCompleted = await loadHasSeenWelcomeFromProfile(
       supabase as unknown as ProfileQueryClient,
-      (user as { id: string }).id,
+      {
+        id: (user as { id: string }).id,
+        email: (user as { email?: string | null }).email ?? null,
+      },
       `middleware:${pathname}`,
     );
     const membershipState = readMembershipStateFromUser(
