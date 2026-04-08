@@ -45,12 +45,10 @@ export default function PricingPage() {
                 onboarding.onboardingComplete && onboarding.selectedPlanId === plan.id
                   ? "Current plan"
                   : busyPlanId === plan.id
-                    ? plan.id === "free"
-                      ? "Starting free plan..."
-                      : "Continuing..."
+                    ? "Saving plan..."
                   : plan.id === "free"
                     ? "Start Free"
-                    : "Select Plan"
+                    : "Choose Plan"
               }
               isBusy={busyPlanId === plan.id}
               onSelect={async (selectedPlan) => {
@@ -75,31 +73,24 @@ export default function PricingPage() {
                   return;
                 }
 
-                if (selectedPlan.id === "free") {
-                  setBusyPlanId(selectedPlan.id);
-                  try {
-                    await completeCheckout(selectedPlan.id);
-                    router.push("/galleries");
-                  } catch (checkoutError) {
-                    console.error("Memora: pricing free-plan selection failed", {
-                      planId: selectedPlan.id,
-                      error: checkoutError,
-                    });
-                    setError(
-                      checkoutError instanceof Error
-                        ? checkoutError.message
-                        : "We couldn't save your selected plan. Please try again.",
-                    );
-                  } finally {
-                    setBusyPlanId(null);
-                    submitLockRef.current = false;
-                  }
-                  return;
-                }
-
                 setBusyPlanId(selectedPlan.id);
-                router.push(`/checkout?plan=${selectedPlan.id}`);
-                submitLockRef.current = false;
+                try {
+                  await completeCheckout(selectedPlan.id);
+                  router.replace("/galleries");
+                } catch (checkoutError) {
+                  console.error("Memora: pricing plan selection failed", {
+                    planId: selectedPlan.id,
+                    error: checkoutError,
+                  });
+                  setError(
+                    checkoutError instanceof Error
+                      ? checkoutError.message
+                      : "We couldn't save your selected plan. Please try again.",
+                  );
+                } finally {
+                  setBusyPlanId(null);
+                  submitLockRef.current = false;
+                }
               }}
             />
           ))}
