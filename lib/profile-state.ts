@@ -22,6 +22,13 @@ type ProfileQueryClient = {
     ) => PromiseLike<{
       error: PostgrestError | null;
     }>;
+    update: (
+      values: Record<string, unknown>,
+    ) => {
+      eq: (column: string, value: string) => PromiseLike<{
+        error: PostgrestError | null;
+      }>;
+    };
   };
 };
 
@@ -155,6 +162,44 @@ export async function upsertProfileState(
     });
     return { ok: false as const, error: fallbackError };
   }
+
+  return { ok: false as const, error };
+}
+
+export async function setHasSeenWelcome(
+  supabase: ProfileQueryClient,
+  user: ProfileIdentity | null | undefined,
+  hasSeenWelcome: boolean,
+  context: string,
+) {
+  if (!user?.id) {
+    const error = new Error("User id missing for welcome update.");
+    console.error("Memora: failed to update has_seen_welcome", {
+      context,
+      user,
+      error,
+    });
+    return { ok: false as const, error };
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      has_seen_welcome: hasSeenWelcome,
+      email: user.email ?? null,
+    })
+    .eq("id", user.id);
+
+  if (!error) {
+    return { ok: true as const, error: null };
+  }
+
+  console.error("Memora: failed to update has_seen_welcome", {
+    context,
+    userId: user.id,
+    hasSeenWelcome,
+    error,
+  });
 
   return { ok: false as const, error };
 }

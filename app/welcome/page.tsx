@@ -40,6 +40,7 @@ export default function WelcomePage() {
                   await completeWelcomeStep();
                   router.push("/pricing");
                 } catch (welcomeError) {
+                  console.error("Memora: welcome continue failed", welcomeError);
                   setError(
                     welcomeError instanceof Error
                       ? welcomeError.message

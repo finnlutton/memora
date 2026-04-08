@@ -19,6 +19,7 @@ import {
 import {
   ensureProfileRow,
   loadHasSeenWelcomeFromProfile,
+  setHasSeenWelcome,
   upsertProfileState,
 } from "@/lib/profile-state";
 import { getMembershipPlan, type MembershipPlanId } from "@/lib/plans";
@@ -1483,7 +1484,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           throw new Error("Please sign in again before continuing.");
         }
 
-        await ensureProfileRow(
+        const ensured = await ensureProfileRow(
           supabase,
           {
             id: userId,
@@ -1492,13 +1493,17 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           "store:complete-welcome-step:ensure-profile",
         );
 
-        const profileWrite = await upsertProfileState(
+        if (!ensured) {
+          throw new Error("Unable to create your profile row right now.");
+        }
+
+        const profileWrite = await setHasSeenWelcome(
           supabase,
           {
             id: userId,
             email: userEmail,
-            has_seen_welcome: true,
           },
+          true,
           "store:complete-welcome-step",
         );
 
