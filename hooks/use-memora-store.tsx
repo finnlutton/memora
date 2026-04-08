@@ -618,8 +618,15 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
   const [onboarding, setOnboarding] = useState<OnboardingState>(defaultOnboardingState);
   const [hydrated, setHydrated] = useState(false);
   const [storageQuotaExceeded, setStorageQuotaExceeded] = useState(false);
-  const supabaseRef = useRef(createSupabaseBrowserClient());
+  const supabaseRef = useRef<ReturnType<typeof createSupabaseBrowserClient> | null>(null);
   const hasBootstrappedAuthRef = useRef(false);
+
+  const getSupabase = () => {
+    if (!supabaseRef.current) {
+      supabaseRef.current = createSupabaseBrowserClient();
+    }
+    return supabaseRef.current;
+  };
 
   useEffect(() => {
     if (hasBootstrappedAuthRef.current) {
@@ -628,11 +635,11 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
     hasBootstrappedAuthRef.current = true;
 
     const nextCollections = loadStoredGalleryCollections();
-    const supabase = supabaseRef.current;
     let cancelled = false;
 
     const syncInitialState = async () => {
       try {
+        const supabase = getSupabase();
         const { data, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) {
           console.error("Memora: failed to load auth session", {
@@ -725,7 +732,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!hydrated) return;
 
-    const supabase = supabaseRef.current;
+    const supabase = getSupabase();
 
     const { data: subscription } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session: Session | null) => {
@@ -1430,7 +1437,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         );
       },
       async completeCheckout(planId) {
-        const supabase = supabaseRef.current;
+        const supabase = getSupabase();
         const userId = onboarding.user?.id;
         const userEmail = onboarding.user?.email ?? null;
 
@@ -1483,7 +1490,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         }));
       },
       async completeWelcomeStep() {
-        const supabase = supabaseRef.current;
+        const supabase = getSupabase();
         const userId = onboarding.user?.id;
         const userEmail = onboarding.user?.email ?? null;
 
