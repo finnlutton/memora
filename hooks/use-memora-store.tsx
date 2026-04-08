@@ -526,23 +526,6 @@ function loadStoredGalleryCollections() {
   }
 }
 
-function loadLegacyOnboarding() {
-  if (typeof window === "undefined") {
-    return defaultOnboardingState;
-  }
-
-  const storedValue = window.localStorage.getItem(LEGACY_ONBOARDING_KEY);
-  if (!storedValue) {
-    return defaultOnboardingState;
-  }
-
-  try {
-    return JSON.parse(storedValue) as OnboardingState;
-  } catch {
-    return defaultOnboardingState;
-  }
-}
-
 function buildOnboardingStateFromUser(
   user: AuthUserLike,
   welcomeStepCompleted = false,
@@ -643,7 +626,6 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
     hasBootstrappedAuthRef.current = true;
 
     const nextCollections = loadStoredGalleryCollections();
-    const legacyOnboarding = loadLegacyOnboarding();
     const supabase = supabaseRef.current;
     let cancelled = false;
 
@@ -661,27 +643,6 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         }
 
         const nextUser = data.session?.user ?? null;
-        let membershipState = readMembershipStateFromUser(nextUser);
-
-        if (
-          nextUser &&
-          !membershipState.selectedPlanId &&
-          legacyOnboarding.selectedPlanId &&
-          getMembershipPlan(legacyOnboarding.selectedPlanId)
-        ) {
-          membershipState = {
-            selectedPlanId: legacyOnboarding.selectedPlanId,
-            onboardingComplete: legacyOnboarding.onboardingComplete,
-          };
-
-          try {
-            await supabase.auth.updateUser({
-              data: buildMembershipMetadata(membershipState),
-            });
-          } catch (error) {
-            console.error("Memora: failed to migrate membership metadata", error);
-          }
-        }
 
         if (nextUser) {
           await ensureProfileRow(
@@ -712,12 +673,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           setUserGalleryCollection(persistedUserGalleries);
           setOnboarding(
             buildOnboardingStateFromUser(
-              nextUser
-                ? {
-                    ...nextUser,
-                    user_metadata: buildMembershipMetadata(membershipState),
-                  }
-                : null,
+              nextUser,
               welcomeStepCompleted,
             ),
           );
@@ -1526,6 +1482,15 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         if (!userId) {
           throw new Error("Please sign in again before continuing.");
         }
+
+        await ensureProfileRow(
+          supabase,
+          {
+            id: userId,
+            email: userEmail,
+          },
+          "store:complete-welcome-step:ensure-profile",
+        );
 
         const profileWrite = await upsertProfileState(
           supabase,

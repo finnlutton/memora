@@ -96,7 +96,7 @@ export function AppShell({
             {onboarding.isAuthenticated ? (
               <SettingsDropdown
                 email={onboarding.user?.email ?? ""}
-                planLabel={selectedPlan?.name ?? "Membership pending"}
+                planLabel={selectedPlan?.name ?? "No plan selected"}
                 galleryCount={selectedPlan?.galleryCount ?? 0}
                 currentPlanId={onboarding.selectedPlanId}
                 onSelectPlan={(planId) => {
@@ -224,7 +224,7 @@ function SettingsDropdown({
                 Capacity
               </span>
               <span className="text-right text-[color:var(--ink)]">
-                {galleryCount} active galleries
+                {currentPlanId ? `${galleryCount} active galleries` : "Select a plan first"}
               </span>
             </div>
           </div>

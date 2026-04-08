@@ -55,7 +55,6 @@ export async function ensureProfileRow(
   const { error } = await supabase.from("profiles").upsert({
     id: user.id,
     email: user.email ?? null,
-    has_seen_welcome: false,
   });
 
   if (!error) {
