@@ -5,6 +5,7 @@ import {
   readMembershipStateFromUser,
 } from "@/lib/onboarding";
 import { loadHasSeenWelcomeFromProfile } from "@/lib/profile-state";
+import { getServerSiteOrigin } from "@/lib/site-url";
 
 type ProfileQueryClient = Parameters<typeof loadHasSeenWelcomeFromProfile>[0];
 
@@ -19,11 +20,20 @@ function isProtectedPath(pathname: string) {
 }
 
 export async function middleware(request: NextRequest) {
+  const siteOrigin = getServerSiteOrigin(request.nextUrl.origin);
   const response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   });
+
+  if (request.nextUrl.origin !== siteOrigin) {
+    const canonicalUrl = new URL(request.nextUrl.toString());
+    const normalizedOrigin = new URL(siteOrigin);
+    canonicalUrl.protocol = normalizedOrigin.protocol;
+    canonicalUrl.host = normalizedOrigin.host;
+    return NextResponse.redirect(canonicalUrl);
+  }
 
   const pathname = request.nextUrl.pathname;
   if (pathname !== "/auth" && !isProtectedPath(pathname)) {

@@ -13,6 +13,7 @@ import {
   ensureProfileRow,
   loadHasSeenWelcomeFromProfile,
 } from "@/lib/profile-state";
+import { buildAbsoluteAppUrl, getClientSiteOrigin } from "@/lib/site-url";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 
@@ -26,30 +27,13 @@ function safeInternalPath(value: string | null) {
   return value;
 }
 
-function getAppOrigin() {
-  const configuredAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  if (configuredAppUrl) {
-    try {
-      return new URL(configuredAppUrl).origin;
-    } catch {
-      console.warn("Memora: NEXT_PUBLIC_APP_URL is invalid. Falling back to window origin.");
-    }
-  }
-
-  if (typeof window !== "undefined") {
-    return window.location.origin;
-  }
-
-  return null;
-}
-
 function buildEmailRedirectUrl() {
-  const appOrigin = getAppOrigin();
+  const appOrigin = getClientSiteOrigin();
   if (!appOrigin) {
     return undefined;
   }
 
-  return new URL("/email-confirmed", appOrigin).toString();
+  return buildAbsoluteAppUrl("/email-confirmed", appOrigin);
 }
 
 function navigateAfterAuth(nextRoute: string, router: ReturnType<typeof useRouter>) {

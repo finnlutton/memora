@@ -3,6 +3,7 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getNextAuthenticatedRoute, readMembershipStateFromUser } from "@/lib/onboarding";
 import { ensureProfileRow, loadHasSeenWelcomeFromProfile } from "@/lib/profile-state";
+import { getServerSiteOrigin } from "@/lib/site-url";
 
 type ProfileQueryClient = Parameters<typeof loadHasSeenWelcomeFromProfile>[0];
 
@@ -16,13 +17,18 @@ function safeInternalPath(value: string | null) {
 function applyInternalRedirect(url: URL, nextPath: string | null, fallbackPath: string) {
   const target = safeInternalPath(nextPath) ?? fallbackPath;
   const targetUrl = new URL(target, url.origin);
+  url.protocol = targetUrl.protocol;
+  url.host = targetUrl.host;
   url.pathname = targetUrl.pathname;
   url.search = targetUrl.search;
   url.hash = "";
 }
 
 function errorRedirect(request: NextRequest, message: string) {
-  const url = request.nextUrl.clone();
+  const url = new URL(request.nextUrl.toString());
+  const origin = getServerSiteOrigin(request.nextUrl.origin);
+  url.protocol = new URL(origin).protocol;
+  url.host = new URL(origin).host;
   url.pathname = "/auth";
   url.search = "";
   url.searchParams.set("mode", "signin");
@@ -33,6 +39,7 @@ function errorRedirect(request: NextRequest, message: string) {
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
+  const requestOrigin = getServerSiteOrigin(requestUrl.origin);
   const code = requestUrl.searchParams.get("code");
   const tokenHash = requestUrl.searchParams.get("token_hash");
   const type = requestUrl.searchParams.get("type");
@@ -87,7 +94,10 @@ export async function GET(request: NextRequest) {
     },
     "auth-callback",
   );
-  const url = request.nextUrl.clone();
+  const url = new URL(request.nextUrl.toString());
+  const normalizedOrigin = new URL(requestOrigin);
+  url.protocol = normalizedOrigin.protocol;
+  url.host = normalizedOrigin.host;
   if (!welcomeStepCompleted) {
     applyInternalRedirect(url, next, "/welcome");
     if (url.pathname !== "/welcome") {
