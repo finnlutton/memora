@@ -1438,17 +1438,21 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           throw new Error("Please sign in again before choosing a plan.");
         }
 
-        const ensured = await ensureProfileRow(
+        const profileState = await loadProfileState(
           supabase,
           {
             id: userId,
             email: userEmail,
           },
-          "store:complete-checkout:ensure-profile",
+          "store:complete-checkout:load-profile",
         );
 
-        if (!ensured) {
-          throw new Error("Unable to create your profile row right now.");
+        if (!profileState.exists) {
+          console.error("Memora: selected_plan update aborted because profile row was missing", {
+            context: "store:complete-checkout",
+            userId,
+          });
+          throw new Error("We couldn't load your account profile. Please sign in again.");
         }
 
         const planWrite = await setSelectedPlan(
@@ -1468,7 +1472,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             planId,
             error: planWrite.error,
           });
-          throw planWrite.error ?? new Error("Unable to save your plan right now.");
+          throw planWrite.error ?? new Error("Unable to save your selected plan right now.");
         }
 
         setOnboarding((current) => ({

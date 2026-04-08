@@ -189,7 +189,6 @@ export async function setSelectedPlan(
     .from("profiles")
     .update({
       selected_plan: planId,
-      email: user.email ?? null,
     })
     .eq("id", user.id);
 

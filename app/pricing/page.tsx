@@ -81,10 +81,14 @@ export default function PricingPage() {
                     await completeCheckout(selectedPlan.id);
                     router.push("/galleries");
                   } catch (checkoutError) {
+                    console.error("Memora: pricing free-plan selection failed", {
+                      planId: selectedPlan.id,
+                      error: checkoutError,
+                    });
                     setError(
                       checkoutError instanceof Error
                         ? checkoutError.message
-                        : "We couldn't save your plan. Please try again.",
+                        : "We couldn't save your selected plan. Please try again.",
                     );
                   } finally {
                     setBusyPlanId(null);
