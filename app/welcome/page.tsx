@@ -44,7 +44,7 @@ export default function WelcomePage() {
                   setError(
                     welcomeError instanceof Error
                       ? welcomeError.message
-                      : "Unable to continue right now.",
+                      : "Unable to update your welcome status right now.",
                   );
                 } finally {
                   setBusy(false);

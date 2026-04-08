@@ -1487,17 +1487,28 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           throw new Error("Please sign in again before continuing.");
         }
 
-        const ensured = await ensureProfileRow(
+        const profileState = await loadProfileState(
           supabase,
           {
             id: userId,
             email: userEmail,
           },
-          "store:complete-welcome-step:ensure-profile",
+          "store:complete-welcome-step:load-profile",
         );
 
-        if (!ensured) {
-          throw new Error("Unable to create your profile row right now.");
+        if (!profileState.exists) {
+          const ensured = await ensureProfileRow(
+            supabase,
+            {
+              id: userId,
+              email: userEmail,
+            },
+            "store:complete-welcome-step:create-profile",
+          );
+
+          if (!ensured) {
+            throw new Error("Unable to create your profile row right now.");
+          }
         }
 
         const profileWrite = await setHasSeenWelcome(
@@ -1511,6 +1522,11 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         );
 
         if (!profileWrite.ok) {
+          console.error("Memora: welcome status update failed", {
+            context: "store:complete-welcome-step",
+            userId,
+            error: profileWrite.error,
+          });
           throw profileWrite.error ?? new Error("Unable to update your welcome status.");
         }
 

@@ -39,6 +39,7 @@ export type ProfileIdentity = {
 };
 
 export type ResolvedProfileState = {
+  exists: boolean;
   hasSeenWelcome: boolean;
   selectedPlanId: MembershipPlanId | null;
 };
@@ -93,6 +94,7 @@ export async function loadProfileState(
       user,
     });
     return {
+      exists: false,
       hasSeenWelcome: false,
       selectedPlanId: null,
     } satisfies ResolvedProfileState;
@@ -115,12 +117,14 @@ export async function loadProfileState(
 
   if (!data) {
     return {
+      exists: false,
       hasSeenWelcome: false,
       selectedPlanId: null,
     } satisfies ResolvedProfileState;
   }
 
   return {
+    exists: true,
     hasSeenWelcome: Boolean(data.has_seen_welcome),
     selectedPlanId: normalizePlanId(data.selected_plan),
   } satisfies ResolvedProfileState;
