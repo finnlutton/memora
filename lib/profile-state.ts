@@ -28,7 +28,14 @@ type ProfileQueryClient = {
     ) => {
       eq: (column: string, value: string) => PromiseLike<{
         error: PostgrestError | null;
-      }>;
+      }> & {
+        select: (columns: string) => {
+          maybeSingle: () => PromiseLike<{
+            data: ProfileStateRow;
+            error: PostgrestError | null;
+          }>;
+        };
+      };
     };
   };
 };
@@ -185,23 +192,48 @@ export async function setSelectedPlan(
     return { ok: false as const, error };
   }
 
-  const { error } = await supabase
+  console.info("Memora: selected_plan update attempt", {
+    context,
+    userId: user.id,
+    planId,
+  });
+
+  const { data, error } = await supabase
     .from("profiles")
     .update({
       selected_plan: planId,
     })
-    .eq("id", user.id);
+    .eq("id", user.id)
+    .select("id, selected_plan")
+    .maybeSingle();
 
-  if (!error) {
-    return { ok: true as const, error: null };
+  if (error) {
+    console.error("Memora: failed to update selected_plan", {
+      context,
+      userId: user.id,
+      planId,
+      error,
+    });
+
+    return { ok: false as const, error };
   }
 
-  console.error("Memora: failed to update selected_plan", {
+  if (!data) {
+    const missingRowError = new Error("Profile row not found for selected_plan update.");
+    console.error("Memora: selected_plan update affected no profile row", {
+      context,
+      userId: user.id,
+      planId,
+      error: missingRowError,
+    });
+    return { ok: false as const, error: missingRowError };
+  }
+
+  console.info("Memora: selected_plan update success", {
     context,
     userId: user.id,
     planId,
-    error,
   });
 
-  return { ok: false as const, error };
+  return { ok: true as const, error: null };
 }

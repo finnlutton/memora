@@ -815,19 +815,30 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
 
         if (onboarding.isAuthenticated) {
           const supabase = createSupabaseBrowserClient();
-          const { data } = await supabase.auth.getUser();
-          const userId = data.user?.id;
+          let userId = onboarding.user?.id ?? null;
+          let authLookupError: unknown = null;
+
+          if (!userId) {
+            const { data, error } = await supabase.auth.getUser();
+            userId = data.user?.id ?? null;
+            authLookupError = error;
+          }
+
+          console.info("Memora: create gallery user resolved", {
+            onboardingUserId: onboarding.user?.id ?? null,
+            resolvedUserId: userId,
+            authLookupError,
+          });
+
           if (!userId) {
             throw new Error("Please sign in again to create a gallery.");
           }
 
-          if (process.env.NODE_ENV !== "production") {
-            console.info("Memora: create gallery start", {
-              userId,
-              title: input.title,
-              hasCoverImage: Boolean(input.coverImage),
-            });
-          }
+          console.info("Memora: create gallery start", {
+            userId,
+            title: input.title,
+            hasCoverImage: Boolean(input.coverImage),
+          });
 
           persistedCover = await uploadImageSourceIfNeeded(
             supabase,
@@ -837,14 +848,12 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             nextGalleryId,
           );
 
-          if (process.env.NODE_ENV !== "production") {
-            console.info("Memora: create gallery upload complete", {
-              galleryId: nextGalleryId,
-              persistedCover,
-            });
-          }
+          console.info("Memora: create gallery upload complete", {
+            galleryId: nextGalleryId,
+            persistedCover,
+          });
 
-          const { error } = await supabase.from("galleries").insert({
+          const insertPayload = {
             id: nextGalleryId,
             user_id: userId,
             title: input.title,
@@ -857,7 +866,15 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             people: input.people,
             mood_tags: input.moodTags,
             privacy: input.privacy,
+          };
+
+          console.info("Memora: create gallery insert attempt", {
+            galleryId: nextGalleryId,
+            userId,
+            payload: insertPayload,
           });
+
+          const { error } = await supabase.from("galleries").insert(insertPayload);
           if (error) {
             console.error("Memora: create gallery insert failed", {
               galleryId: nextGalleryId,
@@ -867,7 +884,25 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             throw error;
           }
 
-          persistedCover = await resolveSingleImageUrl(supabase, persistedCover);
+          console.info("Memora: create gallery insert success", {
+            galleryId: nextGalleryId,
+            userId,
+          });
+
+          try {
+            persistedCover = await resolveSingleImageUrl(supabase, persistedCover);
+            console.info("Memora: create gallery post-insert cover resolution success", {
+              galleryId: nextGalleryId,
+              userId,
+            });
+          } catch (resolutionError) {
+            console.error("Memora: create gallery post-insert cover resolution failed", {
+              galleryId: nextGalleryId,
+              userId,
+              error: resolutionError,
+            });
+            persistedCover = input.coverImage || persistedCover;
+          }
         }
 
         const nextGallery: Gallery = {
@@ -879,6 +914,10 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           subgalleries: [],
         };
         setActiveGalleries((current) => [nextGallery, ...current]);
+        console.info("Memora: create gallery local state update", {
+          galleryId: nextGallery.id,
+          authenticated: onboarding.isAuthenticated,
+        });
         return nextGallery.id;
       },
       async updateGallery(galleryId, input) {
@@ -1438,28 +1477,26 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
       },
       async completeCheckout(planId) {
         const supabase = getSupabase();
-        const userId = onboarding.user?.id;
+        let userId = onboarding.user?.id ?? null;
         const userEmail = onboarding.user?.email ?? null;
+
+        console.info("Memora: pricing plan click fired", {
+          planId,
+          onboardingUserId: onboarding.user?.id ?? null,
+        });
+
+        if (!userId) {
+          const { data, error } = await supabase.auth.getUser();
+          console.info("Memora: pricing user lookup result", {
+            planId,
+            userId: data.user?.id ?? null,
+            error,
+          });
+          userId = data.user?.id ?? null;
+        }
 
         if (!userId) {
           throw new Error("Please sign in again before choosing a plan.");
-        }
-
-        const profileState = await loadProfileState(
-          supabase,
-          {
-            id: userId,
-            email: userEmail,
-          },
-          "store:complete-checkout:load-profile",
-        );
-
-        if (!profileState.exists) {
-          console.error("Memora: selected_plan update aborted because profile row was missing", {
-            context: "store:complete-checkout",
-            userId,
-          });
-          throw new Error("We couldn't load your account profile. Please sign in again.");
         }
 
         const planWrite = await setSelectedPlan(
@@ -1481,6 +1518,12 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           });
           throw planWrite.error ?? new Error("Unable to save your selected plan right now.");
         }
+
+        console.info("Memora: pricing redirect attempted", {
+          userId,
+          planId,
+          target: "/galleries",
+        });
 
         setOnboarding((current) => ({
           ...current,

@@ -52,6 +52,12 @@ export default function PricingPage() {
               }
               isBusy={busyPlanId === plan.id}
               onSelect={async (selectedPlan) => {
+                console.info("Memora: pricing card selected", {
+                  planId: selectedPlan.id,
+                  busyPlanId,
+                  submitLocked: submitLockRef.current,
+                });
+
                 if (busyPlanId || submitLockRef.current) {
                   return;
                 }
@@ -76,6 +82,10 @@ export default function PricingPage() {
                 setBusyPlanId(selectedPlan.id);
                 try {
                   await completeCheckout(selectedPlan.id);
+                  console.info("Memora: pricing navigation to dashboard", {
+                    planId: selectedPlan.id,
+                    target: "/galleries",
+                  });
                   router.replace("/galleries");
                 } catch (checkoutError) {
                   console.error("Memora: pricing plan selection failed", {
