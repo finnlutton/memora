@@ -1,17 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { GalleryCard } from "@/components/gallery-card";
+import { JourneyCard } from "@/components/journey-card";
+import { JourneyCelebration } from "@/components/journey-celebration";
 import { Button } from "@/components/ui/button";
 import { useMemoraStore } from "@/hooks/use-memora-store";
+import {
+  getJourneyStage,
+  getJourneyLineModel,
+  getJourneyStats,
+  getJourneySupportCopy,
+  getLatestCelebratedMilestone,
+  getNextJourneyMilestone,
+  getResolvedJourneyMilestones,
+} from "@/lib/journey";
 import { getMembershipPlan } from "@/lib/plans";
 
 export default function GalleriesPage() {
   const { galleries, hydrated, onboarding } = useMemoraStore();
+  const [shownMilestoneIds, setShownMilestoneIds] = useState<string[]>([]);
   const sortedGalleries = useMemo(
     () =>
       [...galleries].sort(
@@ -29,6 +41,46 @@ export default function GalleriesPage() {
   const usageLabel = selectedPlan
     ? `${sortedGalleries.length} of ${selectedPlan.galleryCount} active galleries`
     : `${sortedGalleries.length} galleries in archive`;
+  const journey = useMemo(() => {
+    const stats = getJourneyStats(sortedGalleries);
+    const stage = getJourneyStage(stats.galleryCount);
+    const line = getJourneyLineModel(stats.galleryCount);
+    const nextMilestone = getNextJourneyMilestone(stats);
+    const supportCopy = getJourneySupportCopy(stats);
+    const milestones = getResolvedJourneyMilestones(stats);
+    return { stats, stage, line, nextMilestone, supportCopy, milestones };
+  }, [sortedGalleries]);
+  const storageKey = onboarding.user?.id ? `memora::journey-celebrations:v1:${onboarding.user.id}` : null;
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !storageKey) {
+      queueMicrotask(() => setShownMilestoneIds([]));
+      return;
+    }
+
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      queueMicrotask(() =>
+        setShownMilestoneIds(raw ? (JSON.parse(raw) as string[]) : []),
+      );
+    } catch {
+      queueMicrotask(() => setShownMilestoneIds([]));
+    }
+  }, [storageKey]);
+
+  const pendingCelebration = useMemo(
+    () => getLatestCelebratedMilestone(journey.milestones, shownMilestoneIds),
+    [journey.milestones, shownMilestoneIds],
+  );
+
+  const dismissCelebration = () => {
+    if (!pendingCelebration) return;
+    const nextShownIds = Array.from(new Set([...shownMilestoneIds, pendingCelebration.id]));
+    setShownMilestoneIds(nextShownIds);
+    if (typeof window !== "undefined" && storageKey) {
+      window.localStorage.setItem(storageKey, JSON.stringify(nextShownIds));
+    }
+  };
 
   return (
     <AppShell>
@@ -69,6 +121,26 @@ export default function GalleriesPage() {
             value={sortedGalleries.length ? "Open a gallery" : "Create your first gallery"}
           />
         </div>
+      </section>
+
+      {pendingCelebration ? (
+        <section className="mb-6">
+          <JourneyCelebration
+            title={pendingCelebration.title}
+            supportingText={pendingCelebration.supportingText}
+            onDismiss={dismissCelebration}
+          />
+        </section>
+      ) : null}
+
+      <section className="mb-6">
+        <JourneyCard
+          href="/galleries/journey"
+          stage={journey.stage}
+          stats={journey.stats}
+          lineModel={journey.line}
+          supportCopy={journey.supportCopy}
+        />
       </section>
 
       {!hydrated ? (
