@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Plus } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { GalleryCard } from "@/components/gallery-card";
 import { JourneyCard } from "@/components/journey-card";
-import { JourneyCelebration } from "@/components/journey-celebration";
 import { Button } from "@/components/ui/button";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 import {
@@ -15,15 +14,11 @@ import {
   getJourneyLineModel,
   getJourneyStats,
   getJourneySupportCopy,
-  getLatestCelebratedMilestone,
-  getNextJourneyMilestone,
-  getResolvedJourneyMilestones,
 } from "@/lib/journey";
 import { getMembershipPlan } from "@/lib/plans";
 
 export default function GalleriesPage() {
   const { galleries, hydrated, onboarding } = useMemoraStore();
-  const [shownMilestoneIds, setShownMilestoneIds] = useState<string[]>([]);
   const sortedGalleries = useMemo(
     () =>
       [...galleries].sort(
@@ -45,49 +40,16 @@ export default function GalleriesPage() {
     const stats = getJourneyStats(sortedGalleries);
     const stage = getJourneyStage(stats.galleryCount);
     const line = getJourneyLineModel(stats.galleryCount);
-    const nextMilestone = getNextJourneyMilestone(stats);
     const supportCopy = getJourneySupportCopy(stats);
-    const milestones = getResolvedJourneyMilestones(stats);
-    return { stats, stage, line, nextMilestone, supportCopy, milestones };
+    return { stats, stage, line, supportCopy };
   }, [sortedGalleries]);
-  const storageKey = onboarding.user?.id ? `memora::journey-celebrations:v1:${onboarding.user.id}` : null;
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !storageKey) {
-      queueMicrotask(() => setShownMilestoneIds([]));
-      return;
-    }
-
-    try {
-      const raw = window.localStorage.getItem(storageKey);
-      queueMicrotask(() =>
-        setShownMilestoneIds(raw ? (JSON.parse(raw) as string[]) : []),
-      );
-    } catch {
-      queueMicrotask(() => setShownMilestoneIds([]));
-    }
-  }, [storageKey]);
-
-  const pendingCelebration = useMemo(
-    () => getLatestCelebratedMilestone(journey.milestones, shownMilestoneIds),
-    [journey.milestones, shownMilestoneIds],
-  );
-
-  const dismissCelebration = () => {
-    if (!pendingCelebration) return;
-    const nextShownIds = Array.from(new Set([...shownMilestoneIds, pendingCelebration.id]));
-    setShownMilestoneIds(nextShownIds);
-    if (typeof window !== "undefined" && storageKey) {
-      window.localStorage.setItem(storageKey, JSON.stringify(nextShownIds));
-    }
-  };
 
   return (
     <AppShell>
-      <section className="mb-8 grid gap-8 xl:grid-cols-[minmax(0,1.45fr)_minmax(18rem,0.8fr)] xl:items-start">
+      <section className="mb-6 grid gap-5 xl:grid-cols-[minmax(0,1.52fr)_minmax(16rem,0.66fr)] xl:items-start">
         <div className="relative overflow-hidden bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(247,250,253,0.72))] px-1 py-1">
           <div className="pointer-events-none absolute left-0 top-0 h-32 w-32 rounded-full bg-[radial-gradient(circle,rgba(210,222,236,0.34),transparent_68%)]" />
-          <div className="relative px-4 py-5 md:px-6 md:py-6">
+          <div className="relative px-4 py-4 md:px-6 md:py-5">
             <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
               Dashboard
             </p>
@@ -97,7 +59,7 @@ export default function GalleriesPage() {
             <p className="mt-4 max-w-2xl text-sm leading-7 text-[color:var(--ink-soft)] md:text-[0.95rem]">
               Continue building your archive, return to the moments already preserved, and let each gallery sit within a more composed personal record.
             </p>
-            <div className="mt-6 flex flex-wrap gap-2">
+            <div className="mt-5 flex flex-wrap gap-2">
               {hasReachedGalleryLimit ? (
                 <Button asChild variant="secondary">
                   <Link href="/pricing?source=gallery-limit">
@@ -116,11 +78,11 @@ export default function GalleriesPage() {
           </div>
         </div>
 
-        <aside className="bg-[linear-gradient(180deg,rgba(247,250,253,0.88),rgba(255,255,255,0.7))] px-4 py-5 md:px-5 md:py-6">
+        <aside className="self-start bg-[linear-gradient(180deg,rgba(247,250,253,0.74),rgba(255,255,255,0.56))] px-3.5 py-4 md:px-4 md:py-4.5">
           <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
             Archive at a glance
           </p>
-          <div className="mt-4 space-y-4">
+          <div className="mt-3 space-y-3">
             <DashboardPanel
               label="Membership"
               value={selectedPlan?.name ?? "No plan selected"}
@@ -144,17 +106,7 @@ export default function GalleriesPage() {
         </aside>
       </section>
 
-      {pendingCelebration ? (
-        <section className="mb-8">
-          <JourneyCelebration
-            title={pendingCelebration.title}
-            supportingText={pendingCelebration.supportingText}
-            onDismiss={dismissCelebration}
-          />
-        </section>
-      ) : null}
-
-      <section className="mb-8">
+      <section className="mb-6">
         <JourneyCard
           href="/galleries/journey"
           stage={journey.stage}
@@ -169,7 +121,7 @@ export default function GalleriesPage() {
           Loading your memories...
         </div>
       ) : sortedGalleries.length ? (
-        <section className="space-y-4">
+        <section className="space-y-3">
           <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
             Active archive
           </p>
@@ -207,14 +159,14 @@ function DashboardPanel({
   detail: string;
 }) {
   return (
-    <div className="border-b border-[rgba(38,58,83,0.08)] pb-4 last:border-b-0 last:pb-0">
+    <div className="border-b border-[rgba(38,58,83,0.08)] pb-3 last:border-b-0 last:pb-0">
       <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
         {label}
       </p>
-      <p className="mt-2 font-serif text-[1.9rem] leading-tight text-[color:var(--ink)]">
+      <p className="mt-1.5 font-serif text-[1.45rem] leading-tight text-[color:var(--ink)] md:text-[1.6rem]">
         {value}
       </p>
-      <p className="mt-2 max-w-[26ch] text-xs leading-6 text-[color:var(--ink-soft)]">
+      <p className="mt-1.5 max-w-[24ch] text-[11px] leading-5 text-[color:var(--ink-soft)]">
         {detail}
       </p>
     </div>
