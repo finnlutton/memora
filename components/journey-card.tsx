@@ -8,12 +8,14 @@ export function JourneyCard({
   stats,
   lineModel,
   supportCopy,
+  showStats = true,
 }: {
   href: string;
   stage: JourneyStage;
   stats: JourneyStats;
   lineModel: JourneyLineModel;
   supportCopy: string;
+  showStats?: boolean;
 }) {
   return (
     <Link
@@ -45,11 +47,13 @@ export function JourneyCard({
           </div>
         </div>
 
-        <div className="grid gap-5 border-t border-[rgba(38,58,83,0.08)] pt-5 sm:grid-cols-3">
-          <JourneyMetric label="Galleries" value={stats.galleryCount} note="Chapters preserved" />
-          <JourneyMetric label="Scenes" value={stats.sceneCount} note="Moments given shape" />
-          <JourneyMetric label="Moments" value={stats.momentCount} note="Images held in memory" />
-        </div>
+        {showStats ? (
+          <div className="grid gap-5 border-t border-[rgba(38,58,83,0.08)] pt-5 sm:grid-cols-3">
+            <JourneyMetric label="Galleries" value={stats.galleryCount} note="Chapters preserved" />
+            <JourneyMetric label="Scenes" value={stats.sceneCount} note="Moments given shape" />
+            <JourneyMetric label="Moments" value={stats.momentCount} note="Images held in memory" />
+          </div>
+        ) : null}
       </div>
     </Link>
   );

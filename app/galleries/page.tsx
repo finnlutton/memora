@@ -46,7 +46,7 @@ export default function GalleriesPage() {
 
   return (
     <AppShell>
-      <section className="mb-6 grid gap-5 xl:grid-cols-[minmax(0,1.52fr)_minmax(16rem,0.66fr)] xl:items-start">
+      <section className="mb-6">
         <div className="relative overflow-hidden bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(247,250,253,0.72))] px-1 py-1">
           <div className="pointer-events-none absolute left-0 top-0 h-32 w-32 rounded-full bg-[radial-gradient(circle,rgba(210,222,236,0.34),transparent_68%)]" />
           <div className="relative px-4 py-4 md:px-6 md:py-5">
@@ -59,6 +59,36 @@ export default function GalleriesPage() {
             <p className="mt-4 max-w-2xl text-sm leading-7 text-[color:var(--ink-soft)] md:text-[0.95rem]">
               Continue building your archive, return to the moments already preserved, and let each gallery sit within a more composed personal record.
             </p>
+            <div className="mt-6 max-w-4xl border-t border-[rgba(38,58,83,0.08)] pt-4">
+              <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
+                Archive at a glance
+              </p>
+              <div className="mt-3 grid gap-4 md:grid-cols-3 md:gap-6">
+                <DashboardPanel
+                  label="Membership"
+                  value={selectedPlan?.name ?? "No plan selected"}
+                  detail={
+                    selectedPlan
+                      ? `${selectedPlan.galleryCount} gallery${selectedPlan.galleryCount === 1 ? "" : "ies"} included`
+                      : "Choose a plan when you're ready"
+                  }
+                />
+                <DashboardPanel
+                  label="Archive usage"
+                  value={usageLabel}
+                  detail="A quieter measure of what is already taking shape."
+                />
+                <DashboardPanel
+                  label="Next step"
+                  value={sortedGalleries.length ? "Open a gallery" : "Create your first gallery"}
+                  detail={
+                    sortedGalleries.length
+                      ? "Return to a chapter and continue arranging its scenes."
+                      : "Begin with one chapter and let the archive grow from there."
+                  }
+                />
+              </div>
+            </div>
             <div className="mt-5 flex flex-wrap gap-2">
               {hasReachedGalleryLimit ? (
                 <Button asChild variant="secondary">
@@ -77,33 +107,6 @@ export default function GalleriesPage() {
             </div>
           </div>
         </div>
-
-        <aside className="self-start bg-[linear-gradient(180deg,rgba(247,250,253,0.74),rgba(255,255,255,0.56))] px-3.5 py-4 md:px-4 md:py-4.5">
-          <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
-            Archive at a glance
-          </p>
-          <div className="mt-3 space-y-3">
-            <DashboardPanel
-              label="Membership"
-              value={selectedPlan?.name ?? "No plan selected"}
-              detail={
-                selectedPlan
-                  ? `${selectedPlan.galleryCount} gallery${selectedPlan.galleryCount === 1 ? "" : "ies"} included`
-                  : "Choose a plan when you're ready"
-              }
-            />
-            <DashboardPanel label="Archive usage" value={usageLabel} detail="A quieter measure of what is already taking shape." />
-            <DashboardPanel
-              label="Next step"
-              value={sortedGalleries.length ? "Open a gallery" : "Create your first gallery"}
-              detail={
-                sortedGalleries.length
-                  ? "Return to a chapter and continue arranging its scenes."
-                  : "Begin with one chapter and let the archive grow from there."
-              }
-            />
-          </div>
-        </aside>
       </section>
 
       <section className="mb-6">
@@ -113,6 +116,7 @@ export default function GalleriesPage() {
           stats={journey.stats}
           lineModel={journey.line}
           supportCopy={journey.supportCopy}
+          showStats={false}
         />
       </section>
 
@@ -159,7 +163,7 @@ function DashboardPanel({
   detail: string;
 }) {
   return (
-    <div className="border-b border-[rgba(38,58,83,0.08)] pb-3 last:border-b-0 last:pb-0">
+    <div className="min-w-0">
       <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
         {label}
       </p>
