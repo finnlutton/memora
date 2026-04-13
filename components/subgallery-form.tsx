@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowLeft, GripHorizontal, Save, Sparkles } from "lucide-react";
+import { LocationAutocompleteInput } from "@/components/location-autocomplete-input";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { Button } from "@/components/ui/button";
 import { filesToPhotos, readFileAsDataUrl } from "@/lib/file";
@@ -30,6 +31,8 @@ export function SubgalleryForm({
   const [title, setTitle] = useState(initialValue?.title ?? "");
   const [coverImage, setCoverImage] = useState(initialValue?.coverImage ?? "/demo/mountain-window.svg");
   const [location, setLocation] = useState(initialValue?.location ?? "");
+  const [locationLat, setLocationLat] = useState<number | null>(initialValue?.locationLat ?? null);
+  const [locationLng, setLocationLng] = useState<number | null>(initialValue?.locationLng ?? null);
   const [dateLabel, setDateLabel] = useState(initialValue?.dateLabel ?? "");
   const [description, setDescription] = useState(initialValue?.description ?? "");
   const [photos, setPhotos] = useState<MemoryPhoto[]>(initialValue?.photos ?? []);
@@ -47,6 +50,8 @@ export function SubgalleryForm({
         title,
         coverImage,
         location,
+        locationLat,
+        locationLng,
         dateLabel,
         description,
         photos,
@@ -86,11 +91,14 @@ export function SubgalleryForm({
             </label>
             <div className="grid gap-3 md:grid-cols-2">
               <label className="space-y-2">
-                <span className="text-sm text-[color:var(--ink-soft)]">Location</span>
-                <input
-                  required
-                  value={location}
-                  onChange={(event) => setLocation(event.target.value)}
+                <span className="text-sm text-[color:var(--ink-soft)]">Location (optional)</span>
+                <LocationAutocompleteInput
+                  value={{ label: location, lat: locationLat, lng: locationLng }}
+                  onChange={(next) => {
+                    setLocation(next.label);
+                    setLocationLat(next.lat);
+                    setLocationLng(next.lng);
+                  }}
                   className={fieldClassName()}
                   placeholder="Zermatt, Switzerland"
                 />

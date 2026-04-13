@@ -6,15 +6,9 @@ import { Plus } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { GalleryCard } from "@/components/gallery-card";
-import { JourneyCard } from "@/components/journey-card";
+import { WorldGlobe } from "@/components/WorldGlobe";
 import { Button } from "@/components/ui/button";
 import { useMemoraStore } from "@/hooks/use-memora-store";
-import {
-  getJourneyStage,
-  getJourneyLineModel,
-  getJourneyStats,
-  getJourneySupportCopy,
-} from "@/lib/journey";
 import { getMembershipPlan } from "@/lib/plans";
 
 export default function GalleriesPage() {
@@ -36,12 +30,30 @@ export default function GalleriesPage() {
   const usageLabel = selectedPlan
     ? `${sortedGalleries.length} of ${selectedPlan.galleryCount} active galleries`
     : `${sortedGalleries.length} galleries in archive`;
-  const journey = useMemo(() => {
-    const stats = getJourneyStats(sortedGalleries);
-    const stage = getJourneyStage(stats.galleryCount);
-    const line = getJourneyLineModel(stats.galleryCount);
-    const supportCopy = getJourneySupportCopy(stats);
-    return { stats, stage, line, supportCopy };
+  const globePins = useMemo(() => {
+    const pins: Array<{ id: string; lat: number; lng: number }> = [];
+
+    sortedGalleries.forEach((gallery) => {
+      if (typeof gallery.locationLat === "number" && typeof gallery.locationLng === "number") {
+        pins.push({
+          id: `gallery-${gallery.id}`,
+          lat: gallery.locationLat,
+          lng: gallery.locationLng,
+        });
+      }
+
+      gallery.subgalleries.forEach((subgallery) => {
+        if (typeof subgallery.locationLat === "number" && typeof subgallery.locationLng === "number") {
+          pins.push({
+            id: `subgallery-${subgallery.id}`,
+            lat: subgallery.locationLat,
+            lng: subgallery.locationLng,
+          });
+        }
+      });
+    });
+
+    return pins;
   }, [sortedGalleries]);
 
   return (
@@ -109,15 +121,10 @@ export default function GalleriesPage() {
         </div>
       </section>
 
-      <section className="mb-6">
-        <JourneyCard
-          href="/galleries/journey"
-          stage={journey.stage}
-          stats={journey.stats}
-          lineModel={journey.line}
-          supportCopy={journey.supportCopy}
-          showStats={false}
-        />
+      <section className="mb-8 -mx-4 md:-mx-6">
+        <div className="relative flex h-[44.5rem] items-center justify-center overflow-hidden bg-[color:var(--background)] py-0 md:h-[44.5rem]">
+          <WorldGlobe width={1220} height={700} pins={globePins} />
+        </div>
       </section>
 
       {!hydrated ? (

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowLeft, Save } from "lucide-react";
+import { LocationAutocompleteInput } from "@/components/location-autocomplete-input";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { Button } from "@/components/ui/button";
 import { readFileAsDataUrl } from "@/lib/file";
@@ -40,7 +41,9 @@ export function GalleryForm({
   const [description, setDescription] = useState(initialValue?.description ?? "");
   const [startDate, setStartDate] = useState(initialValue?.startDate ?? "");
   const [endDate, setEndDate] = useState(initialValue?.endDate ?? "");
-  const [locations, setLocations] = useState(initialValue?.locations.join(", ") ?? "");
+  const [location, setLocation] = useState(initialValue?.locations[0] ?? "");
+  const [locationLat, setLocationLat] = useState<number | null>(initialValue?.locationLat ?? null);
+  const [locationLng, setLocationLng] = useState<number | null>(initialValue?.locationLng ?? null);
   const [people, setPeople] = useState(initialValue?.people.join(", ") ?? "");
   const [moodTags, setMoodTags] = useState(initialValue?.moodTags.join(", ") ?? "");
   const [privacy, setPrivacy] = useState<Gallery["privacy"]>(initialValue?.privacy ?? "private");
@@ -59,7 +62,9 @@ export function GalleryForm({
         description,
         startDate,
         endDate,
-        locations: splitCommaSeparated(locations),
+        location: location.trim(),
+        locationLat,
+        locationLng,
         people: splitCommaSeparated(people),
         moodTags: splitCommaSeparated(moodTags),
         privacy,
@@ -128,12 +133,16 @@ export function GalleryForm({
               </label>
             </div>
             <label className="space-y-2">
-              <span className="text-sm text-[color:var(--ink-soft)]">Locations</span>
-              <input
-                value={locations}
-                onChange={(event) => setLocations(event.target.value)}
+              <span className="text-sm text-[color:var(--ink-soft)]">Location (optional)</span>
+              <LocationAutocompleteInput
+                value={{ label: location, lat: locationLat, lng: locationLng }}
+                onChange={(next) => {
+                  setLocation(next.label);
+                  setLocationLat(next.lat);
+                  setLocationLng(next.lng);
+                }}
                 className={fieldClassName()}
-                placeholder="Zermatt, Livigno, Lake Como"
+                placeholder="Granada, Spain"
               />
             </label>
             <label className="space-y-2">

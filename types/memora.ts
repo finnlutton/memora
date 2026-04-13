@@ -15,6 +15,8 @@ export type Subgallery = {
   title: string;
   coverImage: string;
   location: string;
+  locationLat?: number | null;
+  locationLng?: number | null;
   dateLabel: string;
   description: string;
   photos: MemoryPhoto[];
@@ -32,6 +34,8 @@ export type Gallery = {
   startDate: string;
   endDate: string;
   locations: string[];
+  locationLat?: number | null;
+  locationLng?: number | null;
   people: string[];
   moodTags: string[];
   privacy: GalleryPrivacy;
@@ -46,7 +50,9 @@ export type GalleryInput = {
   description: string;
   startDate: string;
   endDate: string;
-  locations: string[];
+  location: string;
+  locationLat: number | null;
+  locationLng: number | null;
   people: string[];
   moodTags: string[];
   privacy: GalleryPrivacy;
@@ -56,6 +62,8 @@ export type SubgalleryInput = {
   title: string;
   coverImage: string;
   location: string;
+  locationLat: number | null;
+  locationLng: number | null;
   dateLabel: string;
   description: string;
   photos: MemoryPhoto[];

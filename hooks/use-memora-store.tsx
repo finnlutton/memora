@@ -85,6 +85,8 @@ type GalleryRow = {
   description: string | null;
   cover_image_path: string | null;
   location: string | null;
+  location_lat: number | null;
+  location_lng: number | null;
   start_date: string | null;
   end_date: string | null;
   created_at: string;
@@ -103,6 +105,8 @@ type SubgalleryRow = {
   description: string | null;
   cover_image_path: string | null;
   location: string | null;
+  location_lat: number | null;
+  location_lng: number | null;
   start_date: string | null;
   end_date: string | null;
   date_label?: string | null;
@@ -435,6 +439,8 @@ async function loadUserGalleriesFromSupabase(
       title: subgallery.title,
       coverImage: resolvedImageMap.get(normalizedCover) ?? normalizedCover,
       location: subgallery.location ?? "",
+      locationLat: subgallery.location_lat ?? null,
+      locationLng: subgallery.location_lng ?? null,
       dateLabel: dateLabelFromRange(subgallery.start_date, subgallery.end_date, subgallery.date_label),
       description: subgallery.description ?? "",
       photos: sortPhotos(photosBySubgallery.get(subgallery.id) ?? []),
@@ -451,16 +457,18 @@ async function loadUserGalleriesFromSupabase(
       id: gallery.id,
       title: gallery.title,
       coverImage: resolvedImageMap.get(normalizedCover) ?? normalizedCover,
-    description: gallery.description ?? "",
-    startDate: gallery.start_date ?? "",
-    endDate: gallery.end_date ?? "",
-    locations: gallery.locations ?? (gallery.location ? [gallery.location] : []),
-    people: gallery.people ?? [],
-    moodTags: gallery.mood_tags ?? [],
-    privacy: gallery.privacy ?? "private",
-    createdAt: gallery.created_at,
-    updatedAt: gallery.updated_at,
-    subgalleries: subgalleriesByGallery.get(gallery.id) ?? [],
+      description: gallery.description ?? "",
+      startDate: gallery.start_date ?? "",
+      endDate: gallery.end_date ?? "",
+      locations: gallery.locations ?? (gallery.location ? [gallery.location] : []),
+      locationLat: gallery.location_lat ?? null,
+      locationLng: gallery.location_lng ?? null,
+      people: gallery.people ?? [],
+      moodTags: gallery.mood_tags ?? [],
+      privacy: gallery.privacy ?? "private",
+      createdAt: gallery.created_at,
+      updatedAt: gallery.updated_at,
+      subgalleries: subgalleriesByGallery.get(gallery.id) ?? [],
     };
   });
 }
@@ -859,10 +867,12 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             title: input.title,
             description: input.description || null,
             cover_image_path: persistedCover || null,
-            location: input.locations.join(", ") || null,
+            location: input.location || null,
+            location_lat: input.locationLat,
+            location_lng: input.locationLng,
             start_date: input.startDate || null,
             end_date: input.endDate || null,
-            locations: input.locations,
+            locations: input.location ? [input.location] : [],
             people: input.people,
             mood_tags: input.moodTags,
             privacy: input.privacy,
@@ -906,7 +916,16 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         }
 
         const nextGallery: Gallery = {
-          ...input,
+          title: input.title,
+          description: input.description,
+          startDate: input.startDate,
+          endDate: input.endDate,
+          locations: input.location ? [input.location] : [],
+          locationLat: input.locationLat,
+          locationLng: input.locationLng,
+          people: input.people,
+          moodTags: input.moodTags,
+          privacy: input.privacy,
           id: nextGalleryId,
           coverImage: persistedCover,
           createdAt: timestamp,
@@ -946,10 +965,12 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
               title: input.title,
               description: input.description || null,
               cover_image_path: persistedCover || null,
-              location: input.locations.join(", ") || null,
+              location: input.location || null,
+              location_lat: input.locationLat,
+              location_lng: input.locationLng,
               start_date: input.startDate || null,
               end_date: input.endDate || null,
-              locations: input.locations,
+              locations: input.location ? [input.location] : [],
               people: input.people,
               mood_tags: input.moodTags,
               privacy: input.privacy,
@@ -973,7 +994,21 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         setActiveGalleries((current) =>
           current.map((gallery) =>
             gallery.id === galleryId
-              ? { ...gallery, ...input, coverImage: persistedCover, updatedAt: new Date().toISOString() }
+              ? {
+                  ...gallery,
+                  title: input.title,
+                  description: input.description,
+                  startDate: input.startDate,
+                  endDate: input.endDate,
+                  locations: input.location ? [input.location] : [],
+                  locationLat: input.locationLat,
+                  locationLng: input.locationLng,
+                  people: input.people,
+                  moodTags: input.moodTags,
+                  privacy: input.privacy,
+                  coverImage: persistedCover,
+                  updatedAt: new Date().toISOString(),
+                }
               : gallery,
           ),
         );
@@ -1142,6 +1177,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             description: input.description || null,
             cover_image_path: persistedCover || null,
             location: input.location || null,
+            location_lat: input.locationLat,
+            location_lng: input.locationLng,
             start_date: range.startDate,
             end_date: range.endDate,
             date_label: input.dateLabel || null,
@@ -1220,6 +1257,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           ...input,
           coverImage: input.coverImage || persistedCover,
           photos: localPhotos,
+          locationLat: input.locationLat,
+          locationLng: input.locationLng,
           id: subgalleryId,
           galleryId,
           createdAt: timestamp,
@@ -1321,6 +1360,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
               description: input.description || null,
               cover_image_path: persistedCover || null,
               location: input.location || null,
+              location_lat: input.locationLat,
+              location_lng: input.locationLng,
               start_date: range.startDate,
               end_date: range.endDate,
               date_label: input.dateLabel || null,
