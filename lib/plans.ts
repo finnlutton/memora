@@ -145,8 +145,11 @@ export function getPlanLimit(plan: MembershipPlan, resource: PlanResource): Plan
 
 export function canCreate(resource: PlanResource, currentUsage: number, plan: MembershipPlan) {
   const limit = getPlanLimit(plan, resource);
-  if (isUnlimited(limit)) {
-    return { allowed: true as const, limit };
+  if (limit === null) {
+    return { allowed: true as const, limit: null };
+  }
+  if (!Number.isFinite(limit)) {
+    return { allowed: true as const, limit: null };
   }
   return {
     allowed: currentUsage < limit,
