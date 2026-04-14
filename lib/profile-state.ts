@@ -64,12 +64,23 @@ export async function ensureProfileRow(
     return false;
   }
 
-  const { error } = await supabase.from("profiles").upsert({
+  const updateAttempt = await supabase
+    .from("profiles")
+    .update({ email: user.email ?? null })
+    .eq("id", user.id)
+    .select("id")
+    .maybeSingle();
+
+  if (!updateAttempt.error && updateAttempt.data?.id) {
+    return true;
+  }
+
+  const insertAttempt = await supabase.from("profiles").insert({
     id: user.id,
     email: user.email ?? null,
   });
 
-  if (!error) {
+  if (!insertAttempt.error) {
     return true;
   }
 
@@ -77,12 +88,21 @@ export async function ensureProfileRow(
     context,
     userId: user.id,
     table: "profiles",
-    action: "upsert",
-    error,
-    errorMessage: error.message,
-    errorCode: error.code,
-    errorDetails: error.details,
-    errorHint: error.hint,
+    action: "update-then-insert",
+    updateError: updateAttempt.error
+      ? {
+          message: updateAttempt.error.message,
+          code: updateAttempt.error.code,
+          details: updateAttempt.error.details,
+          hint: updateAttempt.error.hint,
+        }
+      : null,
+    insertError: {
+      message: insertAttempt.error.message,
+      code: insertAttempt.error.code,
+      details: insertAttempt.error.details,
+      hint: insertAttempt.error.hint,
+    },
   });
 
   return false;
