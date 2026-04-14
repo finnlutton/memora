@@ -10,16 +10,38 @@ export default function MemoryMapPage() {
   const { galleries } = useMemoraStore();
 
   const mapPins = useMemo(() => {
-    const pins: Array<{ id: string; lat: number; lng: number }> = [];
+    const pins: Array<{
+      id: string;
+      lat: number;
+      lng: number;
+      title?: string;
+      coverImage?: string;
+      startDate?: string;
+      endDate?: string;
+    }> = [];
 
     galleries.forEach((gallery) => {
       if (typeof gallery.locationLat === "number" && typeof gallery.locationLng === "number") {
-        pins.push({ id: `gallery-${gallery.id}`, lat: gallery.locationLat, lng: gallery.locationLng });
+        pins.push({
+          id: `gallery-${gallery.id}`,
+          lat: gallery.locationLat,
+          lng: gallery.locationLng,
+          title: gallery.title,
+          coverImage: gallery.coverImage,
+          startDate: gallery.startDate,
+          endDate: gallery.endDate,
+        });
       }
 
       gallery.subgalleries.forEach((subgallery) => {
         if (typeof subgallery.locationLat === "number" && typeof subgallery.locationLng === "number") {
-          pins.push({ id: `subgallery-${subgallery.id}`, lat: subgallery.locationLat, lng: subgallery.locationLng });
+          pins.push({
+            id: `subgallery-${subgallery.id}`,
+            lat: subgallery.locationLat,
+            lng: subgallery.locationLng,
+            title: subgallery.title,
+            coverImage: subgallery.coverImage,
+          });
         }
       });
     });

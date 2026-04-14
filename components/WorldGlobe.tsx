@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { GlobeMethods } from "react-globe.gl";
 
 const Globe = dynamic(() => import("react-globe.gl"), { ssr: false });
@@ -13,6 +13,10 @@ type WorldGlobeProps = {
     id: string;
     lat: number;
     lng: number;
+    title?: string;
+    coverImage?: string;
+    startDate?: string;
+    endDate?: string;
   }>;
   allowWheelZoom?: boolean;
 };
@@ -29,6 +33,19 @@ export function WorldGlobe({
   allowWheelZoom = false,
 }: WorldGlobeProps) {
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const previewRef = useRef<HTMLDivElement | null>(null);
+  const [activePinPreview, setActivePinPreview] = useState<{
+    pin: {
+      id: string;
+      title?: string;
+      coverImage?: string;
+      startDate?: string;
+      endDate?: string;
+    };
+    x: number;
+    y: number;
+  } | null>(null);
 
   const adjustZoom = (delta: number) => {
     const globe = globeRef.current;
@@ -80,8 +97,59 @@ export function WorldGlobe({
     }
   }, [allowWheelZoom]);
 
+  useEffect(() => {
+    if (!activePinPreview) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+      const inPreview = previewRef.current?.contains(target);
+      const inMarker = Boolean(target.closest("[data-map-pin-marker='true']"));
+      if (!inPreview && !inMarker) {
+        setActivePinPreview(null);
+      }
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [activePinPreview]);
+
+  const previewPosition = useMemo(() => {
+    if (!activePinPreview || !containerRef.current) return null;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = activePinPreview.x - rect.left;
+    const y = activePinPreview.y - rect.top;
+    const clampedLeft = Math.max(10, Math.min(rect.width - 250, x + 14));
+    const clampedTop = Math.max(10, Math.min(rect.height - 160, y - 14));
+    return {
+      left: clampedLeft,
+      top: clampedTop,
+    };
+  }, [activePinPreview]);
+
+  const formatDateRange = (startDate?: string, endDate?: string) => {
+    if (!startDate && !endDate) return "";
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+    const formatOne = (value: string) => {
+      const date = new Date(`${value}T00:00:00Z`);
+      if (Number.isNaN(date.getTime())) return value;
+      return formatter.format(date);
+    };
+    if (startDate && endDate && startDate !== endDate) {
+      return `${formatOne(startDate)} - ${formatOne(endDate)}`;
+    }
+    return formatOne(startDate ?? endDate ?? "");
+  };
+
   return (
     <div
+      ref={containerRef}
       className="relative"
       // OrbitControls still listens to wheel events even with zoom disabled.
       // Capture wheel early so native page scroll remains smooth while hovered.
@@ -104,8 +172,17 @@ export function WorldGlobe({
         htmlLat="lat"
         htmlLng="lng"
         htmlAltitude={0.02}
-        htmlElement={() => {
+        htmlElement={(pin) => {
+          const markerPin = pin as {
+            id: string;
+            title?: string;
+            coverImage?: string;
+            startDate?: string;
+            endDate?: string;
+          };
           const marker = document.createElement("div");
+          marker.dataset.mapPinMarker = "true";
+          marker.style.cursor = "pointer";
           marker.style.width = "2px";
           marker.style.height = "34px";
           marker.style.background = "rgba(227, 233, 244, 0.96)";
@@ -124,9 +201,55 @@ export function WorldGlobe({
           flag.style.filter = "drop-shadow(0 1px 2px rgba(20,22,35,0.22))";
 
           marker.appendChild(flag);
+          marker.onclick = (event) => {
+            event.stopPropagation();
+            setActivePinPreview({
+              pin: {
+                id: markerPin.id,
+                title: markerPin.title,
+                coverImage: markerPin.coverImage,
+                startDate: markerPin.startDate,
+                endDate: markerPin.endDate,
+              },
+              x: event.clientX,
+              y: event.clientY,
+            });
+          };
           return marker;
         }}
       />
+      {activePinPreview && previewPosition ? (
+        <div
+          ref={previewRef}
+          className="pointer-events-none absolute z-20 w-60 overflow-hidden border border-[rgba(24,40,64,0.14)] bg-[rgba(250,253,255,0.96)] shadow-[0_10px_28px_rgba(16,24,38,0.16)] backdrop-blur"
+          style={{
+            left: previewPosition.left,
+            top: previewPosition.top,
+            transform: "translate(-50%, -100%)",
+          }}
+        >
+          {activePinPreview.pin.coverImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={activePinPreview.pin.coverImage}
+              alt={activePinPreview.pin.title || "Pinned gallery"}
+              className="h-28 w-full object-cover"
+            />
+          ) : null}
+          <div className="space-y-1 px-3 py-2.5">
+            {activePinPreview.pin.title ? (
+              <p className="font-serif text-[17px] leading-tight text-[color:var(--ink)]">
+                {activePinPreview.pin.title}
+              </p>
+            ) : null}
+            {formatDateRange(activePinPreview.pin.startDate, activePinPreview.pin.endDate) ? (
+              <p className="text-xs text-[color:var(--ink-soft)]">
+                {formatDateRange(activePinPreview.pin.startDate, activePinPreview.pin.endDate)}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       <div className="absolute right-3 top-3 z-10 flex flex-col gap-1.5">
         <button
           type="button"
