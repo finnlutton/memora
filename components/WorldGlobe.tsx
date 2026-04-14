@@ -182,12 +182,22 @@ export function WorldGlobe({
           };
           const marker = document.createElement("div");
           marker.dataset.mapPinMarker = "true";
+          marker.style.width = "28px";
+          marker.style.height = "44px";
+          marker.style.display = "flex";
+          marker.style.alignItems = "flex-end";
+          marker.style.justifyContent = "center";
+          marker.style.background = "transparent";
+          marker.style.pointerEvents = "auto";
           marker.style.cursor = "pointer";
-          marker.style.width = "2px";
-          marker.style.height = "34px";
-          marker.style.background = "rgba(227, 233, 244, 0.96)";
           marker.style.position = "relative";
-          marker.style.boxShadow = "0 0 0 1px rgba(32,44,66,0.14)";
+
+          const pole = document.createElement("div");
+          pole.style.width = "2px";
+          pole.style.height = "34px";
+          pole.style.background = "rgba(227, 233, 244, 0.96)";
+          pole.style.position = "relative";
+          pole.style.boxShadow = "0 0 0 1px rgba(32,44,66,0.14)";
 
           const flag = document.createElement("div");
           flag.style.position = "absolute";
@@ -200,8 +210,10 @@ export function WorldGlobe({
           flag.style.borderLeft = "14px solid rgba(202, 47, 47, 0.94)";
           flag.style.filter = "drop-shadow(0 1px 2px rgba(20,22,35,0.22))";
 
-          marker.appendChild(flag);
-          marker.onclick = (event) => {
+          pole.appendChild(flag);
+          marker.appendChild(pole);
+          marker.onpointerdown = (event) => {
+            event.preventDefault();
             event.stopPropagation();
             setActivePinPreview({
               pin: {

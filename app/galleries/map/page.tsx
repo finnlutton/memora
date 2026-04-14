@@ -63,7 +63,7 @@ export default function MemoryMapPage() {
           <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-[color:var(--background)]">
             <WorldGlobe width={1260} height={760} pins={mapPins} allowWheelZoom />
           </div>
-          <div className="pointer-events-none absolute right-4 top-4 rounded-xl bg-white/82 px-3 py-2 text-xs text-[color:var(--ink-soft)] shadow-[0_8px_24px_rgba(16,24,38,0.1)]">
+          <div className="pointer-events-none absolute right-5 top-5 text-xs tracking-[0.08em] text-[color:var(--ink-soft)] md:right-6 md:top-6">
             {mapPins.length} mapped memories
           </div>
         </section>
