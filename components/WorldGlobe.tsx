@@ -134,7 +134,7 @@ export function WorldGlobe({
   const pinIconMarkup = useMemo(
     () =>
       renderToStaticMarkup(
-        <GalleryMapPinIcon className="h-[18px] w-[18px] text-[rgba(196,54,58,0.95)] drop-shadow-[0_1px_2px_rgba(20,22,35,0.22)]" />,
+        <GalleryMapPinIcon className="h-[18px] w-[18px] text-[#2f9bff] drop-shadow-[0_1px_2px_rgba(20,22,35,0.22)]" />,
       ),
     [],
   );
