@@ -2,11 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, FolderKanban, PanelLeft, Settings2 } from "lucide-react";
+import { ChevronDown, PanelLeft } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { DeleteAccountDialog } from "@/components/delete-account-dialog";
 import { GlobeIcon } from "@/components/icons/GlobeIcon";
+import { HelpIcon } from "@/components/icons/HelpIcon";
+import { MyGalleriesIcon } from "@/components/icons/MyGalleriesIcon";
+import { SettingsIcon } from "@/components/icons/SettingsIcon";
 import { cn } from "@/lib/utils";
 import memoraLogo from "../Logo/MemoraLogo.png";
 
@@ -34,8 +37,9 @@ export function WorkspaceShell({ children, onSignOut, email = "" }: WorkspaceShe
 
   const navItems = useMemo(
     () => [
-      { href: "/galleries", label: "My Galleries", icon: FolderKanban, iconClassName: "h-[18px] w-[18px]" },
+      { href: "/galleries", label: "My Galleries", icon: MyGalleriesIcon, iconClassName: "h-[18px] w-[18px]" },
       { href: "/galleries/map", label: "Memory Map", icon: GlobeIcon, iconClassName: "h-[20px] w-[20px]" },
+      { href: "/galleries/help", label: "Help", icon: HelpIcon, iconClassName: "h-[18px] w-[18px]" },
     ],
     [],
   );
@@ -44,11 +48,16 @@ export function WorkspaceShell({ children, onSignOut, email = "" }: WorkspaceShe
     <div className="flex min-h-screen bg-[color:var(--background)] text-[color:var(--ink)]">
       <aside
         className={cn(
-          "sticky top-0 hidden h-screen shrink-0 border-r border-[rgba(28,46,72,0.08)] bg-[rgba(248,251,255,0.9)] px-3 py-4 backdrop-blur-xl transition-[width] duration-300 md:flex md:flex-col",
-          collapsed ? "w-[78px]" : "w-[196px]",
+          "sticky top-0 hidden h-screen shrink-0 border-r border-[rgba(28,46,72,0.08)] bg-[rgba(248,251,255,0.9)] py-4 backdrop-blur-xl transition-[width,padding] duration-300 md:flex md:flex-col",
+          collapsed ? "w-[39px] px-1" : "w-[167px] px-3",
         )}
       >
-        <div className="flex items-center justify-between gap-2 px-1">
+        <div
+          className={cn(
+            "flex items-center gap-2 px-1",
+            collapsed ? "justify-center" : "justify-between",
+          )}
+        >
           <Link href="/galleries" className="block min-w-0">
             <Image
               src={memoraLogo}
@@ -123,7 +132,7 @@ export function WorkspaceShell({ children, onSignOut, email = "" }: WorkspaceShe
               settingsOpen ? "bg-[rgba(131,164,201,0.14)] text-[color:var(--ink)]" : "",
             )}
           >
-            <Settings2 className="h-[18px] w-[18px] shrink-0" />
+            <SettingsIcon className="h-[18px] w-[18px] shrink-0" />
             <span className={cn("truncate transition-opacity", collapsed ? "opacity-0" : "opacity-100")}>
               Settings
             </span>
@@ -220,7 +229,7 @@ export function WorkspaceShell({ children, onSignOut, email = "" }: WorkspaceShe
                   : "text-[color:var(--ink-soft)] hover:bg-white/80",
               )}
             >
-              <Settings2 className="h-[16px] w-[16px] shrink-0" />
+              <SettingsIcon className="h-[16px] w-[16px] shrink-0" />
               <span>Settings</span>
               <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", mobileSettingsOpen ? "rotate-180" : "")} />
             </button>
