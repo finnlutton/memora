@@ -41,6 +41,7 @@ export function CreateSharePanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const editingGroup = useMemo(
     () => groups.find((group) => group.id === editingGroupId) ?? null,
     [groups, editingGroupId],
@@ -51,22 +52,29 @@ export function CreateSharePanel({
       setBusy(false);
       setError(null);
       setShareUrl(null);
+      setCopied(false);
       setEditingGroupId(null);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timeout = window.setTimeout(() => setCopied(false), 2000);
+    return () => window.clearTimeout(timeout);
+  }, [copied]);
 
   if (!open) return null;
 
   return (
     <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-end">
-      <div className="pointer-events-auto h-full w-full max-w-[34rem] border-l border-[rgba(26,42,67,0.14)] bg-[rgba(251,253,255,0.98)] p-6 shadow-[-18px_0_48px_rgba(14,22,34,0.14)]">
+      <div className="pointer-events-auto h-full w-full max-w-[34rem] border-l border-[rgba(26,42,67,0.14)] bg-[rgba(251,253,255,0.98)] p-4 shadow-[-18px_0_48px_rgba(14,22,34,0.14)] md:p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Share</p>
-            <h2 className="mt-2 font-serif text-3xl leading-tight text-[color:var(--ink)]">
+            <h2 className="mt-1.5 font-serif text-2xl leading-tight text-[color:var(--ink)] md:mt-2 md:text-3xl">
               Create a share set
             </h2>
-            <p className="mt-2 text-sm leading-6 text-[color:var(--ink-soft)]">
+            <p className="mt-1.5 text-xs leading-6 text-[color:var(--ink-soft)] md:mt-2 md:text-sm">
               Choose galleries, pick recipient groups, and add a custom note. Sending and public pages come next.
             </p>
           </div>
@@ -80,14 +88,14 @@ export function CreateSharePanel({
           </button>
         </div>
 
-        <div className="mt-6 space-y-6">
+        <div className="mt-4 space-y-4 md:mt-6 md:space-y-6">
           {error ? (
             <p className="rounded-lg border border-[#d8a5a5] bg-[#fff6f6] px-3 py-2 text-sm text-[#8f4848]">
               {error}
             </p>
           ) : null}
           {shareUrl ? (
-            <div className="rounded-xl border border-[rgba(26,42,67,0.12)] bg-white/88 p-4">
+            <div className="rounded-xl border border-[rgba(26,42,67,0.12)] bg-white/88 p-3 md:p-4">
               <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">Share link ready</p>
               <p className="mt-2 break-all text-sm text-[color:var(--ink)]">{shareUrl}</p>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -97,9 +105,17 @@ export function CreateSharePanel({
                   onClick={async () => {
                     if (typeof navigator === "undefined" || !navigator.clipboard) return;
                     await navigator.clipboard.writeText(shareUrl);
+                    setCopied(true);
                   }}
                 >
-                  Copy Link
+                  {copied ? (
+                    <>
+                      <Check className="h-3.5 w-3.5" />
+                      Link copied
+                    </>
+                  ) : (
+                    "Copy Link"
+                  )}
                 </Button>
                 <Button
                   type="button"
@@ -161,7 +177,7 @@ export function CreateSharePanel({
               })}
             </div>
 
-            <div className="rounded-xl border border-[rgba(26,42,67,0.12)] bg-white/75 p-3">
+            <div className="rounded-xl border border-[rgba(26,42,67,0.12)] bg-white/75 p-2.5 md:p-3">
               <p className="text-xs text-[color:var(--ink-soft)]">Create new group</p>
               <input
                 value={newGroupName}
@@ -228,7 +244,7 @@ export function CreateSharePanel({
                       ),
                     )
                   }
-                  className="mt-2 w-full border border-[rgba(26,42,67,0.12)] bg-white px-3 py-2 text-sm text-[color:var(--ink)] outline-none focus:border-[color:var(--accent)]"
+                  className="mt-2 w-full border border-[rgba(26,42,67,0.12)] bg-white px-2.5 py-1.5 text-sm text-[color:var(--ink)] outline-none focus:border-[color:var(--accent)] md:px-3 md:py-2"
                 />
                 <textarea
                   value={editingGroup.members.map((member) => member.label).join(", ")}
@@ -246,7 +262,7 @@ export function CreateSharePanel({
                       ),
                     );
                   }}
-                  className="mt-2 min-h-20 w-full resize-none border border-[rgba(26,42,67,0.12)] bg-white px-3 py-2 text-sm text-[color:var(--ink)] outline-none focus:border-[color:var(--accent)]"
+                  className="mt-2 min-h-20 w-full resize-none border border-[rgba(26,42,67,0.12)] bg-white px-2.5 py-1.5 text-sm text-[color:var(--ink)] outline-none focus:border-[color:var(--accent)] md:px-3 md:py-2"
                 />
                 <Button
                   type="button"
@@ -271,12 +287,12 @@ export function CreateSharePanel({
               value={customMessage}
               onChange={(event) => onCustomMessageChange(event.target.value)}
               placeholder="Optional message to show above shared galleries. Example: We loved this trip and wanted to share highlights with you."
-              className="min-h-28 w-full resize-none border border-[rgba(26,42,67,0.12)] bg-white px-3 py-2 text-sm leading-6 text-[color:var(--ink)] outline-none transition focus:border-[color:var(--accent)]"
+              className="min-h-24 w-full resize-none border border-[rgba(26,42,67,0.12)] bg-white px-2.5 py-1.5 text-sm leading-6 text-[color:var(--ink)] outline-none transition focus:border-[color:var(--accent)] md:min-h-28 md:px-3 md:py-2"
             />
           </section>
         </div>
 
-        <div className="mt-6 flex items-center justify-between border-t border-[rgba(26,42,67,0.1)] pt-4">
+        <div className="mt-4 flex items-center justify-between border-t border-[rgba(26,42,67,0.1)] pt-3 md:mt-6 md:pt-4">
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

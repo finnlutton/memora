@@ -58,11 +58,11 @@ function dateLabelForSubgallery(subgallery: SubgalleryRow) {
 
 function InvalidShareState({ token, message }: { token: string; message: string }) {
   return (
-    <main className="min-h-screen bg-[color:var(--background)] px-5 py-10 text-[color:var(--ink)]">
+    <main className="min-h-screen bg-[color:var(--background)] px-4 py-8 text-[color:var(--ink)] md:px-5 md:py-10">
       <div className="mx-auto max-w-3xl">
         <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
-        <h1 className="mt-3 font-serif text-4xl leading-tight">Share unavailable</h1>
-        <p className="mt-4 text-sm leading-7 text-[color:var(--ink-soft)]">{message}</p>
+        <h1 className="mt-2 font-serif text-3xl leading-tight md:mt-3 md:text-4xl">Share unavailable</h1>
+        <p className="mt-3 text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:leading-7">{message}</p>
         <Link href={`/share/${token}`} className="mt-6 inline-block text-sm text-[color:var(--ink)] underline underline-offset-4">
           Back to shared galleries
         </Link>
@@ -136,30 +136,30 @@ export default async function PublicSharedGalleryPage({
     : (gallery.cover_image_path ?? "");
 
   return (
-    <main className="min-h-screen bg-[color:var(--background)] px-5 py-8 text-[color:var(--ink)] md:px-8">
+    <main className="min-h-screen bg-[color:var(--background)] px-4 py-6 text-[color:var(--ink)] md:px-8 md:py-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-8 border-b border-[rgba(30,46,72,0.1)] pb-5">
+        <div className="mb-6 border-b border-[rgba(30,46,72,0.1)] pb-4 md:mb-8 md:pb-5">
           <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
           <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-[color:var(--ink-soft)]">
             <Link href={`/share/${token}`} className="underline underline-offset-4">All shared galleries</Link>
             <span>/</span>
             <span>{gallery.title}</span>
           </div>
-          <h1 className="mt-2 font-serif text-4xl leading-tight md:text-5xl">{gallery.title}</h1>
+          <h1 className="mt-2 font-serif text-3xl leading-tight md:text-5xl">{gallery.title}</h1>
           {share.message ? (
-            <p className="mt-4 max-w-3xl text-[15px] leading-7 text-[color:var(--ink-soft)]">{share.message}</p>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:text-[15px] md:leading-7">{share.message}</p>
           ) : null}
         </div>
 
         {galleryCover ? (
-          <div className="mb-8 overflow-hidden border border-[rgba(30,46,72,0.12)]">
+          <div className="mb-6 overflow-hidden border border-[rgba(30,46,72,0.12)] md:mb-8">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={galleryCover} alt={gallery.title} className="h-80 w-full object-cover md:h-[24rem]" />
           </div>
         ) : null}
 
         {(subgalleries ?? []).length ? (
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <section className="grid gap-3 sm:grid-cols-2 md:grid-cols-2 md:gap-4 xl:grid-cols-3">
             {(subgalleries ?? []).map((subgallery) => {
               const cover = isLikelyStoragePath(subgallery.cover_image_path ?? "")
                 ? signedUrlByPath.get(subgallery.cover_image_path ?? "") ?? ""

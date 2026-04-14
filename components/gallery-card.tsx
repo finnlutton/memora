@@ -35,7 +35,7 @@ export function GalleryCard({
 
   const cardBody = (
     <>
-      <div className="relative aspect-[5/3] overflow-hidden">
+      <div className="relative aspect-[16/10] overflow-hidden md:aspect-[5/3]">
         <Image
           src={coverImage}
           alt={gallery.title}
@@ -53,7 +53,7 @@ export function GalleryCard({
               event.stopPropagation();
               onToggleSelected?.(gallery.id);
             }}
-            className={`absolute right-3 top-3 inline-flex h-6 w-6 items-center justify-center rounded-full border transition ${
+            className={`absolute right-2.5 top-2.5 inline-flex h-5.5 w-5.5 items-center justify-center rounded-full border transition md:right-3 md:top-3 md:h-6 md:w-6 ${
               selected
                 ? "border-[color:var(--accent-strong)] bg-[color:var(--accent-strong)] text-white"
                 : "border-white/60 bg-[rgba(255,255,255,0.14)] text-transparent hover:bg-[rgba(255,255,255,0.24)]"
@@ -64,19 +64,19 @@ export function GalleryCard({
           </button>
         ) : null}
       </div>
-      <div className="space-y-1.5 px-3.5 py-3.5">
+      <div className="space-y-1.5 px-3 py-3 md:px-3.5 md:py-3.5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="font-serif text-[1.02rem] text-[color:var(--ink)]">{gallery.title}</h3>
+            <h3 className="font-serif text-base text-[color:var(--ink)] md:text-[1.02rem]">{gallery.title}</h3>
             <p className="mt-0.5 text-xs text-[color:var(--ink-soft)]">
               {formatDateRange(gallery.startDate, gallery.endDate)}
             </p>
           </div>
-          <span className="rounded-full bg-[color:var(--paper)] p-1.5 text-[color:var(--accent)] transition group-hover:bg-[color:var(--accent-strong)] group-hover:text-white">
+          <span className="rounded-full bg-[color:var(--paper)] p-1 text-[color:var(--accent)] transition group-hover:bg-[color:var(--accent-strong)] group-hover:text-white md:p-1.5">
             <ArrowUpRight className="h-3 w-3" />
           </span>
         </div>
-        <p className="line-clamp-3 text-xs leading-6 text-[color:var(--ink-soft)]">
+        <p className="line-clamp-3 text-xs leading-5 text-[color:var(--ink-soft)] md:leading-6">
           {gallery.description}
         </p>
         <div className="flex flex-wrap items-center gap-2 text-xs text-[color:var(--ink-soft)]">

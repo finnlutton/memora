@@ -134,7 +134,7 @@ export function WorldGlobe({
   const pinIconMarkup = useMemo(
     () =>
       renderToStaticMarkup(
-        <GalleryMapPinIcon className="h-[18px] w-[18px] text-[#2f9bff] drop-shadow-[0_1px_2px_rgba(20,22,35,0.22)]" />,
+        <GalleryMapPinIcon className="h-[18px] w-[18px] text-[#fffa5c] drop-shadow-[0_1px_2px_rgba(20,22,35,0.22)]" />,
       ),
     [],
   );
@@ -223,7 +223,7 @@ export function WorldGlobe({
       {activePinPreview && previewPosition ? (
         <div
           ref={previewRef}
-          className="pointer-events-none absolute z-20 w-60 overflow-hidden border border-[rgba(24,40,64,0.14)] bg-[rgba(250,253,255,0.96)] shadow-[0_10px_28px_rgba(16,24,38,0.16)] backdrop-blur"
+          className="pointer-events-none absolute z-20 w-52 overflow-hidden border border-[rgba(24,40,64,0.14)] bg-[rgba(250,253,255,0.96)] shadow-[0_10px_28px_rgba(16,24,38,0.16)] backdrop-blur md:w-60"
           style={{
             left: previewPosition.left,
             top: previewPosition.top,
@@ -235,7 +235,7 @@ export function WorldGlobe({
             <img
               src={activePinPreview.pin.coverImage}
               alt={activePinPreview.pin.title || "Pinned gallery"}
-              className="h-28 w-full object-cover"
+              className="h-24 w-full object-cover md:h-28"
             />
           ) : null}
           <div className="space-y-1 px-3 py-2.5">

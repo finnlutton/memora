@@ -98,7 +98,7 @@ export default function GalleriesPage() {
         }
       />
 
-      <section className="mb-4 grid gap-4 md:grid-cols-3 md:gap-6">
+      <section className="mb-3 grid gap-3 md:mb-4 md:grid-cols-3 md:gap-6">
         <QuickStat label="Membership" value={selectedPlan?.name ?? "No plan selected"} />
         <QuickStat label="Archive usage" value={usageLabel} />
         <QuickStat
@@ -112,16 +112,16 @@ export default function GalleriesPage() {
           Loading your memories...
         </div>
       ) : sortedGalleries.length ? (
-        <section className="mt-7 space-y-4">
+        <section className="mt-5 space-y-3 md:mt-7 md:space-y-4">
           {shareMode ? (
-            <div className="flex items-center justify-between rounded-xl bg-[rgba(255,255,255,0.64)] px-3 py-2 text-sm text-[color:var(--ink-soft)]">
+            <div className="flex items-center justify-between rounded-xl bg-[rgba(255,255,255,0.64)] px-2.5 py-1.5 text-xs text-[color:var(--ink-soft)] md:px-3 md:py-2 md:text-sm">
               <span>
                 Share mode active. Select one or more galleries.
               </span>
               <span className="text-[color:var(--ink)]">{selectedCount} selected</span>
             </div>
           ) : null}
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 md:gap-4">
           {sortedGalleries.map((gallery) => (
             <GalleryCard
               key={gallery.id}
@@ -222,12 +222,12 @@ export default function GalleriesPage() {
 
 function QuickStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="relative px-1 py-0.5 md:pl-4">
+    <div className="relative px-0.5 py-0 md:px-1 md:py-0.5 md:pl-4">
       <span className="absolute left-0 top-1 hidden h-10 w-px bg-[rgba(36,58,88,0.14)] md:block" />
       <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
         {label}
       </p>
-      <p className="mt-1.5 text-[15px] leading-6 text-[color:var(--ink)]">{value}</p>
+      <p className="mt-1 text-sm leading-5 text-[color:var(--ink)] md:mt-1.5 md:text-[15px] md:leading-6">{value}</p>
     </div>
   );
 }

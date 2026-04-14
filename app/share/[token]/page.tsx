@@ -59,11 +59,11 @@ export default async function PublicSharePage({
 
   if (shareError || !share || share.revoked_at) {
     return (
-      <main className="min-h-screen bg-[color:var(--background)] px-5 py-10 text-[color:var(--ink)]">
+      <main className="min-h-screen bg-[color:var(--background)] px-4 py-8 text-[color:var(--ink)] md:px-5 md:py-10">
         <div className="mx-auto max-w-3xl">
           <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
-          <h1 className="mt-3 font-serif text-4xl leading-tight">This share link is unavailable</h1>
-          <p className="mt-4 text-sm leading-7 text-[color:var(--ink-soft)]">
+          <h1 className="mt-2 font-serif text-3xl leading-tight md:mt-3 md:text-4xl">This share link is unavailable</h1>
+          <p className="mt-3 text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:leading-7">
             The link may be invalid, revoked, or no longer active.
           </p>
           <Link href="/" className="mt-6 inline-block text-sm text-[color:var(--ink)] underline underline-offset-4">
@@ -117,13 +117,13 @@ export default async function PublicSharePage({
   }
 
   return (
-    <main className="min-h-screen bg-[color:var(--background)] px-5 py-8 text-[color:var(--ink)] md:px-8">
+    <main className="min-h-screen bg-[color:var(--background)] px-4 py-6 text-[color:var(--ink)] md:px-8 md:py-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-8 border-b border-[rgba(30,46,72,0.1)] pb-5">
+        <div className="mb-6 border-b border-[rgba(30,46,72,0.1)] pb-4 md:mb-8 md:pb-5">
           <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
-          <h1 className="mt-3 font-serif text-4xl leading-tight md:text-5xl">Shared with you</h1>
+          <h1 className="mt-2 font-serif text-3xl leading-tight md:mt-3 md:text-5xl">Shared with you</h1>
           {share.message ? (
-            <p className="mt-4 max-w-3xl text-[15px] leading-7 text-[color:var(--ink-soft)]">{share.message}</p>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:text-[15px] md:leading-7">{share.message}</p>
           ) : null}
         </div>
 
