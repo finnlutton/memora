@@ -28,14 +28,14 @@ export default function NewGalleryPage() {
               Gallery limit reached
             </p>
             <h1 className="mt-2 font-serif text-3xl text-[color:var(--ink)] md:mt-3 md:text-5xl">
-              Your free plan includes 2 active galleries.
+              You&apos;ve reached the gallery limit on the {selectedPlan?.name ?? "current"} plan.
             </h1>
             <p className="mt-3 text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:leading-7">
               Upgrade your membership to continue creating new galleries without removing existing ones.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <Button asChild>
-                <Link href="/pricing?source=gallery-limit">Upgrade membership</Link>
+                <Link href="/galleries/settings/membership?source=gallery-limit">Choose membership</Link>
               </Button>
               <Button asChild variant="secondary">
                 <Link href="/galleries">Back to dashboard</Link>

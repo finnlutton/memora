@@ -21,7 +21,7 @@ import {
   setHasSeenWelcome,
   setSelectedPlan,
 } from "@/lib/profile-state";
-import { getMembershipPlan, type MembershipPlanId } from "@/lib/plans";
+import { canCreate, getMembershipPlan, type MembershipPlanId, type PlanResource } from "@/lib/plans";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { createId } from "@/lib/utils";
 import type { Gallery, GalleryInput, MemoryPhoto, Subgallery, SubgalleryInput } from "@/types/memora";
@@ -159,6 +159,40 @@ function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     value,
   );
+}
+
+type PlanLimitErrorPayload = {
+  code?: string;
+  resource?: PlanResource;
+  currentPlan?: string;
+  limit?: number;
+  currentUsage?: number;
+};
+
+async function enforcePlanLimitOnServer(
+  resource: PlanResource,
+  payload: { galleryId?: string; subgalleryId?: string; desiredUsage?: number } = {},
+) {
+  const response = await fetch("/api/plan-limits/check", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ resource, ...payload }),
+  });
+  const data = (await response.json()) as PlanLimitErrorPayload & { error?: string };
+  if (response.ok) return;
+  if (data.code === "PLAN_LIMIT_REACHED" && data.resource) {
+    const resourceLabel =
+      data.resource === "galleries"
+        ? "galleries"
+        : data.resource === "subgalleries"
+          ? "subgalleries"
+          : data.resource === "photos"
+            ? "photos"
+            : "share links";
+    const planLabel = data.currentPlan ? `${data.currentPlan} plan` : "current plan";
+    throw new Error(`You've reached the ${resourceLabel} limit on the ${planLabel}. Upgrade to create more.`);
+  }
+  throw new Error(data.error ?? "Unable to validate plan limits.");
 }
 
 function parseDateLabelToRange(dateLabel: string): { startDate: string | null; endDate: string | null } {
@@ -809,9 +843,9 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         if (
           onboarding.isAuthenticated &&
           selectedPlan &&
-          galleries.length >= selectedPlan.galleryCount
+          !canCreate("galleries", galleries.length, selectedPlan).allowed
         ) {
-          throw new Error("Gallery limit reached for current membership plan.");
+          throw new Error(`You've reached the gallery limit on the ${selectedPlan.name} plan. Upgrade to create more galleries.`);
         }
 
         const timestamp = new Date().toISOString();
@@ -822,6 +856,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         let persistedCover = input.coverImage;
 
         if (onboarding.isAuthenticated) {
+          await enforcePlanLimitOnServer("galleries");
           const supabase = createSupabaseBrowserClient();
           let userId = onboarding.user?.id ?? null;
           let authLookupError: unknown = null;
@@ -1059,6 +1094,24 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         setActiveGalleries((current) => current.filter((gallery) => gallery.id !== galleryId));
       },
       async createSubgallery(galleryId, input) {
+        const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);
+        const gallery = galleries.find((entry) => entry.id === galleryId);
+        if (
+          onboarding.isAuthenticated &&
+          selectedPlan &&
+          gallery &&
+          !canCreate("subgalleries", gallery.subgalleries.length, selectedPlan).allowed
+        ) {
+          throw new Error(`You've reached the subgallery limit on the ${selectedPlan.name} plan. Upgrade to create more.`);
+        }
+        if (
+          onboarding.isAuthenticated &&
+          selectedPlan &&
+          !canCreate("photos", input.photos.length - 1, selectedPlan).allowed
+        ) {
+          throw new Error(`You've reached the photo limit on the ${selectedPlan.name} plan. Upgrade to add more photos.`);
+        }
+
         const timestamp = new Date().toISOString();
         const subgalleryId =
           onboarding.isAuthenticated && typeof crypto !== "undefined"
@@ -1074,6 +1127,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         );
 
         if (onboarding.isAuthenticated) {
+          await enforcePlanLimitOnServer("subgalleries", { galleryId });
+          await enforcePlanLimitOnServer("photos", { desiredUsage: input.photos.length });
           const supabase = createSupabaseBrowserClient();
           const { data } = await supabase.auth.getUser();
           const userId = data.user?.id;
@@ -1288,6 +1343,14 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         return nextSubgallery.id;
       },
       async updateSubgallery(galleryId, subgalleryId, input) {
+        const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);
+        if (
+          onboarding.isAuthenticated &&
+          selectedPlan &&
+          !canCreate("photos", input.photos.length - 1, selectedPlan).allowed
+        ) {
+          throw new Error(`You've reached the photo limit on the ${selectedPlan.name} plan. Upgrade to add more photos.`);
+        }
         const timestamp = new Date().toISOString();
         let persistedCover = input.coverImage;
         let persistedPhotos = sortPhotos(
@@ -1299,6 +1362,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         );
 
         if (onboarding.isAuthenticated) {
+          await enforcePlanLimitOnServer("photos", { desiredUsage: input.photos.length });
           const supabase = createSupabaseBrowserClient();
           const { data } = await supabase.auth.getUser();
           const userId = data.user?.id;

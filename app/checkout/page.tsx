@@ -35,7 +35,7 @@ export default function CheckoutPage() {
       return;
     }
     if (!plan) {
-      router.replace("/pricing");
+      router.replace("/galleries/settings/membership");
       return;
     }
   }, [hydrated, plan, router]);

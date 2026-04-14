@@ -25,7 +25,7 @@ export function AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const isHomePage = pathname === "/";
-  const isProductRoute = pathname.startsWith("/galleries");
+  const isProductRoute = pathname.startsWith("/galleries") || pathname.startsWith("/welcome");
   const { onboarding, getNextOnboardingRoute, signOut } = useMemoraStore();
   const createHref = onboarding.isAuthenticated
     ? onboarding.onboardingComplete
@@ -38,6 +38,25 @@ export function AppShell({
       : getNextOnboardingRoute()
     : "/";
   const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);
+  const handleSignOut = async () => {
+    try {
+      const supabase = createSupabaseBrowserClient();
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error("Memora: sign out failed", error);
+    } finally {
+      signOut();
+      router.replace("/");
+      router.refresh();
+      if (typeof window !== "undefined") {
+        window.setTimeout(() => {
+          if (window.location.pathname !== "/") {
+            window.location.replace("/");
+          }
+        }, 150);
+      }
+    }
+  };
 
   useEffect(() => {
     if (!isProductRoute || onboarding.isAuthenticated) {
@@ -55,11 +74,7 @@ export function AppShell({
     return (
       <WorkspaceShell
         onSignOut={() => {
-          const supabase = createSupabaseBrowserClient();
-          void supabase.auth.signOut().finally(() => {
-            signOut();
-            window.location.replace("/");
-          });
+          void handleSignOut();
         }}
         email={onboarding.user?.email ?? ""}
       >
@@ -118,14 +133,10 @@ export function AppShell({
                 galleryCount={selectedPlan?.galleryCount ?? 0}
                 currentPlanId={onboarding.selectedPlanId}
                 onSelectPlan={(planId) => {
-                  router.push(`/pricing?plan=${planId}`);
+                  router.push(`/galleries/settings/membership?plan=${planId}`);
                 }}
                 onSignOut={() => {
-                  const supabase = createSupabaseBrowserClient();
-                  void supabase.auth.signOut().finally(() => {
-                    signOut();
-                    window.location.replace("/");
-                  });
+                  void handleSignOut();
                 }}
               />
             ) : null}
@@ -213,6 +224,9 @@ function SettingsDropdown({
   onSignOut: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const capacityLabel = Number.isFinite(galleryCount)
+    ? `${galleryCount} active galleries`
+    : "Unlimited galleries";
 
   return (
     <div className="relative ml-2">
@@ -242,7 +256,7 @@ function SettingsDropdown({
                 Capacity
               </span>
               <span className="text-right text-[color:var(--ink)]">
-                {currentPlanId ? `${galleryCount} active galleries` : "Select a plan first"}
+                {currentPlanId ? capacityLabel : "Select a plan first"}
               </span>
             </div>
           </div>

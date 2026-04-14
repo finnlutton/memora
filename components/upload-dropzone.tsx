@@ -9,17 +9,20 @@ export function UploadDropzone({
   multiple = false,
   onFilesSelected,
   busy = false,
+  disabled = false,
 }: {
   label: string;
   hint: string;
   multiple?: boolean;
   onFilesSelected: (files: File[]) => void | Promise<void>;
   busy?: boolean;
+  disabled?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isOver, setIsOver] = useState(false);
 
   const handleFiles = async (fileList: FileList | null) => {
+    if (disabled) return;
     const files = Array.from(fileList ?? []);
     if (!files.length) {
       return;
@@ -37,10 +40,18 @@ export function UploadDropzone({
       onDrop={async (event) => {
         event.preventDefault();
         setIsOver(false);
+        if (disabled) return;
         await handleFiles(event.dataTransfer.files);
       }}
-      onClick={() => inputRef.current?.click()}
-      className={`group cursor-pointer rounded-[1.75rem] border border-dashed px-5 py-6 transition ${
+      onClick={() => {
+        if (disabled) return;
+        inputRef.current?.click();
+      }}
+      className={`group rounded-[1.75rem] border border-dashed px-5 py-6 transition ${
+        disabled
+          ? "cursor-not-allowed opacity-60"
+          : "cursor-pointer"
+      } ${
         isOver
           ? "border-[color:var(--accent)] bg-[color:var(--paper)]"
           : "border-[color:var(--border-strong)] bg-white/70 hover:border-[color:var(--accent)] hover:bg-[color:var(--paper)]"

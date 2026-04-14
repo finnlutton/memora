@@ -19,15 +19,8 @@ export default function HomePage() {
     if (!hydrated || !onboarding.isAuthenticated) {
       return;
     }
-
-    router.replace(onboarding.onboardingComplete ? "/galleries" : getNextOnboardingRoute());
-  }, [
-    getNextOnboardingRoute,
-    hydrated,
-    onboarding.isAuthenticated,
-    onboarding.onboardingComplete,
-    router,
-  ]);
+    router.replace(getNextOnboardingRoute());
+  }, [getNextOnboardingRoute, hydrated, onboarding.isAuthenticated, router]);
 
   useEffect(() => {
     if (!hydrated || onboarding.isAuthenticated) {

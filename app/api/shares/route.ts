@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
+import { canCreate, getMembershipPlan, normalizePlanId } from "@/lib/plans";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type CreateSharePayload = {
@@ -33,6 +34,37 @@ export async function POST(request: NextRequest) {
 
     if (galleryIds.length === 0) {
       return NextResponse.json({ error: "Select at least one gallery to share." }, { status: 400 });
+    }
+
+    const [{ data: profile }, { count: activeSharesCount, error: activeSharesError }] = await Promise.all([
+      supabase.from("profiles").select("selected_plan").eq("id", user.id).maybeSingle<{ selected_plan: string | null }>(),
+      supabase
+        .from("shares")
+        .select("id", { count: "exact", head: true })
+        .eq("owner_user_id", user.id)
+        .is("revoked_at", null),
+    ]);
+    if (activeSharesError) {
+      return NextResponse.json({ error: activeSharesError.message }, { status: 500 });
+    }
+    const plan = getMembershipPlan(normalizePlanId(profile?.selected_plan ?? null));
+    if (!plan) {
+      return NextResponse.json({ error: "No plan selected." }, { status: 500 });
+    }
+    const usage = activeSharesCount ?? 0;
+    const shareCheck = canCreate("shares", usage, plan);
+    if (!shareCheck.allowed && Number.isFinite(shareCheck.limit)) {
+      return NextResponse.json(
+        {
+          error: "Share limit reached for your current plan.",
+          code: "PLAN_LIMIT_REACHED",
+          resource: "shares",
+          currentPlan: plan.id,
+          limit: shareCheck.limit,
+          currentUsage: usage,
+        },
+        { status: 409 },
+      );
     }
 
     const { data: ownedGalleries, error: ownedGalleriesError } = await supabase

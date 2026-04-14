@@ -18,7 +18,7 @@ export type AuthUserLike = {
 export function createMembershipState(selectedPlanId: MembershipPlanId | null): MembershipState {
   return {
     selectedPlanId,
-    onboardingComplete: Boolean(selectedPlanId),
+    onboardingComplete: true,
   };
 }
 
@@ -26,10 +26,5 @@ export function getNextAuthenticatedRoute(state: AuthenticatedRouteState) {
   if (!state.welcomeStepCompleted) {
     return "/welcome";
   }
-
-  if (!state.selectedPlanId) {
-    return "/pricing";
-  }
-
   return "/galleries";
 }

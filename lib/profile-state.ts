@@ -1,5 +1,5 @@
 import type { PostgrestError } from "@supabase/supabase-js";
-import { getMembershipPlan, type MembershipPlanId } from "@/lib/plans";
+import { normalizePlanId, type MembershipPlanId } from "@/lib/plans";
 
 export type ProfileStateRow = {
   id: string;
@@ -50,14 +50,6 @@ export type ResolvedProfileState = {
   hasSeenWelcome: boolean;
   selectedPlanId: MembershipPlanId | null;
 };
-
-function normalizePlanId(value: string | null | undefined) {
-  if (!value) {
-    return null;
-  }
-
-  return getMembershipPlan(value as MembershipPlanId) ? (value as MembershipPlanId) : null;
-}
 
 export async function ensureProfileRow(
   supabase: ProfileQueryClient,
@@ -132,14 +124,31 @@ export async function loadProfileState(
     return {
       exists: false,
       hasSeenWelcome: false,
-      selectedPlanId: null,
+      selectedPlanId: "free",
     } satisfies ResolvedProfileState;
+  }
+
+  const normalizedPlan = normalizePlanId(data.selected_plan);
+  if (!data.selected_plan || data.selected_plan !== normalizedPlan) {
+    const { error: planWriteError } = await supabase
+      .from("profiles")
+      .update({ selected_plan: normalizedPlan })
+      .eq("id", user.id);
+    if (planWriteError) {
+      console.error("Memora: failed to normalize selected_plan", {
+        context,
+        userId: user.id,
+        selectedPlan: data.selected_plan,
+        normalizedPlan,
+        error: planWriteError,
+      });
+    }
   }
 
   return {
     exists: true,
     hasSeenWelcome: Boolean(data.has_seen_welcome),
-    selectedPlanId: normalizePlanId(data.selected_plan),
+    selectedPlanId: normalizedPlan,
   } satisfies ResolvedProfileState;
 }
 

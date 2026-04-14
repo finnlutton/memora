@@ -19,10 +19,12 @@ function fieldClassName() {
 export function SubgalleryForm({
   galleryId,
   initialValue,
+  photoLimit = null,
   onSubmit,
 }: {
   galleryId: string;
   initialValue?: Subgallery;
+  photoLimit?: number | null;
   onSubmit: (value: SubgalleryInput) => Promise<void> | void;
 }) {
   const router = useRouter();
@@ -38,6 +40,9 @@ export function SubgalleryForm({
   const [photos, setPhotos] = useState<MemoryPhoto[]>(initialValue?.photos ?? []);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
+  const isPhotoLimitFinite = photoLimit != null && Number.isFinite(photoLimit);
+  const reachedPhotoLimit = isPhotoLimitFinite && photos.length >= (photoLimit ?? 0);
+  const remainingPhotoSlots = isPhotoLimitFinite ? Math.max(0, (photoLimit ?? 0) - photos.length) : null;
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -193,18 +198,33 @@ export function SubgalleryForm({
             </p>
             <h3 className="mt-2 font-serif text-3xl text-[color:var(--ink)]">Add and order images</h3>
           </div>
-          <div className="text-sm text-[color:var(--ink-soft)]">{photos.length} photos in this subgallery</div>
+          <div className="text-sm text-[color:var(--ink-soft)]">
+            {isPhotoLimitFinite ? `${photos.length} / ${photoLimit} photos used` : `${photos.length} photos in this subgallery`}
+          </div>
         </div>
+        {reachedPhotoLimit ? (
+          <p className="mt-3 text-sm text-[color:var(--ink-soft)]">
+            You&apos;ve reached the photo limit for this plan.{" "}
+            <Link href="/galleries/settings/membership" className="text-[color:var(--ink)] underline underline-offset-2">
+              Choose membership
+            </Link>
+            .
+          </p>
+        ) : null}
         <div className="mt-5">
           <UploadDropzone
             label="Upload memory photos"
             hint="Drop multiple images here or click to browse. They’ll appear below immediately."
             multiple
             busy={isUploadingPhotos}
+            disabled={reachedPhotoLimit}
             onFilesSelected={async (files) => {
+              if (reachedPhotoLimit) return;
               setIsUploadingPhotos(true);
               const tempSubgalleryId = initialValue?.id ?? createId("draft-subgallery");
-              const uploaded = await filesToPhotos(files, tempSubgalleryId, photos.length);
+              const allowedFiles =
+                remainingPhotoSlots == null ? files : files.slice(0, remainingPhotoSlots);
+              const uploaded = await filesToPhotos(allowedFiles, tempSubgalleryId, photos.length);
               setPhotos((current) => [...current, ...uploaded]);
               if (!coverImage && uploaded[0]) {
                 setCoverImage(uploaded[0].src);

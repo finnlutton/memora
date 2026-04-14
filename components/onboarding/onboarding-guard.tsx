@@ -10,17 +10,17 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
   const { hydrated, onboarding, getNextOnboardingRoute } = useMemoraStore();
 
   useEffect(() => {
-    if (!hydrated || onboarding.onboardingComplete) {
+    if (!hydrated || !onboarding.isAuthenticated) {
       return;
     }
 
     const nextRoute = getNextOnboardingRoute();
-    if (pathname !== nextRoute) {
+    if (nextRoute !== "/galleries" && pathname !== nextRoute) {
       router.replace(nextRoute);
     }
-  }, [getNextOnboardingRoute, hydrated, onboarding.onboardingComplete, pathname, router]);
+  }, [getNextOnboardingRoute, hydrated, onboarding.isAuthenticated, pathname, router]);
 
-  if (!hydrated || !onboarding.onboardingComplete) {
+  if (!hydrated || !onboarding.isAuthenticated || getNextOnboardingRoute() !== "/galleries") {
     return null;
   }
 

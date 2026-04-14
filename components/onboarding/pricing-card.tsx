@@ -19,17 +19,17 @@ export function PricingCard({
 
   return (
     <div
-      className={`flex h-full flex-col justify-between overflow-hidden rounded-[1.5rem] border p-4 md:rounded-[2rem] md:p-6 ${
+      className={`flex h-full flex-col justify-between overflow-hidden rounded-[0.95rem] border p-3 md:p-4 ${
         plan.featured
-          ? "border-[color:var(--border-strong)] bg-[rgba(240,246,252,0.98)] shadow-[0_22px_80px_rgba(34,49,71,0.10)]"
+          ? "border-[color:var(--border-strong)] bg-[rgba(246,250,255,0.95)]"
           : "border-[color:var(--border)] bg-[rgba(255,255,255,0.86)]"
       }`}
     >
-      <div className="space-y-3 md:space-y-4">
-        <div className="flex items-start gap-4">
+      <div className="space-y-2.5 md:space-y-3">
+        <div className="flex items-start gap-3">
           <div className="flex-shrink-0">
-            <h3 className="font-serif text-3xl text-[color:var(--ink)] md:text-4xl">{plan.name}</h3>
-            <p className="mt-1.5 font-serif text-3xl leading-tight text-[color:var(--ink)] md:mt-2 md:text-4xl">
+            <h3 className="font-serif text-2xl text-[color:var(--ink)] md:text-3xl">{plan.name}</h3>
+            <p className="mt-1 font-serif text-2xl leading-tight text-[color:var(--ink)] md:mt-1.5 md:text-3xl">
               {plan.priceMonthlyLabel}
             </p>
           </div>
@@ -40,23 +40,23 @@ export function PricingCard({
           ) : null}
         </div>
 
-        <p className="text-sm leading-6 text-[color:var(--ink-soft)] md:leading-7">{plan.summary}</p>
+        <p className="text-xs leading-5 text-[color:var(--ink-soft)] md:text-sm md:leading-6">{plan.summary}</p>
       </div>
 
-      <div className="mt-4 flex flex-1 flex-col justify-between border-t border-[color:var(--border)] pt-4 md:mt-6 md:pt-5">
-        <ul className={plan.id === "pro" ? "space-y-2" : "space-y-3"}>
+      <div className="mt-3 flex flex-1 flex-col justify-between border-t border-[color:var(--border)] pt-3 md:mt-4 md:pt-4">
+        <ul className={plan.id === "pro" ? "space-y-1.5" : "space-y-2"}>
           {plan.features.map((feature) => (
-            <li key={feature} className="flex items-start gap-2.5 text-sm leading-5 text-[color:var(--ink-soft)] md:gap-3 md:leading-6">
-              <Check className="mt-0.5 h-4 w-4 text-[color:var(--accent-strong)]" />
+            <li key={feature} className="flex items-start gap-2 text-xs leading-5 text-[color:var(--ink-soft)] md:text-sm md:leading-6">
+              <Check className="mt-0.5 h-3.5 w-3.5 text-[color:var(--accent-strong)]" />
               <span>{feature}</span>
             </li>
           ))}
         </ul>
 
-        <div className="mt-auto pt-2">
+        <div className="mt-auto pt-1.5">
           <Button
             type="button"
-            className="w-full justify-center"
+            className="w-full justify-center py-2 text-[11px]"
             variant={isCurrent ? "secondary" : "primary"}
             disabled={isCurrent || isBusy}
             onClick={() => onSelect(plan)}

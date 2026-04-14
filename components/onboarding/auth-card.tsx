@@ -171,9 +171,10 @@ export function AuthCard() {
             )
           : { hasSeenWelcome: false, selectedPlanId: null };
         const membershipState = createMembershipState(profileState.selectedPlanId);
-        const nextRoute = membershipState.onboardingComplete
-          ? redirectTo ?? getNextAuthenticatedRoute({ ...membershipState, welcomeStepCompleted: profileState.hasSeenWelcome })
-          : getNextAuthenticatedRoute({ ...membershipState, welcomeStepCompleted: profileState.hasSeenWelcome });
+        const nextRoute = redirectTo ?? getNextAuthenticatedRoute({
+          ...membershipState,
+          welcomeStepCompleted: profileState.hasSeenWelcome,
+        });
 
         setIsTransitioning(true);
         setInfo("Logging you in...");

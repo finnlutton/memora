@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Share2 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
@@ -41,6 +41,7 @@ export default function GalleriesPage() {
       updatedAt: new Date().toISOString(),
     },
   ]);
+  const [shareUsage, setShareUsage] = useState<{ current: number; limit: number | null } | null>(null);
   const sortedGalleries = useMemo(
     () =>
       [...galleries].sort(
@@ -56,9 +57,48 @@ export default function GalleriesPage() {
       sortedGalleries.length >= selectedPlan.galleryCount,
   );
   const usageLabel = selectedPlan
-    ? `${sortedGalleries.length} of ${selectedPlan.galleryCount} active galleries`
+    ? Number.isFinite(selectedPlan.galleryCount)
+      ? `${sortedGalleries.length} of ${selectedPlan.galleryCount} active galleries`
+      : `${sortedGalleries.length} active galleries`
     : `${sortedGalleries.length} galleries in archive`;
+  const shareUsageLabel =
+    shareUsage && Number.isFinite(shareUsage.limit)
+      ? `${shareUsage.current} / ${shareUsage.limit} active share links`
+      : shareUsage
+        ? `${shareUsage.current} active share links`
+        : "Share usage unavailable";
+  const shareLimitReached =
+    shareUsage != null && Number.isFinite(shareUsage.limit) && shareUsage.current >= (shareUsage.limit ?? 0);
   const selectedCount = selectedGalleryIds.length;
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadShareUsage = async () => {
+      try {
+        const response = await fetch("/api/plan-limits/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ resource: "shares" }),
+        });
+        const payload = (await response.json()) as {
+          currentUsage?: number;
+          limit?: number | null;
+        };
+        if (!response.ok || cancelled) return;
+        setShareUsage({
+          current: payload.currentUsage ?? 0,
+          limit: payload.limit ?? null,
+        });
+      } catch {
+        if (!cancelled) setShareUsage(null);
+      }
+    };
+    void loadShareUsage();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <AppShell>
       <WorkspaceTopbar
@@ -71,6 +111,7 @@ export default function GalleriesPage() {
               type="button"
               variant="ghost"
               className="text-[color:var(--ink)]"
+              disabled={shareLimitReached}
               onClick={() => {
                 setShareMode(true);
                 setSharePanelOpen(false);
@@ -80,11 +121,11 @@ export default function GalleriesPage() {
               }}
             >
               <Share2 className="h-3.5 w-3.5" />
-              Share Galleries
+              {shareLimitReached ? "Share limit reached" : "Share Galleries"}
             </Button>
             {hasReachedGalleryLimit ? (
               <Button asChild variant="secondary">
-                <Link href="/pricing?source=gallery-limit">Upgrade membership</Link>
+                <Link href="/galleries/settings/membership?source=gallery-limit">Choose membership</Link>
               </Button>
             ) : (
               <Button asChild>
@@ -101,11 +142,16 @@ export default function GalleriesPage() {
       <section className="mb-3 grid gap-3 md:mb-4 md:grid-cols-3 md:gap-6">
         <QuickStat label="Membership" value={selectedPlan?.name ?? "No plan selected"} />
         <QuickStat label="Archive usage" value={usageLabel} />
-        <QuickStat
-          label="Next step"
-          value={sortedGalleries.length ? "Open a gallery to continue" : "Create your first gallery"}
-        />
+        <QuickStat label="Sharing usage" value={shareUsageLabel} />
       </section>
+      {shareLimitReached ? (
+        <p className="mb-3 rounded-sm border border-[rgba(34,52,79,0.12)] bg-white/70 px-3 py-2 text-sm text-[color:var(--ink-soft)]">
+          You&apos;ve reached the share-link limit on the {selectedPlan?.name ?? "current"} plan.{" "}
+          <Link href="/galleries/settings/membership" className="text-[color:var(--ink)] underline underline-offset-2">
+            Upgrade to create more share links.
+          </Link>
+        </p>
+      ) : null}
 
       {!hydrated ? (
         <div className="rounded-[2rem] border border-white/60 bg-white/70 px-6 py-12 text-center text-[color:var(--ink-soft)]">
@@ -186,10 +232,26 @@ export default function GalleriesPage() {
             },
             body: JSON.stringify(input),
           });
-          const payload = (await response.json()) as { error?: string; shareUrl?: string };
+          const payload = (await response.json()) as {
+            error?: string;
+            code?: string;
+            resource?: string;
+            currentPlan?: string;
+            limit?: number;
+            currentUsage?: number;
+            shareUrl?: string;
+          };
           if (!response.ok || !payload.shareUrl) {
+            if (payload.code === "PLAN_LIMIT_REACHED" && payload.resource === "shares") {
+              throw new Error(
+                `You've reached the share-link limit on the ${payload.currentPlan ?? "current"} plan. Upgrade to create more links.`,
+              );
+            }
             throw new Error(payload.error ?? "Unable to create share link.");
           }
+          setShareUsage((current) =>
+            current ? { ...current, current: current.current + 1 } : current,
+          );
           return { shareUrl: payload.shareUrl };
         }}
       />
@@ -209,7 +271,7 @@ export default function GalleriesPage() {
           </Button>
           <Button
             type="button"
-            disabled={selectedGalleryIds.length === 0}
+            disabled={selectedGalleryIds.length === 0 || shareLimitReached}
             onClick={() => setSharePanelOpen(true)}
           >
             Continue to share

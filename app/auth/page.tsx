@@ -13,8 +13,8 @@ export default function AuthPage() {
     if (!hydrated || !onboarding.isAuthenticated) {
       return;
     }
-    router.replace(onboarding.onboardingComplete ? "/galleries" : getNextOnboardingRoute());
-  }, [getNextOnboardingRoute, hydrated, onboarding.isAuthenticated, onboarding.onboardingComplete, router]);
+    router.replace(getNextOnboardingRoute());
+  }, [getNextOnboardingRoute, hydrated, onboarding.isAuthenticated, router]);
 
   return <AuthCard />;
 }

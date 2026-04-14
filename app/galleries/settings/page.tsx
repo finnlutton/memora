@@ -54,7 +54,7 @@ export default function WorkspaceSettingsPage() {
               asChild
               className="bg-[#00A86B] px-3.5 py-2 text-[11px] tracking-[0.16em] hover:bg-[#00925d]"
             >
-              <Link href="/pricing">Upgrade membership</Link>
+              <Link href="/galleries/settings/membership">Choose membership</Link>
             </Button>
           </div>
         </section>
