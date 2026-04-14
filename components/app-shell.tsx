@@ -54,6 +54,13 @@ export function AppShell({
   if (isProductRoute && onboarding.isAuthenticated) {
     return (
       <WorkspaceShell
+        onSignOut={() => {
+          const supabase = createSupabaseBrowserClient();
+          void supabase.auth.signOut().finally(() => {
+            signOut();
+            window.location.replace("/");
+          });
+        }}
         email={onboarding.user?.email ?? ""}
       >
         {children}

@@ -67,15 +67,14 @@ export function DeleteAccountDialog({
         <AlertDialog.Overlay className="fixed inset-0 z-40 bg-[rgba(18,24,32,0.45)] backdrop-blur-sm" />
         <AlertDialog.Content className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,30rem)] -translate-x-1/2 -translate-y-1/2 rounded-[2rem] border border-white/50 bg-[color:var(--background)] p-6 shadow-[0_24px_70px_rgba(18,24,32,0.24)]">
           <AlertDialog.Title className="font-serif text-2xl text-[color:var(--ink)]">
-            Delete account?
+            Are you sure you want to do this?
           </AlertDialog.Title>
-          <AlertDialog.Description className="mt-3 space-y-2 text-sm leading-7 text-[color:var(--ink-soft)]">
-            <p>
-              This will permanently delete your account, galleries, uploaded photos, and all
-              associated data.
-            </p>
-            <p>This action cannot be undone.</p>
+          <AlertDialog.Description className="mt-3 text-sm leading-7 text-[color:var(--ink-soft)]">
+            This cannot be undone.
           </AlertDialog.Description>
+          <p className="mt-1 text-sm leading-7 text-[color:var(--ink-soft)]">
+            This will permanently delete your account, galleries, uploaded photos, and all associated data.
+          </p>
           {error ? (
             <p className="mt-4 rounded-sm border border-[#c98282] bg-[#fff7f7] px-3 py-2 text-sm leading-6 text-[#9a4545]">
               {error}
@@ -84,11 +83,11 @@ export function DeleteAccountDialog({
           <div className="mt-6 flex justify-end gap-3">
             <AlertDialog.Cancel asChild>
               <Button variant="secondary" disabled={busy}>
-                Cancel
+                Go back
               </Button>
             </AlertDialog.Cancel>
             <Button variant="danger" onClick={() => void handleDelete()} disabled={busy}>
-              {busy ? "Deleting account..." : "Delete Account"}
+              {busy ? "Yes..." : "Yes"}
             </Button>
           </div>
         </AlertDialog.Content>

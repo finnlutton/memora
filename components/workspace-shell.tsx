@@ -14,12 +14,13 @@ import memoraLogo from "../Logo/MemoraLogo.png";
 
 type WorkspaceShellProps = {
   children: React.ReactNode;
+  onSignOut: () => void;
   email?: string;
 };
 
 const SIDEBAR_STORAGE_KEY = "memora::workspace-sidebar-collapsed:v1";
 
-export function WorkspaceShell({ children, email = "" }: WorkspaceShellProps) {
+export function WorkspaceShell({ children, onSignOut, email = "" }: WorkspaceShellProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -110,9 +111,13 @@ export function WorkspaceShell({ children, email = "" }: WorkspaceShellProps) {
 
         <div className="mt-auto space-y-2 border-t border-[rgba(28,46,72,0.08)] pt-4">
           {!collapsed ? (
-            <p className="truncate px-2 text-[11px] text-[color:var(--ink-faint)]">
-              {email || "Signed in"}
-            </p>
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="block w-full rounded-lg px-2 py-1.5 text-left text-[12px] text-[#8f4848] transition hover:bg-[#fff1f1]"
+            >
+              Sign out
+            </button>
           ) : null}
         </div>
       </aside>
