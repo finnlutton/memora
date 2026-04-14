@@ -23,6 +23,8 @@ export function WorkspaceShell({ children, onSignOut, email = "" }: WorkspaceShe
   const [collapsed, setCollapsed] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false);
+  const [mobileAccountOpen, setMobileAccountOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -184,6 +186,81 @@ export function WorkspaceShell({ children, onSignOut, email = "" }: WorkspaceShe
       </aside>
 
       <div className="min-w-0 flex-1">
+        <div className="border-b border-[rgba(28,46,72,0.08)] bg-[rgba(248,251,255,0.9)] px-4 py-2.5 backdrop-blur-xl md:hidden">
+          <div className="flex items-center gap-2">
+            {navItems.map((item) => {
+              const active =
+                item.href === "/galleries"
+                  ? pathname === "/galleries"
+                  : pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] uppercase tracking-[0.14em] transition",
+                    active
+                      ? "bg-[rgba(131,164,201,0.2)] text-[color:var(--ink)]"
+                      : "text-[color:var(--ink-soft)] hover:bg-white/80",
+                  )}
+                >
+                  <Icon className={cn("shrink-0", item.iconClassName)} />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setMobileSettingsOpen((current) => !current)}
+              className={cn(
+                "ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] uppercase tracking-[0.14em] transition",
+                mobileSettingsOpen
+                  ? "bg-[rgba(131,164,201,0.2)] text-[color:var(--ink)]"
+                  : "text-[color:var(--ink-soft)] hover:bg-white/80",
+              )}
+            >
+              <Settings2 className="h-[16px] w-[16px] shrink-0" />
+              <span>Settings</span>
+              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", mobileSettingsOpen ? "rotate-180" : "")} />
+            </button>
+          </div>
+
+          {mobileSettingsOpen ? (
+            <div className="mt-2 space-y-1.5 border-t border-[rgba(28,46,72,0.08)] pt-2.5">
+              <button
+                type="button"
+                onClick={() => setMobileAccountOpen((current) => !current)}
+                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-[12px] text-[color:var(--ink-soft)] transition hover:bg-white/80"
+              >
+                <span>Account info</span>
+                <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", mobileAccountOpen ? "rotate-180" : "")} />
+              </button>
+              {mobileAccountOpen ? (
+                <p className="rounded-lg bg-white/75 px-2.5 py-2 text-[12px] text-[color:var(--ink)]">
+                  {email || "No email found"}
+                </p>
+              ) : null}
+              <Link
+                href="/pricing"
+                className="block rounded-lg px-2.5 py-2 text-[12px] text-[color:var(--ink-soft)] transition hover:bg-white/80"
+              >
+                Upgrade membership
+              </Link>
+              <button
+                type="button"
+                onClick={onSignOut}
+                className="block w-full rounded-lg px-2.5 py-2 text-left text-[12px] text-[#8f4848] transition hover:bg-[#fff1f1]"
+              >
+                Sign out
+              </button>
+              <DeleteAccountDialog
+                triggerLabel="Delete account"
+                triggerClassName="mt-0 w-full rounded-lg border-0 bg-transparent px-2.5 py-2 text-left text-[12px] tracking-normal text-[#8f4848] hover:bg-[#fff1f1]"
+              />
+            </div>
+          ) : null}
+        </div>
         <main className="mx-auto w-full max-w-[1220px] px-4 py-6 md:px-8 md:py-8">{children}</main>
       </div>
     </div>
