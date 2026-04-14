@@ -78,10 +78,10 @@ export function AppShell({
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[14rem] bg-[linear-gradient(180deg,rgba(221,231,243,0.34),transparent)]" />
       <header className="sticky top-0 z-30 overflow-visible border-b border-[color:var(--border)] bg-[rgba(250,252,255,0.96)] backdrop-blur-xl">
-        <div className="mx-auto flex h-[60px] w-full max-w-7xl items-center justify-between gap-3 overflow-visible px-4 py-1 md:h-[72px] md:gap-5 md:px-6 md:py-0">
+        <div className="mx-auto flex h-[56px] w-full max-w-7xl items-center justify-between gap-2 overflow-visible px-4 py-1 md:h-[72px] md:gap-5 md:px-6 md:py-0">
           <Link
             href={homeHref}
-            className="flex h-[60px] min-w-0 items-center overflow-visible md:h-[70px]"
+            className="flex h-[56px] min-w-0 items-center overflow-visible md:h-[70px]"
             aria-label={onboarding.isAuthenticated ? "Memora dashboard" : "Memora home"}
           >
             <Image
@@ -91,7 +91,7 @@ export function AppShell({
               height={240}
               priority
               sizes="(max-width: 640px) 72vw, (max-width: 1024px) 60vw, 520px"
-              className="h-full w-auto max-w-[92vw] origin-left translate-y-[1px] object-contain object-left scale-[1.9] md:max-w-[48rem] md:scale-[2.2] md:translate-y-[1px]"
+              className="h-full w-auto max-w-[86vw] origin-left translate-y-[1px] object-contain object-left scale-[1.5] md:max-w-[48rem] md:scale-[2.2] md:translate-y-[1px]"
             />
           </Link>
           <nav className="flex shrink-0 items-center gap-0.5 md:gap-1">
@@ -225,7 +225,7 @@ function SettingsDropdown({
         <ChevronDown className="h-3.5 w-3.5" />
       </button>
       {open ? (
-        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-40 w-80 border border-[color:var(--border)] bg-[rgba(250,252,255,0.98)] p-4 shadow-[0_16px_40px_rgba(10,20,35,0.08)] backdrop-blur">
+        <div className="fixed inset-x-3 top-[calc(56px+0.5rem)] z-40 max-h-[calc(100dvh-5rem)] overflow-y-auto border border-[color:var(--border)] bg-[rgba(250,252,255,0.98)] p-4 shadow-[0_16px_40px_rgba(10,20,35,0.08)] backdrop-blur md:absolute md:inset-auto md:right-0 md:top-[calc(100%+0.5rem)] md:max-h-none md:w-80 md:overflow-visible">
           <p className="text-[10px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
             My account
           </p>

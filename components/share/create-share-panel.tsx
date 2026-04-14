@@ -66,9 +66,10 @@ export function CreateSharePanel({
   if (!open) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-end">
-      <div className="pointer-events-auto h-full w-full max-w-[34rem] border-l border-[rgba(26,42,67,0.14)] bg-[rgba(251,253,255,0.98)] p-4 shadow-[-18px_0_48px_rgba(14,22,34,0.14)] md:p-6">
-        <div className="flex items-start justify-between gap-4">
+    <div className="pointer-events-none fixed inset-0 z-50 flex items-end justify-end md:items-center">
+      <div className="pointer-events-auto flex h-[100dvh] w-full flex-col overflow-hidden border-l border-[rgba(26,42,67,0.14)] bg-[rgba(251,253,255,0.98)] shadow-[-18px_0_48px_rgba(14,22,34,0.14)] md:h-full md:max-w-[34rem]">
+        <div className="sticky top-0 z-10 border-b border-[rgba(26,42,67,0.08)] bg-[rgba(251,253,255,0.98)] px-4 pb-3 pt-4 md:static md:border-b-0 md:bg-transparent md:px-6 md:pb-0 md:pt-6">
+          <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Share</p>
             <h2 className="mt-1.5 font-serif text-2xl leading-tight text-[color:var(--ink)] md:mt-2 md:text-3xl">
@@ -87,8 +88,10 @@ export function CreateSharePanel({
             <X className="h-4 w-4" />
           </button>
         </div>
+        </div>
 
-        <div className="mt-4 space-y-4 md:mt-6 md:space-y-6">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-4 md:px-6 md:pb-6 md:pt-6">
+        <div className="space-y-4 md:space-y-6">
           {error ? (
             <p className="rounded-lg border border-[#d8a5a5] bg-[#fff6f6] px-3 py-2 text-sm text-[#8f4848]">
               {error}
@@ -291,8 +294,9 @@ export function CreateSharePanel({
             />
           </section>
         </div>
+        </div>
 
-        <div className="mt-4 flex items-center justify-between border-t border-[rgba(26,42,67,0.1)] pt-3 md:mt-6 md:pt-4">
+        <div className="sticky bottom-0 z-10 flex items-center justify-between border-t border-[rgba(26,42,67,0.1)] bg-[rgba(251,253,255,0.98)] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 md:static md:px-6 md:pb-6 md:pt-4">
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

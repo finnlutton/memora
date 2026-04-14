@@ -59,7 +59,7 @@ export default function GalleryDetailPage() {
                 More
               </Button>
               {actionsOpen ? (
-                <div className="absolute right-0 top-[calc(100%+0.45rem)] z-20 w-48 rounded-xl border border-[rgba(28,46,72,0.12)] bg-white/95 p-2 shadow-[0_14px_34px_rgba(16,24,38,0.12)]">
+                <div className="absolute right-0 top-[calc(100%+0.45rem)] z-20 w-[min(16rem,calc(100vw-2rem))] rounded-xl border border-[rgba(28,46,72,0.12)] bg-white/95 p-2 shadow-[0_14px_34px_rgba(16,24,38,0.12)] md:w-48">
                   {gallery.subgalleries.length > 0 ? (
                     <Link
                       href={`/galleries/${gallery.id}/subgalleries/${gallery.subgalleries[activeSubgalleryIndex].id}/edit`}

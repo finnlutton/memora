@@ -29,11 +29,11 @@ export default function NewSubgalleryPage() {
 
   return (
     <AppShell>
-      <section className="mb-6">
+      <section className="mb-4 md:mb-6">
         <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
           Add subgallery
         </p>
-        <h1 className="mt-3 font-serif text-5xl text-[color:var(--ink)]">
+        <h1 className="mt-2 font-serif text-3xl text-[color:var(--ink)] md:mt-3 md:text-5xl">
           Add a new scene
         </h1>
       </section>

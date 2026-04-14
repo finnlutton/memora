@@ -18,7 +18,7 @@ export function SubgalleryCard({
           : "border-white/12"
       }`}
     >
-      <div className="relative aspect-[4/5] overflow-hidden md:aspect-[16/11]">
+      <div className="relative aspect-[10/13] overflow-hidden md:aspect-[16/11]">
         {subgallery.coverImage ? (
           <Image
             src={subgallery.coverImage}
@@ -32,15 +32,15 @@ export function SubgalleryCard({
           <div className="absolute inset-0 bg-gradient-to-br from-[rgba(8,14,24,0.96)] via-[rgba(20,45,74,0.7)] to-[rgba(120,165,205,0.55)]" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[rgba(6,12,22,0.92)] via-[rgba(6,12,22,0.22)] to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
+        <div className="absolute inset-x-0 bottom-0 p-4 md:p-8">
           <div className="max-w-2xl">
             <p className="text-[11px] uppercase tracking-[0.26em] text-white/65">
               Scene
             </p>
-            <h3 className="mt-3 font-serif text-3xl leading-tight text-white md:text-5xl">
+            <h3 className="mt-2 font-serif text-2xl leading-tight text-white md:mt-3 md:text-5xl">
               {subgallery.title}
             </h3>
-            <div className="mt-3 flex flex-wrap gap-3 text-[11px] uppercase tracking-[0.18em] text-white/70 md:text-xs">
+            <div className="mt-2.5 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.18em] text-white/70 md:mt-3 md:gap-3 md:text-xs">
               <span className="inline-flex items-center gap-1.5">
                 <MapPin className="h-3.5 w-3.5" />
                 {subgallery.location}
@@ -50,7 +50,7 @@ export function SubgalleryCard({
                 {subgallery.dateLabel}
               </span>
             </div>
-            <p className="mt-4 max-w-xl text-sm leading-7 text-white/82 md:text-base md:leading-8">
+            <p className="mt-3 max-w-xl text-xs leading-6 text-white/82 md:mt-4 md:text-base md:leading-8">
               {subgallery.description}
             </p>
           </div>

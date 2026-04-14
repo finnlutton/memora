@@ -34,7 +34,7 @@ export default function SubgalleryDetailPage() {
 
   return (
     <AppShell accent="immersive">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-2.5 md:mb-6 md:gap-4">
         <Button asChild variant="ghost">
           <Link href={`/galleries/${gallery.id}`}>
             <ArrowLeft className="h-4 w-4" />
@@ -62,30 +62,30 @@ export default function SubgalleryDetailPage() {
       </div>
 
       <section>
-        <div className="rounded-[2.5rem] border border-white/60 bg-white/74 p-7 shadow-[0_22px_70px_rgba(34,49,71,0.1)] backdrop-blur">
+        <div className="rounded-[1.75rem] border border-white/60 bg-white/74 p-4 shadow-[0_22px_70px_rgba(34,49,71,0.1)] backdrop-blur md:rounded-[2.5rem] md:p-7">
           <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
             Inside {gallery.title}
           </p>
-          <h1 className="mt-3 font-serif text-5xl text-[color:var(--ink)]">{subgallery.title}</h1>
-          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[color:var(--ink-soft)]">
+          <h1 className="mt-2 font-serif text-3xl text-[color:var(--ink)] md:mt-3 md:text-5xl">{subgallery.title}</h1>
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-[color:var(--ink-soft)] md:mt-4 md:gap-x-4 md:gap-y-2">
             {subgallery.location ? <span>{subgallery.location}</span> : null}
             {subgallery.location && subgallery.dateLabel ? (
               <span className="text-[color:var(--ink-faint)]">/</span>
             ) : null}
             {subgallery.dateLabel ? <span>{subgallery.dateLabel}</span> : null}
           </div>
-          <p className="mt-6 text-base leading-8 text-[color:var(--ink-soft)]">
+          <p className="mt-4 text-sm leading-6 text-[color:var(--ink-soft)] md:mt-6 md:text-base md:leading-8">
             {subgallery.description}
           </p>
         </div>
       </section>
 
-      <section className="mt-8 space-y-5">
+      <section className="mt-6 space-y-4 md:mt-8 md:space-y-5">
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
             Visual journal
           </p>
-          <h2 className="mt-2 font-serif text-4xl text-[color:var(--ink)]">Photographs</h2>
+          <h2 className="mt-1.5 font-serif text-3xl text-[color:var(--ink)] md:mt-2 md:text-4xl">Photographs</h2>
         </div>
         <PhotoGrid photos={subgallery.photos} />
       </section>

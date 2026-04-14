@@ -20,22 +20,22 @@ export default function PricingPage() {
 
   return (
     <AppShell>
-      <section className="space-y-8 py-6">
-        <div className="max-w-3xl space-y-4">
+      <section className="space-y-6 py-4 md:space-y-8 md:py-6">
+        <div className="max-w-3xl space-y-3 md:space-y-4">
           <p className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)]">
             Membership
           </p>
-          <h1 className="font-serif text-5xl leading-tight text-[color:var(--ink)]">
+          <h1 className="font-serif text-3xl leading-tight text-[color:var(--ink)] md:text-5xl">
             Choose a plan to start building your archive.
           </h1>
-          <p className="max-w-2xl text-sm leading-7 text-[color:var(--ink-soft)]">
+          <p className="max-w-2xl text-sm leading-6 text-[color:var(--ink-soft)] md:leading-7">
             Save and organize your memories with the plan that fits how you collect.
           </p>
-          <p className="text-sm leading-7 text-[color:var(--ink-soft)]">
+          <p className="text-sm leading-6 text-[color:var(--ink-soft)] md:leading-7">
             Upgrade anytime as your archive grows.
           </p>
         </div>
-        <div className="grid items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid items-stretch gap-3 sm:grid-cols-2 md:gap-5 xl:grid-cols-4">
           {orderedPlans.map((plan) => (
             <PricingCard
               key={plan.id}

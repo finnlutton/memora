@@ -50,9 +50,9 @@ export function LightboxViewer({
     >
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-[rgba(9,14,22,0.76)] backdrop-blur-md" />
-        <Dialog.Content className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8">
+        <Dialog.Content className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-8">
           {current ? (
-            <div className="relative flex h-full w-full max-w-6xl flex-col justify-center gap-5">
+            <div className="relative flex h-full w-full max-w-6xl flex-col justify-center gap-3 md:gap-5">
               <div className="absolute right-0 top-0 z-10">
                 <Dialog.Close asChild>
                   <Button variant="secondary" className="bg-white/10 text-white hover:bg-white/20">
@@ -61,7 +61,7 @@ export function LightboxViewer({
                   </Button>
                 </Dialog.Close>
               </div>
-              <div className="relative flex-1 overflow-hidden rounded-[2rem] border border-white/10 bg-[rgba(255,255,255,0.05)]">
+              <div className="relative flex-1 overflow-hidden rounded-[1.1rem] border border-white/10 bg-[rgba(255,255,255,0.05)] md:rounded-[2rem]">
                 <Image
                   src={current.src}
                   alt={current.caption || "Photo"}
@@ -71,12 +71,12 @@ export function LightboxViewer({
                   unoptimized={nextImageUnoptimizedForSrc(current.src)}
                 />
               </div>
-              <div className="flex items-center justify-between gap-4 text-white">
-                <div>
+              <div className="flex flex-wrap items-end justify-between gap-3 text-white md:gap-4">
+                <div className="min-w-0 flex-1">
                   <p className="text-xs uppercase tracking-[0.22em] text-white/60">
                     Photo {openIndex! + 1} of {photos.length}
                   </p>
-                  <p className="mt-2 max-w-2xl text-sm leading-7 text-white/88">
+                  <p className="mt-1.5 max-w-2xl text-xs leading-6 text-white/88 md:mt-2 md:text-sm md:leading-7">
                     {current.caption || "No caption yet. Add one in the scene editor to deepen the memory."}
                   </p>
                 </div>

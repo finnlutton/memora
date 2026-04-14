@@ -11,7 +11,7 @@ export function PhotoGrid({ photos }: { photos: MemoryPhoto[] }) {
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
         {photos.map((photo, index) => (
           <button
             key={photo.id}
@@ -27,7 +27,7 @@ export function PhotoGrid({ photos }: { photos: MemoryPhoto[] }) {
               unoptimized={nextImageUnoptimizedForSrc(photo.src)}
             />
             {photo.caption ? (
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[rgba(10,18,30,0.68)] to-transparent px-4 pb-4 pt-10 text-left text-sm text-white">
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[rgba(10,18,30,0.68)] to-transparent px-3 pb-2.5 pt-8 text-left text-xs text-white sm:px-4 sm:pb-4 sm:pt-10 sm:text-sm">
                 {photo.caption}
               </div>
             ) : null}

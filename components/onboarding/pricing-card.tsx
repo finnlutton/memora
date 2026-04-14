@@ -19,17 +19,17 @@ export function PricingCard({
 
   return (
     <div
-      className={`flex h-full flex-col justify-between overflow-hidden rounded-[2rem] border p-6 ${
+      className={`flex h-full flex-col justify-between overflow-hidden rounded-[1.5rem] border p-4 md:rounded-[2rem] md:p-6 ${
         plan.featured
           ? "border-[color:var(--border-strong)] bg-[rgba(240,246,252,0.98)] shadow-[0_22px_80px_rgba(34,49,71,0.10)]"
           : "border-[color:var(--border)] bg-[rgba(255,255,255,0.86)]"
       }`}
     >
-      <div className="space-y-4">
+      <div className="space-y-3 md:space-y-4">
         <div className="flex items-start gap-4">
           <div className="flex-shrink-0">
-            <h3 className="font-serif text-4xl text-[color:var(--ink)]">{plan.name}</h3>
-            <p className="mt-2 font-serif text-4xl leading-tight text-[color:var(--ink)]">
+            <h3 className="font-serif text-3xl text-[color:var(--ink)] md:text-4xl">{plan.name}</h3>
+            <p className="mt-1.5 font-serif text-3xl leading-tight text-[color:var(--ink)] md:mt-2 md:text-4xl">
               {plan.priceMonthlyLabel}
             </p>
           </div>
@@ -40,13 +40,13 @@ export function PricingCard({
           ) : null}
         </div>
 
-        <p className="text-sm leading-7 text-[color:var(--ink-soft)]">{plan.summary}</p>
+        <p className="text-sm leading-6 text-[color:var(--ink-soft)] md:leading-7">{plan.summary}</p>
       </div>
 
-      <div className="mt-6 flex flex-1 flex-col justify-between border-t border-[color:var(--border)] pt-5">
+      <div className="mt-4 flex flex-1 flex-col justify-between border-t border-[color:var(--border)] pt-4 md:mt-6 md:pt-5">
         <ul className={plan.id === "pro" ? "space-y-2" : "space-y-3"}>
           {plan.features.map((feature) => (
-            <li key={feature} className="flex items-start gap-3 text-sm leading-6 text-[color:var(--ink-soft)]">
+            <li key={feature} className="flex items-start gap-2.5 text-sm leading-5 text-[color:var(--ink-soft)] md:gap-3 md:leading-6">
               <Check className="mt-0.5 h-4 w-4 text-[color:var(--accent-strong)]" />
               <span>{feature}</span>
             </li>

@@ -64,7 +64,7 @@ export function SubgalleryForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
       <div className="flex items-center justify-between">
         <Button asChild variant="ghost">
           <Link href={`/galleries/${galleryId}`}>
@@ -73,8 +73,8 @@ export function SubgalleryForm({
           </Link>
         </Button>
       </div>
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-[2rem] border border-white/60 bg-white/74 p-4 shadow-[0_20px_70px_rgba(34,49,71,0.08)] backdrop-blur">
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <section className="rounded-[1.5rem] border border-white/60 bg-white/74 p-4 shadow-[0_20px_70px_rgba(34,49,71,0.08)] backdrop-blur md:rounded-[2rem]">
           <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
             Journal entry
           </p>
@@ -125,8 +125,8 @@ export function SubgalleryForm({
             </label>
           </div>
         </section>
-        <aside className="space-y-6">
-          <section className="rounded-[2rem] border border-white/60 bg-white/74 p-4 shadow-[0_20px_70px_rgba(34,49,71,0.08)] backdrop-blur">
+        <aside className="space-y-4 md:space-y-6">
+          <section className="rounded-[1.5rem] border border-white/60 bg-white/74 p-4 shadow-[0_20px_70px_rgba(34,49,71,0.08)] backdrop-blur md:rounded-[2rem]">
             <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
               Cover image
             </p>
@@ -156,12 +156,12 @@ export function SubgalleryForm({
               ) : null}
             </div>
           </section>
-          <section className="rounded-[2rem] border border-white/60 bg-[color:var(--paper)] p-6">
+          <section className="rounded-[1.5rem] border border-white/60 bg-[color:var(--paper)] p-4 md:rounded-[2rem] md:p-6">
             <h3 className="font-serif text-2xl text-[color:var(--ink)]">Photo arrangement</h3>
             <p className="mt-3 text-sm leading-7 text-[color:var(--ink-soft)]">
               Add the visual sequence for this memory, then lightly reorder it so the page reads in the right rhythm.
             </p>
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-4 flex flex-wrap gap-2.5 md:mt-6 md:gap-3">
               <Button
                 type="submit"
                 disabled={isSubmitting || isUploadingCover || isUploadingPhotos || !coverImage || photos.length === 0}
@@ -185,7 +185,7 @@ export function SubgalleryForm({
           </section>
         </aside>
       </div>
-      <section className="rounded-[2rem] border border-white/60 bg-white/74 p-6 shadow-[0_20px_70px_rgba(34,49,71,0.08)] backdrop-blur">
+      <section className="rounded-[1.5rem] border border-white/60 bg-white/74 p-4 shadow-[0_20px_70px_rgba(34,49,71,0.08)] backdrop-blur md:rounded-[2rem] md:p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
@@ -213,7 +213,7 @@ export function SubgalleryForm({
             }}
           />
         </div>
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-4 grid gap-3 md:mt-6 md:gap-4 md:grid-cols-2 xl:grid-cols-3">
           {photos.map((photo, index) => (
             <div
               key={photo.id}

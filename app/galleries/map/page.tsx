@@ -51,9 +51,9 @@ export default function MemoryMapPage() {
 
   return (
     <AppShell>
-      <div className="flex h-[calc(100dvh-8rem)] flex-col overflow-hidden">
+      <div className="flex h-[calc(100dvh-10.5rem)] flex-col overflow-hidden md:h-[calc(100dvh-8rem)]">
         <WorkspaceTopbar
-          className="mb-0 pb-4"
+          className="mb-0 pb-3 md:pb-4"
           eyebrow="Memory map"
           title="Memory Map"
           subtitle="Explore your archive spatially. Select a location in gallery or subgallery edit to place a pin."
@@ -63,7 +63,7 @@ export default function MemoryMapPage() {
           <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-[color:var(--background)]">
             <WorldGlobe width={1260} height={760} pins={mapPins} allowWheelZoom />
           </div>
-          <div className="pointer-events-none absolute right-8 top-5 text-xs tracking-[0.08em] text-[color:var(--ink-soft)] md:right-10 md:top-6">
+          <div className="pointer-events-none absolute right-4 top-3 text-[11px] tracking-[0.08em] text-[color:var(--ink-soft)] md:right-10 md:top-6 md:text-xs">
             {mapPins.length} mapped memories
           </div>
         </section>

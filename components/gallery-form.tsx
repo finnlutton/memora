@@ -77,7 +77,7 @@ export function GalleryForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
       <div className="flex items-center justify-between">
         <Button asChild variant="ghost">
           <Link href={backHref}>
@@ -86,8 +86,8 @@ export function GalleryForm({
           </Link>
         </Button>
       </div>
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-[2rem] border border-white/60 bg-white/74 p-6 shadow-[0_20px_70px_rgba(34,49,71,0.08)] backdrop-blur">
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <section className="rounded-[1.5rem] border border-white/60 bg-white/74 p-4 shadow-[0_20px_70px_rgba(34,49,71,0.08)] backdrop-blur md:rounded-[2rem] md:p-6">
           <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
             Story framing
           </p>
@@ -177,7 +177,7 @@ export function GalleryForm({
           </div>
         </section>
         <aside className="space-y-6">
-          <section className="rounded-[2rem] border border-white/60 bg-white/74 p-6 shadow-[0_20px_70px_rgba(34,49,71,0.08)] backdrop-blur">
+          <section className="rounded-[1.5rem] border border-white/60 bg-white/74 p-4 shadow-[0_20px_70px_rgba(34,49,71,0.08)] backdrop-blur md:rounded-[2rem] md:p-6">
             <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
               Cover image
             </p>
@@ -207,12 +207,12 @@ export function GalleryForm({
               ) : null}
             </div>
           </section>
-          <section className="rounded-[2rem] border border-white/60 bg-[color:var(--paper)] p-6">
+          <section className="rounded-[1.5rem] border border-white/60 bg-[color:var(--paper)] p-4 md:rounded-[2rem] md:p-6">
             <h3 className="font-serif text-2xl text-[color:var(--ink)]">Keep it meaningful</h3>
             <p className="mt-3 text-sm leading-7 text-[color:var(--ink-soft)]">
               A strong gallery reads like the opening page of a journal: broad enough to hold the whole trip, specific enough to remember how it felt.
             </p>
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-4 flex flex-wrap gap-2.5 md:mt-6 md:gap-3">
               <Button type="submit" disabled={isSubmitting || isUploading || !coverImage}>
                 <Save className="h-4 w-4" />
                 {isSubmitting

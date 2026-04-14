@@ -187,7 +187,7 @@ export function WorkspaceShell({ children, onSignOut, email = "" }: WorkspaceShe
 
       <div className="min-w-0 flex-1">
         <div className="border-b border-[rgba(28,46,72,0.08)] bg-[rgba(248,251,255,0.9)] px-4 py-2.5 backdrop-blur-xl md:hidden">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {navItems.map((item) => {
               const active =
                 item.href === "/galleries"
@@ -199,7 +199,7 @@ export function WorkspaceShell({ children, onSignOut, email = "" }: WorkspaceShe
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] uppercase tracking-[0.14em] transition",
+                    "inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[10px] uppercase tracking-[0.14em] transition",
                     active
                       ? "bg-[rgba(131,164,201,0.2)] text-[color:var(--ink)]"
                       : "text-[color:var(--ink-soft)] hover:bg-white/80",
@@ -214,7 +214,7 @@ export function WorkspaceShell({ children, onSignOut, email = "" }: WorkspaceShe
               type="button"
               onClick={() => setMobileSettingsOpen((current) => !current)}
               className={cn(
-                "ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] uppercase tracking-[0.14em] transition",
+                "ml-auto inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[10px] uppercase tracking-[0.14em] transition",
                 mobileSettingsOpen
                   ? "bg-[rgba(131,164,201,0.2)] text-[color:var(--ink)]"
                   : "text-[color:var(--ink-soft)] hover:bg-white/80",

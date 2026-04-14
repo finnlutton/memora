@@ -23,14 +23,14 @@ export default function NewGalleryPage() {
     <OnboardingGuard>
       <AppShell>
         {hasReachedGalleryLimit ? (
-          <section className="mx-auto max-w-3xl border border-[color:var(--border)] bg-[rgba(255,255,255,0.82)] p-6 text-center md:p-8">
+          <section className="mx-auto max-w-3xl border border-[color:var(--border)] bg-[rgba(255,255,255,0.82)] p-4 text-center md:p-8">
             <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
               Gallery limit reached
             </p>
-            <h1 className="mt-3 font-serif text-4xl text-[color:var(--ink)] md:text-5xl">
+            <h1 className="mt-2 font-serif text-3xl text-[color:var(--ink)] md:mt-3 md:text-5xl">
               Your free plan includes 2 active galleries.
             </h1>
-            <p className="mt-4 text-sm leading-7 text-[color:var(--ink-soft)]">
+            <p className="mt-3 text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:leading-7">
               Upgrade your membership to continue creating new galleries without removing existing ones.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -44,11 +44,11 @@ export default function NewGalleryPage() {
           </section>
         ) : (
           <>
-        <section className="mb-6">
+        <section className="mb-4 md:mb-6">
           <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
             Create gallery
           </p>
-          <h1 className="mt-3 font-serif text-5xl text-[color:var(--ink)]">Compose a new memory</h1>
+          <h1 className="mt-2 font-serif text-3xl text-[color:var(--ink)] md:mt-3 md:text-5xl">Compose a new memory</h1>
         </section>
         <GalleryForm
           createLabel="Create gallery"
