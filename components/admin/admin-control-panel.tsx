@@ -36,6 +36,28 @@ type UserLookupResult = {
   recentGalleries?: Array<{ title: string; updatedAt: string }>;
 };
 
+type ShareDiagnosticsResult = {
+  foundUser?: boolean;
+  filterEmail?: string;
+  filterUserEmail?: string;
+  metrics: {
+    totalShares: number;
+    activeShares: number;
+    revokedShares: number;
+    totalMappings: number;
+    averageGalleriesPerShare: number;
+  };
+  recentShares: Array<{
+    id: string;
+    createdAt: string;
+    status: "active" | "revoked";
+    messagePreview: string;
+    ownerEmail: string;
+    galleryCount: number;
+    tokenPreview: string;
+  }>;
+};
+
 function formatDateTime(value: string | null) {
   if (!value) return "—";
   const date = new Date(value);
@@ -59,6 +81,13 @@ export function AdminControlPanel() {
   const [lookupEmail, setLookupEmail] = useState("");
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [lookupResult, setLookupResult] = useState<UserLookupResult | null>(null);
+  const [shareBusy, setShareBusy] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
+  const [shareEmailFilter, setShareEmailFilter] = useState("");
+  const [shareResult, setShareResult] = useState<ShareDiagnosticsResult | null>(null);
+  const [shareRevokeBusy, setShareRevokeBusy] = useState(false);
+  const [shareRevokeSuccess, setShareRevokeSuccess] = useState<string | null>(null);
+  const [revokeConfirmOpen, setRevokeConfirmOpen] = useState(false);
 
   const preview = useMemo(() => {
     const list = result?.orphanedObjects ?? [];
@@ -174,10 +203,125 @@ export function AdminControlPanel() {
         </section>
 
         <section className="border-b border-[rgba(34,52,79,0.08)] pb-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[color:var(--ink)]">Sharing</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[color:var(--ink)]">Share Diagnostics</p>
           <p className="mt-2 text-sm text-[color:var(--ink-soft)]">
-            Reserved for advanced share-link controls and audit tools.
+            Inspect share totals, status split, and recent share records.
           </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <input
+              type="email"
+              value={shareEmailFilter}
+              onChange={(event) => setShareEmailFilter(event.target.value)}
+              placeholder="Optional owner email filter"
+              className="min-w-0 flex-1 border border-[color:var(--border)] bg-white/80 px-3 py-2 text-sm text-[color:var(--ink)] outline-none transition focus:border-[color:var(--accent)]"
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={shareBusy}
+              onClick={async () => {
+                setShareBusy(true);
+                setShareError(null);
+                setShareRevokeSuccess(null);
+                try {
+                  const response = await fetch("/api/admin/shares/diagnostics", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: shareEmailFilter.trim() || undefined }),
+                  });
+                  const payload = (await response.json()) as ShareDiagnosticsResult & { error?: string };
+                  if (!response.ok) throw new Error(payload.error ?? "Unable to load share diagnostics.");
+                  setShareResult(payload);
+                } catch (diagnosticsError) {
+                  setShareError(
+                    diagnosticsError instanceof Error
+                      ? diagnosticsError.message
+                      : "Unable to load share diagnostics.",
+                  );
+                } finally {
+                  setShareBusy(false);
+                }
+              }}
+            >
+              {shareBusy ? "Loading..." : "Load diagnostics"}
+            </Button>
+          </div>
+          <div className="mt-3">
+            <AlertDialog.Root open={revokeConfirmOpen} onOpenChange={setRevokeConfirmOpen}>
+              <AlertDialog.Trigger asChild>
+                <Button
+                  type="button"
+                  variant="danger"
+                  disabled={
+                    shareRevokeBusy ||
+                    !shareResult ||
+                    !shareResult.foundUser ||
+                    !shareResult.filterUserEmail
+                  }
+                >
+                  Revoke all shares for this user
+                </Button>
+              </AlertDialog.Trigger>
+              <AlertDialog.Portal>
+                <AlertDialog.Overlay className="fixed inset-0 z-40 bg-[rgba(18,24,32,0.45)] backdrop-blur-sm" />
+                <AlertDialog.Content className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,32rem)] -translate-x-1/2 -translate-y-1/2 rounded-[2rem] border border-white/50 bg-[color:var(--background)] p-6 shadow-[0_24px_70px_rgba(18,24,32,0.24)]">
+                  <AlertDialog.Title className="font-serif text-2xl text-[color:var(--ink)]">
+                    Revoke shares for filtered user?
+                  </AlertDialog.Title>
+                  <AlertDialog.Description className="mt-3 text-sm leading-7 text-[color:var(--ink-soft)]">
+                    This will revoke all currently active shares for {shareResult?.filterUserEmail ?? "this user"}.
+                  </AlertDialog.Description>
+                  <div className="mt-6 flex justify-end gap-3">
+                    <AlertDialog.Cancel asChild>
+                      <Button variant="secondary">Go back</Button>
+                    </AlertDialog.Cancel>
+                    <Button
+                      type="button"
+                      variant="danger"
+                      disabled={shareRevokeBusy}
+                      onClick={async () => {
+                        if (!shareResult?.filterUserEmail) return;
+                        setShareRevokeBusy(true);
+                        setShareError(null);
+                        setShareRevokeSuccess(null);
+                        try {
+                          const response = await fetch("/api/admin/shares/revoke-user", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ email: shareResult.filterUserEmail }),
+                          });
+                          const payload = (await response.json()) as {
+                            error?: string;
+                            revokedCount?: number;
+                            userEmail?: string;
+                          };
+                          if (!response.ok) {
+                            throw new Error(payload.error ?? "Unable to revoke shares for user.");
+                          }
+                          setShareRevokeSuccess(
+                            `Revoked ${payload.revokedCount ?? 0} active share link${
+                              payload.revokedCount === 1 ? "" : "s"
+                            } for ${payload.userEmail ?? shareResult.filterUserEmail}.`,
+                          );
+                          setRevokeConfirmOpen(false);
+                        } catch (revokeError) {
+                          setShareError(
+                            revokeError instanceof Error
+                              ? revokeError.message
+                              : "Unable to revoke shares for user.",
+                          );
+                        } finally {
+                          setShareRevokeBusy(false);
+                        }
+                      }}
+                    >
+                      {shareRevokeBusy ? "Revoking..." : "Yes, revoke"}
+                    </Button>
+                  </div>
+                </AlertDialog.Content>
+              </AlertDialog.Portal>
+            </AlertDialog.Root>
+          </div>
         </section>
 
         <section className="border-b border-[rgba(34,52,79,0.08)] pb-4">
@@ -242,6 +386,67 @@ export function AdminControlPanel() {
         <p className="rounded-sm border border-[#c98282] bg-[#fff7f7] px-3 py-2 text-sm leading-6 text-[#9a4545]">
           {lookupError}
         </p>
+      ) : null}
+
+      {shareError ? (
+        <p className="rounded-sm border border-[#c98282] bg-[#fff7f7] px-3 py-2 text-sm leading-6 text-[#9a4545]">
+          {shareError}
+        </p>
+      ) : null}
+
+      {shareRevokeSuccess ? (
+        <p className="rounded-sm border border-[rgba(46,78,114,0.16)] bg-[rgba(246,250,255,0.9)] px-3 py-2 text-sm leading-6 text-[color:var(--ink)]">
+          {shareRevokeSuccess}
+        </p>
+      ) : null}
+
+      {shareResult ? (
+        <section className="space-y-3 rounded-[1.25rem] border border-[color:var(--border)] bg-white/72 p-4 text-sm text-[color:var(--ink-soft)]">
+          <div className="grid gap-3 md:grid-cols-5">
+            <StatChip label="Total shares" value={String(shareResult.metrics.totalShares)} />
+            <StatChip label="Active" value={String(shareResult.metrics.activeShares)} />
+            <StatChip label="Revoked" value={String(shareResult.metrics.revokedShares)} />
+            <StatChip label="Share mappings" value={String(shareResult.metrics.totalMappings)} />
+            <StatChip label="Avg galleries/share" value={String(shareResult.metrics.averageGalleriesPerShare)} />
+          </div>
+          {shareResult.filterEmail && !shareResult.foundUser ? (
+            <p>No user found for {shareResult.filterEmail}.</p>
+          ) : null}
+          {shareResult.recentShares.length ? (
+            <div className="overflow-x-auto border-t border-[rgba(34,52,79,0.08)] pt-3">
+              <table className="min-w-full text-left text-sm">
+                <thead className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-faint)]">
+                  <tr>
+                    <th className="pb-2 pr-4 font-medium">Created</th>
+                    <th className="pb-2 pr-4 font-medium">Owner</th>
+                    <th className="pb-2 pr-4 font-medium">Status</th>
+                    <th className="pb-2 pr-4 font-medium">Galleries</th>
+                    <th className="pb-2 pr-4 font-medium">Token</th>
+                    <th className="pb-2 font-medium">Message</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shareResult.recentShares.map((entry) => (
+                    <tr key={entry.id} className="border-t border-[rgba(34,52,79,0.06)]">
+                      <td className="py-2 pr-4 whitespace-nowrap">{formatDateTime(entry.createdAt)}</td>
+                      <td className="py-2 pr-4 whitespace-nowrap">{entry.ownerEmail}</td>
+                      <td className="py-2 pr-4 whitespace-nowrap">
+                        <span className={entry.status === "active" ? "text-[color:var(--ink)]" : "text-[color:var(--ink-faint)]"}>
+                          {entry.status}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-4 whitespace-nowrap">{entry.galleryCount}</td>
+                      <td className="py-2 pr-4 whitespace-nowrap">{entry.tokenPreview}</td>
+                      <td className="py-2">{entry.messagePreview || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p>No recent shares to display.</p>
+          )}
+        </section>
       ) : null}
 
       {lookupResult ? (
@@ -339,6 +544,15 @@ export function AdminControlPanel() {
           ) : null}
         </section>
       ) : null}
+    </div>
+  );
+}
+
+function StatChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[0.9rem] border border-[color:var(--border)] bg-[color:var(--paper)] px-3 py-2">
+      <p className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">{label}</p>
+      <p className="mt-1 text-[15px] text-[color:var(--ink)]">{value}</p>
     </div>
   );
 }
