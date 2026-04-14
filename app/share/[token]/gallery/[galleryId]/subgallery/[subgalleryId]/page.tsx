@@ -42,9 +42,20 @@ function isLikelyStoragePath(path: string) {
 }
 
 function formatDateRange(startDate: string | null, endDate: string | null) {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+  const formatSingle = (value: string) => {
+    const date = new Date(`${value}T00:00:00Z`);
+    if (Number.isNaN(date.getTime())) return value;
+    return formatter.format(date);
+  };
+
   if (!startDate && !endDate) return "";
-  if (startDate && endDate && startDate !== endDate) return `${startDate} - ${endDate}`;
-  return startDate ?? endDate ?? "";
+  if (startDate && endDate && startDate !== endDate) return `${formatSingle(startDate)} - ${formatSingle(endDate)}`;
+  return formatSingle(startDate ?? endDate ?? "");
 }
 
 function InvalidShareState({ token, message }: { token: string; message: string }) {
@@ -112,10 +123,7 @@ export default async function PublicSharedSubgalleryPage({
     .order("display_order", { ascending: true })
     .returns<PhotoRow[]>();
 
-  const imagePaths = [
-    subgallery.cover_image_path ?? "",
-    ...(photoRows ?? []).map((photo) => photo.storage_path),
-  ].filter((path) => path && isLikelyStoragePath(path));
+  const imagePaths = (photoRows ?? []).map((photo) => photo.storage_path).filter((path) => path && isLikelyStoragePath(path));
 
   const signedUrlByPath = new Map<string, string>();
   if (imagePaths.length) {
@@ -125,10 +133,6 @@ export default async function PublicSharedSubgalleryPage({
       if (entry.signedUrl) signedUrlByPath.set(uniquePaths[index], entry.signedUrl);
     });
   }
-
-  const coverImage = isLikelyStoragePath(subgallery.cover_image_path ?? "")
-    ? signedUrlByPath.get(subgallery.cover_image_path ?? "") ?? ""
-    : (subgallery.cover_image_path ?? "");
 
   const photos: MemoryPhoto[] = (photoRows ?? []).map((photo, index) => {
     const src = isLikelyStoragePath(photo.storage_path)
@@ -169,13 +173,6 @@ export default async function PublicSharedSubgalleryPage({
             <p className="mt-4 max-w-3xl text-[15px] leading-7 text-[color:var(--ink-soft)]">{subgallery.description}</p>
           ) : null}
         </div>
-
-        {coverImage ? (
-          <div className="mb-8 overflow-hidden border border-[rgba(30,46,72,0.12)]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={coverImage} alt={subgallery.title} className="h-80 w-full object-cover md:h-[24rem]" />
-          </div>
-        ) : null}
 
         <section>
           <p className="mb-3 text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-faint)]">Photos</p>

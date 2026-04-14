@@ -36,9 +36,20 @@ function isLikelyStoragePath(path: string) {
 }
 
 function formatDateRange(startDate: string | null, endDate: string | null) {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+  const formatSingle = (value: string) => {
+    const date = new Date(`${value}T00:00:00Z`);
+    if (Number.isNaN(date.getTime())) return value;
+    return formatter.format(date);
+  };
+
   if (!startDate && !endDate) return "";
-  if (startDate && endDate && startDate !== endDate) return `${startDate} - ${endDate}`;
-  return startDate ?? endDate ?? "";
+  if (startDate && endDate && startDate !== endDate) return `${formatSingle(startDate)} - ${formatSingle(endDate)}`;
+  return formatSingle(startDate ?? endDate ?? "");
 }
 
 function dateLabelForSubgallery(subgallery: SubgalleryRow) {

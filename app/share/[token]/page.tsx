@@ -27,9 +27,20 @@ function isLikelyStoragePath(path: string) {
 }
 
 function formatDateRange(startDate: string | null, endDate: string | null) {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+  const formatSingle = (value: string) => {
+    const date = new Date(`${value}T00:00:00Z`);
+    if (Number.isNaN(date.getTime())) return value;
+    return formatter.format(date);
+  };
+
   if (!startDate && !endDate) return "";
-  if (startDate && endDate && startDate !== endDate) return `${startDate} - ${endDate}`;
-  return startDate ?? endDate ?? "";
+  if (startDate && endDate && startDate !== endDate) return `${formatSingle(startDate)} - ${formatSingle(endDate)}`;
+  return formatSingle(startDate ?? endDate ?? "");
 }
 
 export default async function PublicSharePage({
@@ -110,14 +121,14 @@ export default async function PublicSharePage({
       <div className="mx-auto max-w-6xl">
         <div className="mb-8 border-b border-[rgba(30,46,72,0.1)] pb-5">
           <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
-          <h1 className="mt-3 font-serif text-4xl leading-tight md:text-5xl">Shared Galleries</h1>
+          <h1 className="mt-3 font-serif text-4xl leading-tight md:text-5xl">Shared with you</h1>
           {share.message ? (
             <p className="mt-4 max-w-3xl text-[15px] leading-7 text-[color:var(--ink-soft)]">{share.message}</p>
           ) : null}
         </div>
 
         {galleryRows?.length ? (
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <section className="grid gap-5 md:grid-cols-2">
             {galleryRows.map((gallery) => {
               const coverPath = gallery.cover_image_path ?? "";
               const coverImage = isLikelyStoragePath(coverPath)
@@ -130,7 +141,7 @@ export default async function PublicSharePage({
                   href={`/share/${token}/gallery/${gallery.id}`}
                   className="group overflow-hidden border border-[rgba(30,46,72,0.12)] bg-white/72 transition hover:shadow-[0_16px_38px_rgba(16,24,38,0.12)]"
                 >
-                  <div className="relative aspect-[5/3] bg-[rgba(18,32,48,0.08)]">
+                  <div className="relative aspect-[16/10] bg-[rgba(18,32,48,0.08)]">
                     {coverImage ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={coverImage} alt={gallery.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]" />
