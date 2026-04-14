@@ -58,6 +58,23 @@ type ShareDiagnosticsResult = {
   }>;
 };
 
+type IntegrityScanResult = {
+  generatedAt: string;
+  summary: {
+    totalChecks: number;
+    checksWithIssues: number;
+    totalIssueCount: number;
+    healthy: boolean;
+  };
+  checks: Array<{
+    key: string;
+    name: string;
+    description: string;
+    count: number;
+    samples: Array<Record<string, string | null>>;
+  }>;
+};
+
 function formatDateTime(value: string | null) {
   if (!value) return "—";
   const date = new Date(value);
@@ -88,6 +105,9 @@ export function AdminControlPanel() {
   const [shareRevokeBusy, setShareRevokeBusy] = useState(false);
   const [shareRevokeSuccess, setShareRevokeSuccess] = useState<string | null>(null);
   const [revokeConfirmOpen, setRevokeConfirmOpen] = useState(false);
+  const [integrityBusy, setIntegrityBusy] = useState(false);
+  const [integrityError, setIntegrityError] = useState<string | null>(null);
+  const [integrityResult, setIntegrityResult] = useState<IntegrityScanResult | null>(null);
 
   const preview = useMemo(() => {
     const list = result?.orphanedObjects ?? [];
@@ -100,7 +120,7 @@ export function AdminControlPanel() {
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">
-      <section className="grid gap-5 md:grid-cols-2">
+      <section className="space-y-5">
         <section className="border-b border-[rgba(34,52,79,0.08)] pb-4">
           <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[color:var(--ink)]">Data Health</p>
           <p className="mt-2 text-sm text-[color:var(--ink-soft)]">
@@ -199,6 +219,40 @@ export function AdminControlPanel() {
                 </AlertDialog.Content>
               </AlertDialog.Portal>
             </AlertDialog.Root>
+          </div>
+        </section>
+
+        <section className="border-b border-[rgba(34,52,79,0.08)] pb-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[color:var(--ink)]">Data Integrity</p>
+          <p className="mt-2 text-sm text-[color:var(--ink-soft)]">
+            Scan relational integrity across galleries, subgalleries, photos, shares, and profiles.
+          </p>
+          <div className="mt-3">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={integrityBusy}
+              onClick={async () => {
+                setIntegrityBusy(true);
+                setIntegrityError(null);
+                try {
+                  const response = await fetch("/api/admin/integrity/scan", { method: "GET" });
+                  const payload = (await response.json()) as IntegrityScanResult & { error?: string };
+                  if (!response.ok) {
+                    throw new Error(payload.error ?? "Unable to run integrity scan.");
+                  }
+                  setIntegrityResult(payload);
+                } catch (scanError) {
+                  setIntegrityError(
+                    scanError instanceof Error ? scanError.message : "Unable to run integrity scan.",
+                  );
+                } finally {
+                  setIntegrityBusy(false);
+                }
+              }}
+            >
+              {integrityBusy ? "Scanning..." : "Run Integrity Scan"}
+            </Button>
           </div>
         </section>
 
@@ -394,10 +448,61 @@ export function AdminControlPanel() {
         </p>
       ) : null}
 
+      {integrityError ? (
+        <p className="rounded-sm border border-[#c98282] bg-[#fff7f7] px-3 py-2 text-sm leading-6 text-[#9a4545]">
+          {integrityError}
+        </p>
+      ) : null}
+
       {shareRevokeSuccess ? (
         <p className="rounded-sm border border-[rgba(46,78,114,0.16)] bg-[rgba(246,250,255,0.9)] px-3 py-2 text-sm leading-6 text-[color:var(--ink)]">
           {shareRevokeSuccess}
         </p>
+      ) : null}
+
+      {integrityResult ? (
+        <section className="space-y-3 rounded-[1.25rem] border border-[color:var(--border)] bg-white/72 p-4 text-sm text-[color:var(--ink-soft)]">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-[rgba(34,52,79,0.08)] pb-3">
+            <span>
+              Checks: <span className="text-[color:var(--ink)]">{integrityResult.summary.totalChecks}</span>
+            </span>
+            <span>
+              With issues: <span className="text-[color:var(--ink)]">{integrityResult.summary.checksWithIssues}</span>
+            </span>
+            <span>
+              Total flagged rows:{" "}
+              <span className="text-[color:var(--ink)]">{integrityResult.summary.totalIssueCount}</span>
+            </span>
+            <span>
+              Run at: <span className="text-[color:var(--ink)]">{formatDateTime(integrityResult.generatedAt)}</span>
+            </span>
+          </div>
+
+          {integrityResult.summary.healthy ? (
+            <p className="text-[color:var(--ink)]">No issues found across all integrity checks.</p>
+          ) : (
+            <ul className="space-y-3">
+              {integrityResult.checks.map((check) => (
+                <li key={check.key} className="border-b border-[rgba(34,52,79,0.08)] pb-3 last:border-b-0 last:pb-0">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-[color:var(--ink)]">{check.name}</p>
+                    <span className={check.count > 0 ? "text-[color:var(--ink)]" : "text-[color:var(--ink-faint)]"}>
+                      {check.count} flagged
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-[color:var(--ink-faint)]">{check.description}</p>
+                  {check.count > 0 && check.samples.length > 0 ? (
+                    <ul className="mt-2 space-y-1 text-xs break-all">
+                      {check.samples.map((sample, index) => (
+                        <li key={`${check.key}-sample-${index}`}>{JSON.stringify(sample)}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       ) : null}
 
       {shareResult ? (
