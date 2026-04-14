@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, FolderKanban, Globe, PanelLeft, Settings2 } from "lucide-react";
+import { ChevronDown, FolderKanban, PanelLeft, Settings2 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { DeleteAccountDialog } from "@/components/delete-account-dialog";
+import { GlobeIcon } from "@/components/icons/GlobeIcon";
 import { cn } from "@/lib/utils";
 import memoraLogo from "../Logo/MemoraLogo.png";
 
@@ -31,8 +32,8 @@ export function WorkspaceShell({ children, onSignOut, email = "" }: WorkspaceShe
 
   const navItems = useMemo(
     () => [
-      { href: "/galleries", label: "My Galleries", icon: FolderKanban },
-      { href: "/galleries/map", label: "Memory Map", icon: Globe },
+      { href: "/galleries", label: "My Galleries", icon: FolderKanban, iconClassName: "h-[18px] w-[18px]" },
+      { href: "/galleries/map", label: "Memory Map", icon: GlobeIcon, iconClassName: "h-[20px] w-[20px]" },
     ],
     [],
   );
@@ -78,7 +79,10 @@ export function WorkspaceShell({ children, onSignOut, email = "" }: WorkspaceShe
 
         <nav className="mt-7 flex flex-col gap-1.5">
           {navItems.map((item) => {
-            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const active =
+              item.href === "/galleries"
+                ? pathname === "/galleries"
+                : pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
             return (
               <Link
@@ -89,7 +93,9 @@ export function WorkspaceShell({ children, onSignOut, email = "" }: WorkspaceShe
                   active ? "bg-[rgba(131,164,201,0.14)] text-[color:var(--ink)]" : "hover:bg-white/70",
                 )}
               >
-                <Icon className="h-[18px] w-[18px] shrink-0" />
+                <span className="inline-flex w-5 shrink-0 justify-center">
+                  <Icon className={cn("shrink-0", item.iconClassName)} />
+                </span>
                 <span className={cn("truncate transition-opacity", collapsed ? "opacity-0" : "opacity-100")}>
                   {item.label}
                 </span>
