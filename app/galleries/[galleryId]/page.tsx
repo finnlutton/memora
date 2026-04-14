@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MoreHorizontal } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { SubgalleryCarousel } from "@/components/subgallery-carousel";
+import { WorkspaceTopbar } from "@/components/workspace-topbar";
 import { Button } from "@/components/ui/button";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 
@@ -17,6 +18,7 @@ export default function GalleryDetailPage() {
   const { getGallery, deleteGallery, hydrated } = useMemoraStore();
   const gallery = getGallery(params.galleryId);
   const [activeSubgalleryIndex, setActiveSubgalleryIndex] = useState(0);
+  const [actionsOpen, setActionsOpen] = useState(false);
 
   if (!gallery) {
     return (
@@ -36,45 +38,60 @@ export default function GalleryDetailPage() {
 
   return (
     <AppShell accent="immersive">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <Button asChild variant="ghost" className="text-[color:var(--ink)]">
-          <Link href="/galleries">
-            <ArrowLeft className="h-3 w-3" />
-            Back to galleries
-          </Link>
-        </Button>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button asChild>
-            <Link href={`/galleries/${gallery.id}/subgalleries/new`}>
-              Add Subgallery
-            </Link>
-          </Button>
-          {gallery.subgalleries.length > 0 && (
-            <Button asChild variant="secondary">
-              <Link
-                href={`/galleries/${gallery.id}/subgalleries/${gallery.subgalleries[activeSubgalleryIndex].id}/edit`}
-              >
-                Edit Subgallery
+      <WorkspaceTopbar
+        eyebrow="Gallery workspace"
+        title={gallery.title}
+        subtitle={gallery.description}
+        actions={
+          <>
+            <Button asChild variant="ghost">
+              <Link href="/galleries">
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Back
               </Link>
             </Button>
-          )}
-          <Button asChild variant="secondary">
-            <Link href={`/galleries/${gallery.id}/edit`}>
-              Edit Gallery
-            </Link>
-          </Button>
-          <ConfirmDeleteDialog
-            title="Delete this gallery?"
-            description="This removes the gallery and every subgallery inside it from local storage."
-            triggerLabel="Delete gallery"
-            onConfirm={() => {
-              void deleteGallery(gallery.id).then(() => {
-                router.push("/galleries");
-              });
-            }}
-          />
-        </div>
-      </div>
+            <Button asChild>
+              <Link href={`/galleries/${gallery.id}/subgalleries/new`}>Add subgallery</Link>
+            </Button>
+            <div className="relative">
+              <Button type="button" variant="secondary" onClick={() => setActionsOpen((value) => !value)}>
+                <MoreHorizontal className="h-4 w-4" />
+                More
+              </Button>
+              {actionsOpen ? (
+                <div className="absolute right-0 top-[calc(100%+0.45rem)] z-20 w-48 rounded-xl border border-[rgba(28,46,72,0.12)] bg-white/95 p-2 shadow-[0_14px_34px_rgba(16,24,38,0.12)]">
+                  {gallery.subgalleries.length > 0 ? (
+                    <Link
+                      href={`/galleries/${gallery.id}/subgalleries/${gallery.subgalleries[activeSubgalleryIndex].id}/edit`}
+                      className="block rounded-lg px-3 py-2 text-sm text-[color:var(--ink)] transition hover:bg-[color:var(--paper)]"
+                    >
+                      Edit subgallery
+                    </Link>
+                  ) : null}
+                  <Link
+                    href={`/galleries/${gallery.id}/edit`}
+                    className="block rounded-lg px-3 py-2 text-sm text-[color:var(--ink)] transition hover:bg-[color:var(--paper)]"
+                  >
+                    Edit gallery
+                  </Link>
+                  <div className="px-1 py-1.5">
+                    <ConfirmDeleteDialog
+                      title="Delete this gallery?"
+                      description="This removes the gallery and every subgallery inside it from local storage."
+                      triggerLabel="Delete gallery"
+                      onConfirm={() => {
+                        void deleteGallery(gallery.id).then(() => {
+                          router.push("/galleries");
+                        });
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </>
+        }
+      />
       <section>
         {gallery.subgalleries.length ? (
           <SubgalleryCarousel

@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { StorageCleanupDialog } from "@/components/storage-cleanup-dialog";
 import { DeleteAccountDialog } from "@/components/delete-account-dialog";
+import { WorkspaceShell } from "@/components/workspace-shell";
 import memoraLogo from "../Logo/MemoraLogo.png";
 
 export function AppShell({
@@ -48,6 +49,23 @@ export function AppShell({
 
   if (isProductRoute && !onboarding.isAuthenticated) {
     return null;
+  }
+
+  if (isProductRoute && onboarding.isAuthenticated) {
+    return (
+      <WorkspaceShell
+        email={onboarding.user?.email ?? ""}
+        onSignOut={() => {
+          const supabase = createSupabaseBrowserClient();
+          void supabase.auth.signOut().finally(() => {
+            signOut();
+            window.location.replace("/");
+          });
+        }}
+      >
+        {children}
+      </WorkspaceShell>
+    );
   }
 
   return (

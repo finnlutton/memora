@@ -14,6 +14,7 @@ type WorldGlobeProps = {
     lat: number;
     lng: number;
   }>;
+  allowWheelZoom?: boolean;
 };
 
 const MIN_ALTITUDE = 1.05;
@@ -21,7 +22,12 @@ const MAX_ALTITUDE = 2.9;
 const ZOOM_STEP = 0.3;
 const ZOOM_ANIMATION_MS = 420;
 
-export function WorldGlobe({ width = 600, height = 600, pins = [] }: WorldGlobeProps) {
+export function WorldGlobe({
+  width = 600,
+  height = 600,
+  pins = [],
+  allowWheelZoom = false,
+}: WorldGlobeProps) {
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
 
   const adjustZoom = (delta: number) => {
@@ -47,9 +53,9 @@ export function WorldGlobe({ width = 600, height = 600, pins = [] }: WorldGlobeP
   useEffect(() => {
     const controls = globeRef.current?.controls?.();
     if (!controls) return;
-    // Keep drag rotation, but disable all zoom interactions.
-    controls.enableZoom = false;
-    controls.zoomSpeed = 0;
+    // Keep drag rotation; wheel zoom can be enabled per page.
+    controls.enableZoom = allowWheelZoom;
+    controls.zoomSpeed = allowWheelZoom ? 0.8 : 0;
 
     // Lift dark shading so oceans/continents read clearly on light dashboards.
     const globeInstance = globeRef.current as
@@ -72,7 +78,7 @@ export function WorldGlobe({ width = 600, height = 600, pins = [] }: WorldGlobeP
       material.emissiveIntensity = 0.22;
       material.shininess = 0.35;
     }
-  }, []);
+  }, [allowWheelZoom]);
 
   return (
     <div
@@ -80,7 +86,9 @@ export function WorldGlobe({ width = 600, height = 600, pins = [] }: WorldGlobeP
       // OrbitControls still listens to wheel events even with zoom disabled.
       // Capture wheel early so native page scroll remains smooth while hovered.
       onWheelCapture={(event) => {
-        event.stopPropagation();
+        if (!allowWheelZoom) {
+          event.stopPropagation();
+        }
       }}
     >
       <Globe

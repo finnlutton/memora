@@ -6,7 +6,15 @@ import { Button } from "@/components/ui/button";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 
-export function DeleteAccountDialog({ onAfterDelete }: { onAfterDelete?: () => void }) {
+export function DeleteAccountDialog({
+  onAfterDelete,
+  triggerLabel = "Delete Account",
+  triggerClassName,
+}: {
+  onAfterDelete?: () => void;
+  triggerLabel?: string;
+  triggerClassName?: string;
+}) {
   const { signOut } = useMemoraStore();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -47,9 +55,12 @@ export function DeleteAccountDialog({ onAfterDelete }: { onAfterDelete?: () => v
       <AlertDialog.Trigger asChild>
         <button
           type="button"
-          className="mt-6 w-full border border-[#c98282] bg-[#fff7f7] px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-[#9a4545] transition hover:bg-[#ffefef]"
+          className={
+            triggerClassName ??
+            "mt-6 w-full border border-[#c98282] bg-[#fff7f7] px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-[#9a4545] transition hover:bg-[#ffefef]"
+          }
         >
-          Delete Account
+          {triggerLabel}
         </button>
       </AlertDialog.Trigger>
       <AlertDialog.Portal>

@@ -18,9 +18,9 @@ export function GalleryCard({ gallery, index }: { gallery: Gallery; index: numbe
   return (
     <Link
       href={`/galleries/${gallery.id}`}
-      className="group relative overflow-hidden rounded-[1.25rem] border border-white/60 bg-white/72 shadow-[0_12px_40px_rgba(34,49,71,0.09)] backdrop-blur transition duration-500 hover:-translate-y-1 hover:shadow-[0_16px_50px_rgba(34,49,71,0.14)]"
+      className="group relative overflow-hidden border border-white/60 bg-white/72 shadow-[0_12px_40px_rgba(34,49,71,0.09)] backdrop-blur transition duration-500 hover:-translate-y-1 hover:shadow-[0_16px_50px_rgba(34,49,71,0.14)]"
     >
-      <div className="relative aspect-[5/4] overflow-hidden">
+      <div className="relative aspect-[5/3] overflow-hidden">
         <Image
           src={coverImage}
           alt={gallery.title}
@@ -30,14 +30,11 @@ export function GalleryCard({ gallery, index }: { gallery: Gallery; index: numbe
           unoptimized={nextImageUnoptimizedForSrc(coverImage)}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[rgba(13,25,39,0.72)] via-[rgba(13,25,39,0.18)] to-transparent" />
-        <div className="absolute left-3 top-3 rounded-full border border-white/25 bg-white/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.22em] text-white backdrop-blur">
-          Gallery {index + 1}
-        </div>
       </div>
-      <div className="space-y-2 px-4 py-4">
+      <div className="space-y-1.5 px-3.5 py-3.5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="font-serif text-lg text-[color:var(--ink)]">{gallery.title}</h3>
+            <h3 className="font-serif text-[1.02rem] text-[color:var(--ink)]">{gallery.title}</h3>
             <p className="mt-0.5 text-xs text-[color:var(--ink-soft)]">
               {formatDateRange(gallery.startDate, gallery.endDate)}
             </p>

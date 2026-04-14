@@ -84,7 +84,13 @@ export async function ensureProfileRow(
   console.error("Memora: failed to ensure profile row", {
     context,
     userId: user.id,
+    table: "profiles",
+    action: "upsert",
     error,
+    errorMessage: error.message,
+    errorCode: error.code,
+    errorDetails: error.details,
+    errorHint: error.hint,
   });
 
   return false;
