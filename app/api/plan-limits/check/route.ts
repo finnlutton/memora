@@ -9,6 +9,10 @@ type CheckPayload = {
   desiredUsage?: number;
 };
 
+function isFiniteLimit(value: number | null): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
 function planLimitResponse(resource: PlanResource, currentPlan: string, limit: number, currentUsage: number) {
   return NextResponse.json(
     {
@@ -95,7 +99,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { allowed, limit } = canCreate(resource, currentUsage, plan);
-    if (!allowed && Number.isFinite(limit)) {
+    if (!allowed && isFiniteLimit(limit)) {
       return planLimitResponse(resource, plan.id, limit, currentUsage);
     }
 
