@@ -55,13 +55,6 @@ export function AppShell({
     return (
       <WorkspaceShell
         email={onboarding.user?.email ?? ""}
-        onSignOut={() => {
-          const supabase = createSupabaseBrowserClient();
-          void supabase.auth.signOut().finally(() => {
-            signOut();
-            window.location.replace("/");
-          });
-        }}
       >
         {children}
       </WorkspaceShell>
