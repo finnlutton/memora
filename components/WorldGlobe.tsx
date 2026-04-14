@@ -2,6 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { GalleryMapPinIcon } from "@/components/icons/GalleryMapPinIcon";
 import type { GlobeMethods } from "react-globe.gl";
 
 const Globe = dynamic(() => import("react-globe.gl"), { ssr: false });
@@ -129,6 +131,14 @@ export function WorldGlobe({
     };
   }, [activePinPreview]);
 
+  const pinIconMarkup = useMemo(
+    () =>
+      renderToStaticMarkup(
+        <GalleryMapPinIcon className="h-[18px] w-[18px] text-[rgba(196,54,58,0.95)] drop-shadow-[0_1px_2px_rgba(20,22,35,0.22)]" />,
+      ),
+    [],
+  );
+
   const formatDateRange = (startDate?: string, endDate?: string) => {
     if (!startDate && !endDate) return "";
     const formatter = new Intl.DateTimeFormat("en-US", {
@@ -183,35 +193,15 @@ export function WorldGlobe({
           const marker = document.createElement("div");
           marker.dataset.mapPinMarker = "true";
           marker.style.width = "28px";
-          marker.style.height = "44px";
+          marker.style.height = "28px";
           marker.style.display = "flex";
-          marker.style.alignItems = "flex-end";
+          marker.style.alignItems = "center";
           marker.style.justifyContent = "center";
           marker.style.background = "transparent";
           marker.style.pointerEvents = "auto";
           marker.style.cursor = "pointer";
           marker.style.position = "relative";
-
-          const pole = document.createElement("div");
-          pole.style.width = "2px";
-          pole.style.height = "34px";
-          pole.style.background = "rgba(227, 233, 244, 0.96)";
-          pole.style.position = "relative";
-          pole.style.boxShadow = "0 0 0 1px rgba(32,44,66,0.14)";
-
-          const flag = document.createElement("div");
-          flag.style.position = "absolute";
-          flag.style.left = "2px";
-          flag.style.top = "3px";
-          flag.style.width = "0";
-          flag.style.height = "0";
-          flag.style.borderTop = "5px solid transparent";
-          flag.style.borderBottom = "5px solid transparent";
-          flag.style.borderLeft = "14px solid rgba(202, 47, 47, 0.94)";
-          flag.style.filter = "drop-shadow(0 1px 2px rgba(20,22,35,0.22))";
-
-          pole.appendChild(flag);
-          marker.appendChild(pole);
+          marker.innerHTML = pinIconMarkup;
           marker.onpointerdown = (event) => {
             event.preventDefault();
             event.stopPropagation();
