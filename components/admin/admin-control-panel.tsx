@@ -75,6 +75,29 @@ type IntegrityScanResult = {
   }>;
 };
 
+type StorageOverviewResult = {
+  generatedAt: string;
+  metrics: {
+    totalObjects: number;
+    referencedPhotoObjects: number;
+    referencedArchiveObjects: number;
+    orphanedObjects: number;
+    totalGalleries: number;
+    totalSubgalleries: number;
+    totalPhotos: number;
+    hasSizeMetrics: boolean;
+    totalStorageBytes: number | null;
+    referencedStorageBytes: number | null;
+    orphanedStorageBytes: number | null;
+  };
+  topUsers: Array<{
+    userId: string;
+    email: string;
+    photoCount: number;
+    galleryCount: number;
+  }>;
+};
+
 function formatDateTime(value: string | null) {
   if (!value) return "—";
   const date = new Date(value);
@@ -86,6 +109,19 @@ function formatDateTime(value: string | null) {
     hour: "numeric",
     minute: "2-digit",
   }).format(date);
+}
+
+function formatBytes(value: number | null | undefined) {
+  if (value == null || !Number.isFinite(value)) return "—";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let current = value;
+  let unit = 0;
+  while (current >= 1024 && unit < units.length - 1) {
+    current /= 1024;
+    unit += 1;
+  }
+  const digits = current >= 100 ? 0 : current >= 10 ? 1 : 2;
+  return `${current.toFixed(digits)} ${units[unit]}`;
 }
 
 export function AdminControlPanel() {
@@ -108,6 +144,9 @@ export function AdminControlPanel() {
   const [integrityBusy, setIntegrityBusy] = useState(false);
   const [integrityError, setIntegrityError] = useState<string | null>(null);
   const [integrityResult, setIntegrityResult] = useState<IntegrityScanResult | null>(null);
+  const [storageBusy, setStorageBusy] = useState(false);
+  const [storageError, setStorageError] = useState<string | null>(null);
+  const [storageResult, setStorageResult] = useState<StorageOverviewResult | null>(null);
 
   const preview = useMemo(() => {
     const list = result?.orphanedObjects ?? [];
@@ -252,6 +291,40 @@ export function AdminControlPanel() {
               }}
             >
               {integrityBusy ? "Scanning..." : "Run Integrity Scan"}
+            </Button>
+          </div>
+        </section>
+
+        <section className="border-b border-[rgba(34,52,79,0.08)] pb-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[color:var(--ink)]">Storage Overview</p>
+          <p className="mt-2 text-sm text-[color:var(--ink-soft)]">
+            Snapshot of storage usage, archive volume, and top users by archive footprint.
+          </p>
+          <div className="mt-3">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={storageBusy}
+              onClick={async () => {
+                setStorageBusy(true);
+                setStorageError(null);
+                try {
+                  const response = await fetch("/api/admin/storage-overview", { method: "GET" });
+                  const payload = (await response.json()) as StorageOverviewResult & { error?: string };
+                  if (!response.ok) {
+                    throw new Error(payload.error ?? "Unable to load storage overview.");
+                  }
+                  setStorageResult(payload);
+                } catch (loadError) {
+                  setStorageError(
+                    loadError instanceof Error ? loadError.message : "Unable to load storage overview.",
+                  );
+                } finally {
+                  setStorageBusy(false);
+                }
+              }}
+            >
+              {storageBusy ? "Loading..." : "Load Storage Overview"}
             </Button>
           </div>
         </section>
@@ -454,6 +527,12 @@ export function AdminControlPanel() {
         </p>
       ) : null}
 
+      {storageError ? (
+        <p className="rounded-sm border border-[#c98282] bg-[#fff7f7] px-3 py-2 text-sm leading-6 text-[#9a4545]">
+          {storageError}
+        </p>
+      ) : null}
+
       {shareRevokeSuccess ? (
         <p className="rounded-sm border border-[rgba(46,78,114,0.16)] bg-[rgba(246,250,255,0.9)] px-3 py-2 text-sm leading-6 text-[color:var(--ink)]">
           {shareRevokeSuccess}
@@ -502,6 +581,70 @@ export function AdminControlPanel() {
               ))}
             </ul>
           )}
+        </section>
+      ) : null}
+
+      {storageResult ? (
+        <section className="space-y-3 rounded-[1.25rem] border border-[color:var(--border)] bg-white/72 p-4 text-sm text-[color:var(--ink-soft)]">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-[rgba(34,52,79,0.08)] pb-3">
+            <span>
+              Run at: <span className="text-[color:var(--ink)]">{formatDateTime(storageResult.generatedAt)}</span>
+            </span>
+            <span>
+              Storage sizing:{" "}
+              <span className="text-[color:var(--ink)]">
+                {storageResult.metrics.hasSizeMetrics ? "Included" : "Counts only"}
+              </span>
+            </span>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-3">
+            <StatChip label="Total bucket objects" value={String(storageResult.metrics.totalObjects)} />
+            <StatChip label="Referenced photo objects" value={String(storageResult.metrics.referencedPhotoObjects)} />
+            <StatChip label="Orphaned objects" value={String(storageResult.metrics.orphanedObjects)} />
+            <StatChip label="Total galleries" value={String(storageResult.metrics.totalGalleries)} />
+            <StatChip label="Total subgalleries" value={String(storageResult.metrics.totalSubgalleries)} />
+            <StatChip label="Total photos" value={String(storageResult.metrics.totalPhotos)} />
+          </div>
+
+          <div className="space-y-1 border-t border-[rgba(34,52,79,0.08)] pt-3 text-xs">
+            <p>
+              <span className="text-[color:var(--ink)]">Archive referenced objects:</span>{" "}
+              {storageResult.metrics.referencedArchiveObjects}
+            </p>
+            <p>
+              <span className="text-[color:var(--ink)]">Total storage size:</span>{" "}
+              {formatBytes(storageResult.metrics.totalStorageBytes)}
+            </p>
+            <p>
+              <span className="text-[color:var(--ink)]">Referenced storage size:</span>{" "}
+              {formatBytes(storageResult.metrics.referencedStorageBytes)}
+            </p>
+            <p>
+              <span className="text-[color:var(--ink)]">Orphaned storage size:</span>{" "}
+              {formatBytes(storageResult.metrics.orphanedStorageBytes)}
+            </p>
+          </div>
+
+          <div className="border-t border-[rgba(34,52,79,0.08)] pt-3">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+              Top users by photo count
+            </p>
+            {storageResult.topUsers.length ? (
+              <ul className="mt-2 space-y-1 text-sm">
+                {storageResult.topUsers.map((entry) => (
+                  <li key={entry.userId} className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[color:var(--ink)]">{entry.email}</span>
+                    <span>
+                      {entry.photoCount} photos / {entry.galleryCount} galleries
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-sm">No user usage rows found.</p>
+            )}
+          </div>
         </section>
       ) : null}
 
