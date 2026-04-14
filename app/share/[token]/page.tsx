@@ -125,11 +125,15 @@ export default async function PublicSharePage({
                 : coverPath;
 
               return (
-                <article key={gallery.id} className="overflow-hidden border border-[rgba(30,46,72,0.12)] bg-white/72">
+                <Link
+                  key={gallery.id}
+                  href={`/share/${token}/gallery/${gallery.id}`}
+                  className="group overflow-hidden border border-[rgba(30,46,72,0.12)] bg-white/72 transition hover:shadow-[0_16px_38px_rgba(16,24,38,0.12)]"
+                >
                   <div className="relative aspect-[5/3] bg-[rgba(18,32,48,0.08)]">
                     {coverImage ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={coverImage} alt={gallery.title} className="h-full w-full object-cover" />
+                      <img src={coverImage} alt={gallery.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]" />
                     ) : null}
                   </div>
                   <div className="space-y-2 px-4 py-3.5">
@@ -143,7 +147,7 @@ export default async function PublicSharePage({
                       <p className="line-clamp-3 text-sm leading-6 text-[color:var(--ink-soft)]">{gallery.description}</p>
                     ) : null}
                   </div>
-                </article>
+                </Link>
               );
             })}
           </section>
