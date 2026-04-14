@@ -23,6 +23,11 @@ type ProfileQueryClient = {
     ) => PromiseLike<{
       error: PostgrestError | null;
     }>;
+    insert: (
+      values: Record<string, unknown>,
+    ) => PromiseLike<{
+      error: PostgrestError | null;
+    }>;
     update: (
       values: Record<string, unknown>,
     ) => {
