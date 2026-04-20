@@ -1,6 +1,22 @@
 @import "tailwindcss";
 
+/* ============================================================================
+ * Theme system
+ * ----------------------------------------------------------------------------
+ * Three curated themes — Harbor (default blue), Grove (sage), Dusk (blush).
+ * Applied via `data-theme` on <html>, set before first paint by an inline
+ * script in app/layout.tsx. Themes are user-facing at /galleries/settings.
+ *
+ * Design rules:
+ *   - Saturation is low (≤20%) across every theme so photographs stay hero.
+ *   - Ink contrast against --background holds ≥6:1 in every theme (AA body).
+ *   - Error / warning / danger tokens DO NOT theme — they stay semantic.
+ *   - The Memora logo and the globe atmosphere also stay theme-constant
+ *     (see WorldGlobe, AppShell, WorkspaceShell).
+ * ========================================================================== */
+
 :root {
+  /* Harbor — default mellow blue */
   --background: #f5f8fc;
   --paper: #eef3f8;
   --paper-strong: #dbe5f0;
@@ -12,18 +28,76 @@
   --accent-strong: #162338;
   --border: rgba(42, 64, 89, 0.14);
   --border-strong: rgba(22, 35, 56, 0.26);
-  /* Semantic feedback tokens */
+
+  /* Theme-aware ambient tokens (promoted from hardcoded values) */
+  --halo: rgba(216, 228, 241, 0.64);
+  --gradient-start: #f8fbff;
+  --gradient-end: #f2f6fb;
+  --grid-line: rgba(16, 28, 44, 0.045);
+  --selection-bg: rgba(61, 92, 131, 0.18);
+  --hover-tint: rgba(131, 164, 201, 0.08);
+  --active-tint: rgba(131, 164, 201, 0.14);
+
+  /* Semantic feedback tokens — NOT themed */
   --error-bg: #fff7f7;
   --error-border: #c98282;
   --error-text: #9a4545;
   --warning-bg: rgba(255, 249, 232, 0.92);
   --warning-border: rgba(180, 140, 60, 0.32);
   --warning-text: rgba(120, 88, 18, 0.9);
+
   --font-body:
     "Avenir Next", "Avenir", "SF Pro Text", "SF Pro Display", "Inter",
     system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --font-headline:
     "Iowan Old Style", "Didot", "Bodoni 72", "Georgia", "Times New Roman", serif;
+}
+
+/* Grove — soft sage. Cloistered garden, gardener's journal. */
+:root[data-theme="grove"] {
+  --background: #f4f7f1;
+  --paper: #edf1e8;
+  --paper-strong: #dde4d3;
+  --foreground: #141a15;
+  --ink: #141a15;
+  --ink-soft: #4d5b48;
+  --ink-faint: #8a967e;
+  --accent: #6a7b5d;
+  --accent-strong: #1f2a1d;
+  --border: rgba(60, 78, 52, 0.16);
+  --border-strong: rgba(30, 42, 26, 0.28);
+
+  --halo: rgba(220, 230, 210, 0.58);
+  --gradient-start: #f7faf3;
+  --gradient-end: #eef2e8;
+  --grid-line: rgba(30, 44, 22, 0.045);
+  --selection-bg: rgba(100, 126, 82, 0.2);
+  --hover-tint: rgba(130, 160, 100, 0.1);
+  --active-tint: rgba(130, 160, 100, 0.18);
+}
+
+/* Dusk — soft blush. Late afternoon light. Tuned for AA contrast on
+ * ink-soft, ink-faint, and borders (warm-on-warm is the hardest case). */
+:root[data-theme="dusk"] {
+  --background: #faf4f2;
+  --paper: #f4ebe8;
+  --paper-strong: #e8d8d3;
+  --foreground: #1d1517;
+  --ink: #1d1517;
+  --ink-soft: #5e474d; /* ~7.5:1 on --background */
+  --ink-faint: #987e81; /* ~3.4:1 — stronger than Harbor's faint */
+  --accent: #8a6a6f;
+  --accent-strong: #2a1a1d;
+  --border: rgba(86, 52, 58, 0.18); /* +0.04 opacity vs Harbor — warm-on-warm needs it */
+  --border-strong: rgba(42, 26, 29, 0.28);
+
+  --halo: rgba(238, 220, 218, 0.6);
+  --gradient-start: #fdf7f5;
+  --gradient-end: #f6ece9;
+  --grid-line: rgba(40, 22, 28, 0.045);
+  --selection-bg: rgba(138, 106, 111, 0.22);
+  --hover-tint: rgba(170, 130, 138, 0.1);
+  --active-tint: rgba(170, 130, 138, 0.18);
 }
 
 @theme inline {
@@ -43,8 +117,8 @@ html {
 
 body {
   background:
-    radial-gradient(circle at top left, rgba(216, 228, 241, 0.64), transparent 26%),
-    linear-gradient(180deg, #f8fbff 0%, #f2f6fb 100%);
+    radial-gradient(circle at top left, var(--halo), transparent 26%),
+    linear-gradient(180deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
   color: var(--foreground);
   font-family: var(--font-body), sans-serif;
   font-size: 16px;
@@ -59,8 +133,8 @@ body::before {
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(16, 28, 44, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(16, 28, 44, 0.03) 1px, transparent 1px);
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 42px 42px;
   mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.5), transparent 90%);
   opacity: 0.55;
@@ -91,7 +165,7 @@ select {
 }
 
 ::selection {
-  background: rgba(61, 92, 131, 0.18);
+  background: var(--selection-bg);
 }
 
 /* ---------------------------------------------------------------------------

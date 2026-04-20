@@ -121,7 +121,7 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
                   return next;
                 })
               }
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[color:var(--ink-soft)] transition-colors hover:bg-[rgba(131,164,201,0.12)] hover:text-[color:var(--ink)]"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[color:var(--ink-soft)] transition-colors hover:bg-[color:var(--hover-tint)] hover:text-[color:var(--ink)]"
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               <PanelLeft className="h-[18px] w-[18px]" strokeWidth={1.6} />
@@ -142,8 +142,8 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
                   className={cn(
                     "group relative flex h-10 items-center gap-3 rounded-md pr-2 text-[13px] transition-colors",
                     active
-                      ? "bg-[rgba(131,164,201,0.14)] text-[color:var(--ink)]"
-                      : "text-[color:var(--ink-soft)] hover:bg-[rgba(131,164,201,0.08)] hover:text-[color:var(--ink)]",
+                      ? "bg-[color:var(--active-tint)] text-[color:var(--ink)]"
+                      : "text-[color:var(--ink-soft)] hover:bg-[color:var(--hover-tint)] hover:text-[color:var(--ink)]",
                   )}
                 >
                   {/* Active accent bar — 2px ink rule on the left */}
@@ -213,8 +213,8 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
                 className={cn(
                   "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium uppercase tracking-[0.14em] transition-colors",
                   active
-                    ? "bg-[rgba(131,164,201,0.2)] text-[color:var(--ink)]"
-                    : "text-[color:var(--ink-soft)] hover:bg-[rgba(131,164,201,0.1)] hover:text-[color:var(--ink)]",
+                    ? "bg-[color:var(--active-tint)] text-[color:var(--ink)]"
+                    : "text-[color:var(--ink-soft)] hover:bg-[color:var(--hover-tint)] hover:text-[color:var(--ink)]",
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
