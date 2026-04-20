@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Apple, ArrowRight, Chrome } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { createMembershipState, getNextAuthenticatedRoute } from "@/lib/onboarding";
@@ -55,6 +55,7 @@ export function AuthCard() {
   const [info, setInfo] = useState<string | null>(null);
   const [redirectTo, setRedirectTo] = useState<string | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
 
   useEffect(() => {
     // Avoid useSearchParams() to keep /auth prerender/build happy in this Next version.
@@ -77,6 +78,32 @@ export function AuthCard() {
       setMode("signin");
     }
   }, []);
+
+  const handleForgotPassword = async () => {
+    setError(null);
+    setInfo(null);
+    if (!email) {
+      setError("Enter your email address above, then click Forgot password.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: buildEmailRedirectUrl(),
+      });
+      if (resetError) {
+        setError(resetError.message);
+        return;
+      }
+      setForgotPasswordSent(true);
+      setInfo(`Password reset email sent to ${email}. Check your inbox.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to send reset email.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const submitAuth = async () => {
     setError(null);
@@ -270,27 +297,6 @@ export function AuthCard() {
             </button>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <Button
-              type="button"
-              variant="secondary"
-              className="justify-center"
-              disabled
-            >
-              <Apple className="h-4 w-4" />
-              Continue with Apple
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              className="justify-center"
-              disabled
-            >
-              <Chrome className="h-4 w-4" />
-              Continue with Google
-            </Button>
-          </div>
-
           <div className="my-6 border-t border-[color:var(--border)]" />
 
           <form
@@ -329,6 +335,16 @@ export function AuthCard() {
                   className={fieldClassName}
                   disabled={busy || isTransitioning}
                 />
+                {mode === "signin" && !forgotPasswordSent ? (
+                  <button
+                    type="button"
+                    className="mt-1 block text-left text-[11px] text-[color:var(--ink-faint)] underline underline-offset-2 hover:text-[color:var(--ink-soft)]"
+                    disabled={busy || isTransitioning}
+                    onClick={() => void handleForgotPassword()}
+                  >
+                    Forgot password?
+                  </button>
+                ) : null}
               </label>
               {mode === "signup" ? (
                 <label className="block space-y-2">

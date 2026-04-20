@@ -118,17 +118,20 @@ export function WorldGlobe({
     };
   }, [activePinPreview]);
 
-  const previewPosition = useMemo(() => {
-    if (!activePinPreview || !containerRef.current) return null;
+  const [previewPosition, setPreviewPosition] = useState<{ left: number; top: number } | null>(null);
+
+  useEffect(() => {
+    if (!activePinPreview || !containerRef.current) {
+      setPreviewPosition(null);
+      return;
+    }
     const rect = containerRef.current.getBoundingClientRect();
     const x = activePinPreview.x - rect.left;
     const y = activePinPreview.y - rect.top;
-    const clampedLeft = Math.max(10, Math.min(rect.width - 250, x + 14));
-    const clampedTop = Math.max(10, Math.min(rect.height - 160, y - 14));
-    return {
-      left: clampedLeft,
-      top: clampedTop,
-    };
+    setPreviewPosition({
+      left: Math.max(10, Math.min(rect.width - 250, x + 14)),
+      top: Math.max(10, Math.min(rect.height - 160, y - 14)),
+    });
   }, [activePinPreview]);
 
   const pinIconMarkup = useMemo(

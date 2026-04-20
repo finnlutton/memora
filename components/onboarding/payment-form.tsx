@@ -5,18 +5,11 @@ import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMemoraStore } from "@/hooks/use-memora-store";
-import { PaymentMethodSelector } from "@/components/onboarding/payment-method-selector";
 import type { MembershipPlan } from "@/lib/plans";
-
-const fieldClassName =
-  "w-full rounded-sm border border-[color:var(--border)] bg-white px-4 py-3 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--accent)] focus:ring-1 focus:ring-[color:var(--accent)]/30";
-
-type PaymentMethod = "card" | "apple-pay";
 
 export function PaymentForm({ plan }: { plan: MembershipPlan }) {
   const router = useRouter();
   const { completeCheckout } = useMemoraStore();
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,83 +41,19 @@ export function PaymentForm({ plan }: { plan: MembershipPlan }) {
         Annual billing. Cancel anytime. Existing galleries remain viewable if your plan changes later.
       </p>
 
-      <div className="mt-6">
-        <PaymentMethodSelector value={paymentMethod} onChange={setPaymentMethod} />
+      <div className="mt-6 rounded-sm border border-[rgba(180,140,60,0.35)] bg-[rgba(255,249,232,0.9)] px-4 py-3 text-sm leading-6 text-[rgba(130,95,20,0.9)]">
+        Payment processing is not yet active. Confirming your plan selection will update your account — no charge will be made.
       </div>
 
-      {paymentMethod === "apple-pay" ? (
-        <div className="mt-6 space-y-4">
-          <button
-            type="button"
-            onClick={() => {
-              void handleCompleteCheckout();
-            }}
-            disabled={busy}
-            className="flex w-full items-center justify-center border border-black bg-black px-4 py-4 text-sm uppercase tracking-[0.2em] text-white transition hover:bg-[#111926]"
-          >
-            {busy ? "Processing..." : "Pay with Apple Pay"}
-          </button>
-        </div>
-      ) : (
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            void handleCompleteCheckout();
-          }}
-          className="mt-6 space-y-4"
-        >
-          <label className="block space-y-2">
-            <span className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
-              Name on card
-            </span>
-            <input className={fieldClassName} placeholder="Avery Morgan" required />
-          </label>
-          <label className="block space-y-2">
-            <span className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
-              Card number
-            </span>
-            <input className={fieldClassName} placeholder="4242 4242 4242 4242" required />
-          </label>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <label className="block space-y-2">
-              <span className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
-                Expiration
-              </span>
-              <input className={fieldClassName} placeholder="09 / 29" required />
-            </label>
-            <label className="block space-y-2">
-              <span className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
-                CVC
-              </span>
-              <input className={fieldClassName} placeholder="123" required />
-            </label>
-            <label className="block space-y-2">
-              <span className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
-                ZIP / postal
-              </span>
-              <input className={fieldClassName} placeholder="10001" required />
-            </label>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block space-y-2">
-              <span className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
-                Country
-              </span>
-              <input className={fieldClassName} placeholder="United States" required />
-            </label>
-            <label className="block space-y-2">
-              <span className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
-                Billing email
-              </span>
-              <input className={fieldClassName} placeholder="you@example.com" required />
-            </label>
-          </div>
-          <Button type="submit" className="mt-3 w-full justify-center" disabled={busy}>
-            {busy ? "Processing..." : "Complete purchase"}
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </form>
-      )}
+      <Button
+        type="button"
+        className="mt-6 w-full justify-center"
+        disabled={busy}
+        onClick={() => void handleCompleteCheckout()}
+      >
+        {busy ? "Confirming..." : "Select this plan"}
+        <ArrowRight className="h-4 w-4" />
+      </Button>
 
       {error ? (
         <p className="mt-4 rounded-sm border border-[#c98282] bg-[#fff7f7] px-3 py-2 text-sm leading-6 text-[#9a4545]">
@@ -133,7 +62,7 @@ export function PaymentForm({ plan }: { plan: MembershipPlan }) {
       ) : null}
 
       <div className="mt-6 border-t border-[color:var(--border)] pt-4 text-xs leading-6 text-[color:var(--ink-faint)]">
-        Memora membership is billed annually at ${plan.price}. This is a polished front-end prototype; no real payment is processed yet.
+        Memora membership will be billed annually at ${plan.price} once payment is live.
       </div>
     </div>
   );

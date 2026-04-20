@@ -64,7 +64,7 @@ export default async function PublicSharePage({
           <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
           <h1 className="mt-2 font-serif text-3xl leading-tight md:mt-3 md:text-4xl">This share link is unavailable</h1>
           <p className="mt-3 text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:leading-7">
-            The link may be invalid, revoked, or no longer active.
+            The link may be invalid, revoked, or no longer active. Ask the person who shared it to send you a new one.
           </p>
           <Link href="/" className="mt-6 inline-block text-sm text-[color:var(--ink)] underline underline-offset-4">
             Return to Memora

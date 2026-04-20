@@ -121,7 +121,7 @@ export default function GalleriesPage() {
               }}
             >
               <Share2 className="h-3.5 w-3.5" />
-              {shareLimitReached ? "Share limit reached" : "Share Galleries"}
+              Share Galleries
             </Button>
             {hasReachedGalleryLimit ? (
               <Button asChild variant="secondary">
@@ -188,8 +188,17 @@ export default function GalleriesPage() {
       ) : onboarding.isAuthenticated ? (
         <section className="px-6 py-20 text-center md:px-10">
           <p className="font-serif text-3xl leading-tight text-[color:var(--ink-faint)] md:text-4xl">
-            One gallery at a time...
+            No galleries yet.
           </p>
+          <p className="mt-4 text-sm leading-7 text-[color:var(--ink-soft)]">
+            Create your first gallery to start building your archive.
+          </p>
+          <Link
+            href="/galleries/new"
+            className="mt-6 inline-block border border-[color:var(--border-strong)] bg-[color:var(--paper)] px-5 py-2.5 text-sm text-[color:var(--ink)] hover:bg-[rgba(0,0,0,0.03)]"
+          >
+            Create your first gallery
+          </Link>
         </section>
       ) : (
         <EmptyState

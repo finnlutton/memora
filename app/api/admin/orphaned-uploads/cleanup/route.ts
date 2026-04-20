@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    console.info("Memora: admin deleted orphaned uploads", { adminEmail: user.email, deletedCount: paths.length });
     return NextResponse.json({ deleted: paths.length }, { status: 200 });
   } catch (error) {
     return NextResponse.json(

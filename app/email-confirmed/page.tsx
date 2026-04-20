@@ -6,8 +6,14 @@ export default function EmailConfirmedPage() {
           Your email has been verified!
         </h1>
         <p className="mt-5 text-sm leading-7 text-[color:var(--ink-soft)] md:text-base">
-          Return to your previous tab to log in.
+          You can now log in with your email and password.
         </p>
+        <a
+          href="/auth?mode=signin"
+          className="mt-6 inline-block text-sm text-[color:var(--ink)] underline underline-offset-4"
+        >
+          Go to log in →
+        </a>
       </section>
     </main>
   );
