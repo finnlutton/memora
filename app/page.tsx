@@ -72,20 +72,20 @@ export default function HomePage() {
       />
 
       {/*
-        Editorial promise — a single sentence where the three StatementCards
-        used to be. Right-aligned asymmetry so it doesn't read as a banner.
-        No borders, no dividers; typography does the separation.
+        Editorial promise — single sentence, right-aligned asymmetry so it
+        doesn't read as a banner. Positive framing of what Memora IS:
+        storage, organization, private sharing — done intentionally.
       */}
       <section
-        aria-label="What makes Memora different"
+        aria-label="What Memora is for"
         className="mx-auto flex max-w-5xl flex-col items-end px-4 py-20 md:py-28"
       >
-        <div className="max-w-[36rem] text-right">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
+        <div className="max-w-[38rem] text-right">
+          <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
             The intent
           </p>
           <p className="mt-5 font-serif text-[28px] leading-[1.18] text-[color:var(--ink)] md:text-[34px] md:leading-[1.14]">
-            Memora isn&apos;t storage, and it isn&apos;t social. It&apos;s the private archive you&apos;ll want to open in ten years — the trips, the people, the days worth the long description.
+            The camera roll holds everything. The feed holds what performs. Memora is where you keep what matters — in your own words, for the handful of people you&apos;d read it out loud to.
           </p>
         </div>
       </section>
@@ -103,7 +103,7 @@ export default function HomePage() {
         aria-label="Creator's note"
         className="mx-auto max-w-3xl px-4 py-20 md:py-28"
       >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
+        <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
           Creator&apos;s note
         </p>
         <h2 className="mt-5 font-serif text-[30px] leading-[1.08] text-[color:var(--ink)] md:text-[40px]">
@@ -111,13 +111,13 @@ export default function HomePage() {
         </h2>
         <div className="mt-7 space-y-5 text-[15px] leading-7 text-[color:var(--ink-soft)]">
           <p>
-            After months abroad, my camera roll had everything and nothing — thousands of photos, no order, no words, no way to hand a friend a trip and say &ldquo;here, read it.&rdquo;
+            After months abroad, my camera roll had everything and nothing — thousands of photographs, no order, no words, no way to hand a friend a trip and say &ldquo;here, read it.&rdquo;
           </p>
           <p>
-            Instagram turned the same photographs into performance. Group chats turned them into clutter. Cloud drives turned them into archives no one opened.
+            The pictures deserved more than a scroll. The trips deserved more than a post. What I wanted was somewhere to store them properly — paired with what actually happened, organized by the places they passed through, and shared only with the people who were there.
           </p>
           <p>
-            Memora is the version I wanted: a private place to write about the places you went, to pair the pictures with what actually happened, and to share only the version worth keeping.
+            Memora is that place. A quieter, more intentional home for the memories worth keeping, built so you&apos;ll still want to open them in ten years.
           </p>
         </div>
       </section>

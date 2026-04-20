@@ -25,7 +25,7 @@ function Label({ children, htmlFor }: { children: React.ReactNode; htmlFor?: str
   return (
     <label
       htmlFor={htmlFor}
-      className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-soft)]"
+      className="text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink-soft)]"
     >
       {children}
     </label>

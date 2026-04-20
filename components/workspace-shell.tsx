@@ -82,7 +82,7 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
       <aside
         style={transitionStyle}
         className={cn(
-          "sticky top-0 hidden h-screen shrink-0 border-r border-[color:var(--border)] bg-[rgba(248,251,255,0.94)] py-3 backdrop-blur-xl md:flex md:flex-col",
+          "sticky top-0 hidden h-screen shrink-0 border-r border-[color:var(--border)] bg-[color:var(--chrome)] py-3 backdrop-blur-xl md:flex md:flex-col",
         )}
         data-collapsed={collapsed ? "true" : "false"}
         aria-expanded={!collapsed}
@@ -200,7 +200,7 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
         {/* Mobile chrome — consistent height, rounded-md, matches desktop language */}
         <div
           style={{ height: `${MOBILE_CHROME_HEIGHT}px` }}
-          className="flex items-center gap-1.5 overflow-x-auto border-b border-[color:var(--border)] bg-[rgba(248,251,255,0.94)] px-3 backdrop-blur-xl md:hidden"
+          className="flex items-center gap-1.5 overflow-x-auto border-b border-[color:var(--border)] bg-[color:var(--chrome)] px-3 backdrop-blur-xl md:hidden"
         >
           {navItems.map((item) => {
             const active = isItemActive(item.href);

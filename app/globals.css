@@ -38,6 +38,14 @@
   --hover-tint: rgba(131, 164, 201, 0.08);
   --active-tint: rgba(131, 164, 201, 0.14);
 
+  /* Chrome: semi-opaque theme-tinted surfaces for sticky nav/sidebar/dropdowns.
+   * --chrome is for the header, sidebar, secondary buttons, and settings
+   * dropdown trigger. --chrome-strong is for dropdown PANELS (fuller opacity). */
+  --chrome: rgba(250, 252, 255, 0.94);
+  --chrome-strong: rgba(250, 252, 255, 0.98);
+  /* Hover state for the primary CTA (slight lift over --accent-strong). */
+  --accent-strong-hover: #22314a;
+
   /* Semantic feedback tokens — NOT themed */
   --error-bg: #fff7f7;
   --error-border: #c98282;
@@ -74,6 +82,10 @@
   --selection-bg: rgba(100, 126, 82, 0.2);
   --hover-tint: rgba(130, 160, 100, 0.1);
   --active-tint: rgba(130, 160, 100, 0.18);
+
+  --chrome: rgba(248, 252, 243, 0.94);
+  --chrome-strong: rgba(249, 252, 244, 0.98);
+  --accent-strong-hover: #2c3a29;
 }
 
 /* Dusk — soft blush. Late afternoon light. Tuned for AA contrast on
@@ -98,6 +110,10 @@
   --selection-bg: rgba(138, 106, 111, 0.22);
   --hover-tint: rgba(170, 130, 138, 0.1);
   --active-tint: rgba(170, 130, 138, 0.18);
+
+  --chrome: rgba(253, 246, 244, 0.94);
+  --chrome-strong: rgba(254, 248, 246, 0.98);
+  --accent-strong-hover: #3a2428;
 }
 
 @theme inline {

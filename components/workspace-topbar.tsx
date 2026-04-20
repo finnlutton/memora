@@ -18,7 +18,7 @@ export function WorkspaceTopbar({
   return (
     <header
       className={cn(
-        "mb-4 flex flex-col gap-3 border-b border-[rgba(34,52,79,0.08)] pb-4 md:mb-6 md:gap-4 md:pb-5 md:flex-row md:items-end md:justify-between",
+        "mb-4 flex flex-col gap-3 border-b border-[color:var(--border)] pb-4 md:mb-6 md:gap-4 md:pb-5 md:flex-row md:items-end md:justify-between",
         className,
       )}
     >

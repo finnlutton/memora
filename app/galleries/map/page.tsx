@@ -90,7 +90,7 @@ export default function MemoryMapPage() {
 
         {/* Editorial header — top-left, floating on the globe. */}
         <header className="pointer-events-none absolute left-5 top-6 max-w-[22rem] md:left-10 md:top-10 md:max-w-md">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[color:var(--ink-soft)]">
+          <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-[color:var(--ink-soft)]">
             Memory map
           </p>
           <h1
@@ -110,7 +110,7 @@ export default function MemoryMapPage() {
             <span className="font-serif text-[24px] leading-none text-[color:var(--ink)] md:text-[28px]">
               {pinCount}
             </span>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-soft)]">
+            <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-[color:var(--ink-soft)]">
               {pinLabel}
             </span>
           </div>

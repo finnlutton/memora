@@ -16,14 +16,14 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
   return (
     <section className="py-14 md:py-20">
       <div className="max-w-3xl">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
-          How a gallery reads
+        <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
+          How a gallery holds a trip
         </p>
         <h2 className="mt-4 font-serif text-[32px] leading-[0.98] text-[color:var(--ink)] md:text-[44px]">
-          One archive. Open it, and the scenes appear.
+          A trip, organized as the places it passed through.
         </h2>
         <p className="mt-5 max-w-xl text-[14px] leading-7 text-[color:var(--ink-soft)] md:text-[15px]">
-          Click the cover to open a real gallery — a trip across Switzerland and Northern Italy, told as the places it happened.
+          Open a real one — Switzerland and Northern Italy, told in the cities, mountains, and afternoons it was actually made of.
         </p>
       </div>
 

@@ -41,12 +41,18 @@ export function HomeHero({
     >
       {/* Stage height: full viewport minus the sticky header (72 md / 56 mobile). */}
       <div className="relative h-[calc(100svh-56px)] min-h-[520px] w-full md:h-[calc(100svh-72px)] md:min-h-[640px]">
+        {/*
+          quality={95} to minimize compression softness. Pixel-count softness
+          (upscale artifacts from a <1024px source to >2880px display) is a
+          source-image issue — swap in a ≥3000px original to fix fully.
+        */}
         <Image
           src={imageSrc}
           alt=""
           fill
           priority
           sizes="100vw"
+          quality={95}
           className="object-cover"
         />
 
@@ -59,18 +65,19 @@ export function HomeHero({
         {/* Overlay type — bottom-left, breathing room from edges. */}
         <div className="absolute inset-x-0 bottom-0 px-5 pb-10 md:px-12 md:pb-16 lg:px-16 lg:pb-20">
           <div className="max-w-[44rem]">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-white/70">
-              An archive, not a feed
+            <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-white/70">
+              Memory, kept properly
             </p>
             <h1
               id="home-hero-title"
               className="mt-4 font-serif text-[44px] leading-[0.94] text-white md:mt-5 md:text-[76px] lg:text-[88px]"
             >
-              The trips you&apos;ll want to re&#8209;read.
+              Some trips are worth writing down.
             </h1>
-            <p className="mt-5 max-w-[32rem] text-[14px] leading-6 text-white/82 md:mt-6 md:text-[15px] md:leading-7">
-              Memora is a quiet place to organize, revisit, and share the memories
-              worth keeping — like this one: Switzerland &amp; Northern Italy, February 2026.
+            <p className="mt-5 max-w-[34rem] text-[14px] leading-6 text-white/82 md:mt-6 md:text-[15px] md:leading-7">
+              Memora is a private home for the photographs, places, and stories you&apos;ll
+              want to revisit — organized as trips, paired with your own words, shared
+              only with the people who&apos;d care.
             </p>
 
             <div className="mt-7 flex flex-wrap items-center gap-3 md:mt-9 md:gap-4">
@@ -99,7 +106,7 @@ export function HomeHero({
 
         {/* Authenticity caption — bottom-right, quiet. */}
         <div className="pointer-events-none absolute bottom-6 right-5 hidden max-w-[14rem] text-right md:block md:bottom-8 md:right-10">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/62">
+          <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-white/62">
             Cover
           </p>
           <p className="mt-1 text-[11px] leading-snug text-white/78">{caption}</p>

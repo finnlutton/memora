@@ -219,7 +219,7 @@ export function DateField({
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <p className="text-[14px] font-semibold tracking-[0.01em] text-[color:var(--ink)]">
+              <p className="text-[14px] font-medium tracking-[0.01em] text-[color:var(--ink)]">
                 {monthLabel}
               </p>
               <button
@@ -239,7 +239,7 @@ export function DateField({
               {WEEKDAY_LABELS.map((label, index) => (
                 <div
                   key={`${label}-${index}`}
-                  className="pb-1 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-soft)]"
+                  className="pb-1 text-center text-[10px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)]"
                 >
                   {label}
                 </div>

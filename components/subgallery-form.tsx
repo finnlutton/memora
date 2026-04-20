@@ -18,7 +18,7 @@ function fieldClassName() {
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
+    <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
       {children}
     </span>
   );
@@ -235,7 +235,7 @@ export function SubgalleryForm({
               Add and order images
             </h3>
           </div>
-          <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
+          <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
             {isPhotoLimitFinite
               ? `${photos.length} / ${photoLimit} photos`
               : `${photos.length} photos`}
@@ -301,7 +301,7 @@ export function SubgalleryForm({
                   </div>
                   <div className="flex flex-1 flex-col gap-3 px-4 py-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
+                      <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
                         Photo {index + 1}
                       </span>
                       <div className="flex items-center gap-1">

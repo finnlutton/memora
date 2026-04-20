@@ -304,13 +304,18 @@ export default function GalleriesPage() {
 }
 
 function QuickStat({ label, value }: { label: string; value: string }) {
+  // Editorial caption treatment — not a dashboard metric.
+  // - No vertical divider rule (was Harbor-blue hardcoded, read too grid-y).
+  // - Value drops to regular weight in --ink-soft so it reads like prose,
+  //   not a number you stare at.
   return (
-    <div className="relative px-0.5 py-0 md:px-1 md:py-0.5 md:pl-4">
-      <span className="absolute left-0 top-1 hidden h-10 w-px bg-[rgba(36,58,88,0.14)] md:block" />
+    <div className="py-0.5">
       <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
         {label}
       </p>
-      <p className="mt-1 text-[15px] font-medium leading-5 text-[color:var(--ink)] md:mt-1.5 md:text-base md:leading-6">{value}</p>
+      <p className="mt-2 text-[14px] leading-6 text-[color:var(--ink-soft)] md:text-[15px]">
+        {value}
+      </p>
     </div>
   );
 }

@@ -87,7 +87,7 @@ export function UploadDropzone({
         <p className="text-[14px] font-semibold leading-5 text-[color:var(--ink)]">{label}</p>
         <p className="mt-0.5 text-[13px] leading-5 text-[color:var(--ink-soft)]">{hint}</p>
       </div>
-      <p className="hidden shrink-0 text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-soft)] md:block">
+      <p className="hidden shrink-0 text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)] md:block">
         {isOver ? "Release to upload" : "Drop or click"}
       </p>
     </div>
