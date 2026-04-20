@@ -3,12 +3,17 @@
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { Minus, Plus } from "lucide-react";
 import { GalleryMapPinIcon } from "@/components/icons/GalleryMapPinIcon";
 import type { GlobeMethods } from "react-globe.gl";
 
 const Globe = dynamic(() => import("react-globe.gl"), { ssr: false });
 
 type WorldGlobeProps = {
+  /**
+   * Explicit pixel dimensions. If omitted, the globe fills its parent box
+   * and tracks resizes via ResizeObserver.
+   */
   width?: number;
   height?: number;
   pins?: Array<{
@@ -29,8 +34,8 @@ const ZOOM_STEP = 0.3;
 const ZOOM_ANIMATION_MS = 420;
 
 export function WorldGlobe({
-  width = 600,
-  height = 600,
+  width,
+  height,
   pins = [],
   allowWheelZoom = false,
 }: WorldGlobeProps) {
@@ -48,6 +53,34 @@ export function WorldGlobe({
     x: number;
     y: number;
   } | null>(null);
+
+  // Measured size for fill mode. When explicit width/height are passed, we honor them.
+  const [measuredSize, setMeasuredSize] = useState<{ w: number; h: number }>({
+    w: width ?? 600,
+    h: height ?? 600,
+  });
+
+  const isFillMode = width === undefined || height === undefined;
+
+  useEffect(() => {
+    if (!isFillMode) return;
+    const node = containerRef.current;
+    if (!node) return;
+    const update = () => {
+      const rect = node.getBoundingClientRect();
+      setMeasuredSize({
+        w: Math.max(320, Math.round(rect.width)),
+        h: Math.max(320, Math.round(rect.height)),
+      });
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, [isFillMode]);
+
+  const renderWidth = isFillMode ? measuredSize.w : width!;
+  const renderHeight = isFillMode ? measuredSize.h : height!;
 
   const adjustZoom = (delta: number) => {
     const globe = globeRef.current;
@@ -72,11 +105,9 @@ export function WorldGlobe({
   useEffect(() => {
     const controls = globeRef.current?.controls?.();
     if (!controls) return;
-    // Keep drag rotation; wheel zoom can be enabled per page.
     controls.enableZoom = allowWheelZoom;
     controls.zoomSpeed = allowWheelZoom ? 0.8 : 0;
 
-    // Lift dark shading so oceans/continents read clearly on light dashboards.
     const globeInstance = globeRef.current as
       | {
           globeMaterial?: () => unknown;
@@ -163,9 +194,7 @@ export function WorldGlobe({
   return (
     <div
       ref={containerRef}
-      className="relative"
-      // OrbitControls still listens to wheel events even with zoom disabled.
-      // Capture wheel early so native page scroll remains smooth while hovered.
+      className={isFillMode ? "relative h-full w-full" : "relative"}
       onWheelCapture={(event) => {
         if (!allowWheelZoom) {
           event.stopPropagation();
@@ -174,8 +203,8 @@ export function WorldGlobe({
     >
       <Globe
         ref={globeRef}
-        width={width}
-        height={height}
+        width={renderWidth}
+        height={renderHeight}
         backgroundColor="rgba(0,0,0,0)"
         globeImageUrl="/textures/new_earth.jpg"
         showAtmosphere={true}
@@ -223,10 +252,11 @@ export function WorldGlobe({
           return marker;
         }}
       />
+
       {activePinPreview && previewPosition ? (
         <div
           ref={previewRef}
-          className="pointer-events-none absolute z-20 w-52 overflow-hidden border border-[rgba(24,40,64,0.14)] bg-[rgba(250,253,255,0.96)] shadow-[0_10px_28px_rgba(16,24,38,0.16)] backdrop-blur md:w-60"
+          className="pointer-events-none absolute z-30 w-56 overflow-hidden border border-[color:var(--border-strong)] bg-[rgba(250,252,255,0.97)] shadow-[0_10px_28px_rgba(14,22,34,0.16)] md:w-64"
           style={{
             left: previewPosition.left,
             top: previewPosition.top,
@@ -241,39 +271,43 @@ export function WorldGlobe({
               className="h-24 w-full object-cover md:h-28"
             />
           ) : null}
-          <div className="space-y-1 px-3 py-2.5">
+          <div className="space-y-1 px-3.5 py-2.5">
             {activePinPreview.pin.title ? (
               <p className="font-serif text-[17px] leading-tight text-[color:var(--ink)]">
                 {activePinPreview.pin.title}
               </p>
             ) : null}
             {formatDateRange(activePinPreview.pin.startDate, activePinPreview.pin.endDate) ? (
-              <p className="text-xs text-[color:var(--ink-soft)]">
+              <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--ink-soft)]">
                 {formatDateRange(activePinPreview.pin.startDate, activePinPreview.pin.endDate)}
               </p>
             ) : null}
           </div>
         </div>
       ) : null}
-      <div className="absolute right-3 top-3 z-10 flex flex-col gap-1.5">
-        <button
-          type="button"
-          onClick={() => adjustZoom(-ZOOM_STEP)}
-          className="h-7 w-7 border border-[color:var(--border)] bg-[rgba(255,255,255,0.78)] text-sm leading-none text-[color:var(--ink)] shadow-[0_6px_18px_rgba(18,24,32,0.1)] backdrop-blur hover:border-[color:var(--border-strong)]"
-          aria-label="Zoom in globe"
-        >
-          +
-        </button>
-        <button
-          type="button"
-          onClick={() => adjustZoom(ZOOM_STEP)}
-          className="h-7 w-7 border border-[color:var(--border)] bg-[rgba(255,255,255,0.78)] text-sm leading-none text-[color:var(--ink)] shadow-[0_6px_18px_rgba(18,24,32,0.1)] backdrop-blur hover:border-[color:var(--border-strong)]"
-          aria-label="Zoom out globe"
-        >
-          -
-        </button>
+
+      {/* Zoom cluster — bottom-right, one connected panel with a hairline rule. */}
+      <div className="pointer-events-none absolute bottom-4 right-4 z-20 md:bottom-6 md:right-6">
+        <div className="pointer-events-auto flex flex-col overflow-hidden border border-[color:var(--border-strong)] bg-[rgba(250,252,255,0.94)] shadow-[0_6px_18px_rgba(14,22,34,0.1)] backdrop-blur-sm">
+          <button
+            type="button"
+            onClick={() => adjustZoom(-ZOOM_STEP)}
+            className="flex h-9 w-9 items-center justify-center text-[color:var(--ink)] transition hover:bg-[color:var(--paper)] md:h-10 md:w-10"
+            aria-label="Zoom in globe"
+          >
+            <Plus className="h-4 w-4" strokeWidth={2} />
+          </button>
+          <div className="h-px w-full bg-[color:var(--border-strong)]/70" aria-hidden="true" />
+          <button
+            type="button"
+            onClick={() => adjustZoom(ZOOM_STEP)}
+            className="flex h-9 w-9 items-center justify-center text-[color:var(--ink)] transition hover:bg-[color:var(--paper)] md:h-10 md:w-10"
+            aria-label="Zoom out globe"
+          >
+            <Minus className="h-4 w-4" strokeWidth={2} />
+          </button>
+        </div>
       </div>
     </div>
   );
 }
-
