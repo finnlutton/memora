@@ -69,7 +69,13 @@ export default function MemoryMapPage() {
 
       <section
         aria-labelledby="memory-map-title"
-        className="fixed inset-x-0 bottom-0 top-[56px] z-0 overflow-hidden md:top-[72px]"
+        style={{
+          left: "var(--workspace-sidebar-width, 0px)",
+          top: "var(--workspace-chrome-top, 0px)",
+          transition:
+            "left 320ms cubic-bezier(0.22, 1, 0.36, 1), top 320ms cubic-bezier(0.22, 1, 0.36, 1)",
+        }}
+        className="fixed bottom-0 right-0 z-0 overflow-hidden"
       >
         {/* Globe fills the stage; ResizeObserver inside WorldGlobe handles responsive sizing. */}
         <div className="absolute inset-0 flex items-center justify-center">

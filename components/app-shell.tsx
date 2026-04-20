@@ -151,15 +151,17 @@ export function AppShell({
       >
         {children}
       </main>
-      {isHomePage && (
-        <footer className="mx-auto mt-8 w-full max-w-7xl px-4 pb-6 md:px-6">
-          <ContactUsBox />
-        </footer>
-      )}
+      {/*
+        The home page closes on a mood photograph inside app/page.tsx
+        (see components/home-closer.tsx) rather than a contact form.
+        ContactUsBox is kept below — currently unused on home — so it can
+        be restored quickly without recovering from history.
+      */}
     </div>
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ContactUsBox() {
   const [message, setMessage] = useState("");
   return (
