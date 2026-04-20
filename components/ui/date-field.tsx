@@ -82,7 +82,6 @@ export function DateField({
   const [viewMonth, setViewMonth] = useState<Date>(() => parseISO(value) ?? new Date());
   const wrapRef = useRef<HTMLDivElement | null>(null);
 
-  // Detect coarse-pointer (touch) devices once — we fall back to the native picker there.
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
     const mq = window.matchMedia("(pointer: coarse)");
@@ -92,14 +91,12 @@ export function DateField({
     return () => mq.removeEventListener?.("change", handler);
   }, []);
 
-  // Keep the typed buffer in sync when value changes externally (e.g., form reset).
   useEffect(() => {
     setTyped(formatDisplay(value));
     const parsed = parseISO(value);
     if (parsed) setViewMonth(parsed);
   }, [value]);
 
-  // Close popover on outside click / escape.
   useEffect(() => {
     if (!open) return;
     const onDocClick = (event: MouseEvent) => {
@@ -140,7 +137,7 @@ export function DateField({
   const today = new Date();
   const todayISO = toISO(today);
 
-  // Coarse-pointer fallback — render the native picker, retyped to match our shell.
+  // Coarse-pointer fallback — use native picker, styled to match our shell.
   if (isCoarsePointer) {
     return (
       <div className={`relative ${className ?? ""}`}>
@@ -151,7 +148,7 @@ export function DateField({
           max={max}
           aria-label={ariaLabel}
           onChange={(event) => onChange(event.target.value)}
-          className="w-full border-0 border-b border-[color:var(--border-strong)]/60 bg-transparent px-0 py-2.5 text-[15px] text-[color:var(--ink)] outline-none transition focus:border-[color:var(--ink)]"
+          className="w-full border-0 border-b-[1.5px] border-[color:var(--border-strong)] bg-transparent px-0 py-3 text-[15px] text-[color:var(--ink)] outline-none transition focus:border-[color:var(--ink)]"
         />
       </div>
     );
@@ -159,7 +156,13 @@ export function DateField({
 
   return (
     <div ref={wrapRef} className={`relative ${className ?? ""}`}>
-      <div className="flex items-center gap-2 border-b border-[color:var(--border-strong)]/60 py-2.5 transition focus-within:border-[color:var(--ink)]">
+      <div
+        className={`group flex cursor-text items-center gap-2 border-b-[1.5px] py-3 transition ${
+          open
+            ? "border-[color:var(--ink)]"
+            : "border-[color:var(--border-strong)] hover:border-[color:var(--ink-soft)] focus-within:border-[color:var(--ink)]"
+        }`}
+      >
         <input
           type="text"
           value={open ? typed : formatDisplay(value) || typed}
@@ -178,7 +181,6 @@ export function DateField({
             }
           }}
           onBlur={() => {
-            // Normalize display on blur.
             const parsed = parseFlexible(typed);
             if (parsed !== null) onChange(parsed);
             setTyped(formatDisplay(parsed ?? value));
@@ -189,9 +191,9 @@ export function DateField({
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? "Close date picker" : "Open date picker"}
-          className="text-[color:var(--ink-faint)] transition hover:text-[color:var(--ink)]"
+          className="flex h-7 w-7 items-center justify-center rounded-sm border border-[color:var(--border-strong)] text-[color:var(--ink-soft)] transition hover:border-[color:var(--ink-soft)] hover:bg-[color:var(--paper)] hover:text-[color:var(--ink)]"
         >
-          <Calendar className="h-4 w-4" />
+          <Calendar className="h-3.5 w-3.5" />
         </button>
       </div>
       <AnimatePresence>
@@ -202,7 +204,7 @@ export function DateField({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -2, transition: { duration: 0.12 } }}
             transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute left-0 z-40 mt-2 w-[18rem] rounded-[10px] border border-[color:var(--border)] bg-[color:var(--background)] p-3 shadow-[0_14px_38px_rgba(14,22,34,0.12)]"
+            className="absolute left-0 z-40 mt-2 w-[18rem] border border-[color:var(--border-strong)] bg-[color:var(--background)] p-3 shadow-[0_14px_38px_rgba(14,22,34,0.16)]"
           >
             <div className="flex items-center justify-between px-1 pb-2">
               <button
@@ -212,12 +214,12 @@ export function DateField({
                     new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1),
                   )
                 }
-                className="rounded-sm p-1 text-[color:var(--ink-faint)] transition hover:text-[color:var(--ink)]"
+                className="flex h-7 w-7 items-center justify-center rounded-sm border border-[color:var(--border-strong)]/70 text-[color:var(--ink-soft)] transition hover:border-[color:var(--ink-soft)] hover:bg-[color:var(--paper)] hover:text-[color:var(--ink)]"
                 aria-label="Previous month"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <p className="text-[13px] font-medium tracking-[0.01em] text-[color:var(--ink)]">
+              <p className="text-[14px] font-semibold tracking-[0.01em] text-[color:var(--ink)]">
                 {monthLabel}
               </p>
               <button
@@ -227,7 +229,7 @@ export function DateField({
                     new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1),
                   )
                 }
-                className="rounded-sm p-1 text-[color:var(--ink-faint)] transition hover:text-[color:var(--ink)]"
+                className="flex h-7 w-7 items-center justify-center rounded-sm border border-[color:var(--border-strong)]/70 text-[color:var(--ink-soft)] transition hover:border-[color:var(--ink-soft)] hover:bg-[color:var(--paper)] hover:text-[color:var(--ink)]"
                 aria-label="Next month"
               >
                 <ChevronRight className="h-4 w-4" />
@@ -237,7 +239,7 @@ export function DateField({
               {WEEKDAY_LABELS.map((label, index) => (
                 <div
                   key={`${label}-${index}`}
-                  className="pb-1 text-center text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]"
+                  className="pb-1 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-soft)]"
                 >
                   {label}
                 </div>
@@ -258,22 +260,22 @@ export function DateField({
                       setTyped(formatDisplay(iso));
                       setOpen(false);
                     }}
-                    className={`flex h-8 items-center justify-center rounded-sm text-[13px] transition ${
+                    className={`flex h-8 items-center justify-center rounded-sm text-[13.5px] font-medium transition ${
                       disabled
                         ? "cursor-not-allowed text-[color:var(--ink-faint)] opacity-40"
                         : isSelected
                           ? "bg-[color:var(--ink)] text-white"
                           : inMonth
-                            ? "text-[color:var(--ink)] hover:bg-[color:var(--paper)]"
+                            ? "text-[color:var(--ink)] hover:bg-[color:var(--paper-strong)]"
                             : "text-[color:var(--ink-faint)] hover:bg-[color:var(--paper)]"
-                    } ${isToday && !isSelected ? "ring-1 ring-[color:var(--border-strong)]/70" : ""}`}
+                    } ${isToday && !isSelected ? "ring-1 ring-[color:var(--ink-soft)]" : ""}`}
                   >
                     {date.getDate()}
                   </button>
                 );
               })}
             </div>
-            <div className="mt-2 flex items-center justify-between border-t border-[color:var(--border)]/60 px-1 pt-2 text-[12px]">
+            <div className="mt-2 flex items-center justify-between border-t border-[color:var(--border-strong)]/50 px-1 pt-2 text-[12px] font-medium">
               <button
                 type="button"
                 onClick={() => {
@@ -281,7 +283,7 @@ export function DateField({
                   setTyped("");
                   setOpen(false);
                 }}
-                className="text-[color:var(--ink-faint)] transition hover:text-[color:var(--ink)]"
+                className="text-[color:var(--ink-soft)] transition hover:text-[color:var(--ink)]"
               >
                 Clear
               </button>

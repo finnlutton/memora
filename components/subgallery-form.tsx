@@ -13,12 +13,12 @@ import { createId, nextImageUnoptimizedForSrc, reorderList } from "@/lib/utils";
 import type { MemoryPhoto, Subgallery, SubgalleryInput } from "@/types/memora";
 
 function fieldClassName() {
-  return "w-full border-0 border-b border-[color:var(--border-strong)]/60 bg-transparent px-0 py-2.5 text-[15px] text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--ink)]";
+  return "w-full border-0 border-b-[1.5px] border-[color:var(--border-strong)] bg-transparent px-0 py-3 text-[15px] text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] hover:border-[color:var(--ink-soft)] focus:border-[color:var(--ink)]";
 }
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
       {children}
     </span>
   );
@@ -87,31 +87,31 @@ export function SubgalleryForm({
         </Button>
       </div>
 
-      {/* Journal surface */}
-      <div className="relative overflow-hidden border border-[color:var(--border)] bg-[color:var(--background)]/70 backdrop-blur-sm">
+      {/* Journal surface — opaque, stronger edge */}
+      <div className="relative overflow-hidden border border-[color:var(--border-strong)]/70 bg-[color:var(--background)] shadow-[0_6px_24px_rgba(14,22,34,0.06)]">
         <div className="grid gap-0 lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="order-2 space-y-8 px-5 py-6 md:order-1 md:px-8 md:py-8 lg:border-r lg:border-[color:var(--border)]/70">
+          <div className="order-2 space-y-8 px-5 py-6 md:order-1 md:px-8 md:py-8 lg:border-r lg:border-[color:var(--border-strong)]/50">
             <header>
               <Label>Journal entry</Label>
-              <p className="mt-1.5 max-w-lg text-[13px] leading-6 text-[color:var(--ink-soft)]">
+              <p className="mt-2 max-w-lg text-[14px] leading-6 text-[color:var(--ink-soft)]">
                 One stop, one scene — the piece of the trip you'll want to reread.
               </p>
             </header>
 
-            <div className="space-y-6">
-              <label className="block space-y-1.5">
+            <div className="space-y-7">
+              <div className="space-y-2">
                 <Label>Title</Label>
                 <input
                   required
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
-                  className={`${fieldClassName()} font-serif text-[22px] leading-tight md:text-[26px]`}
+                  className={`${fieldClassName()} font-serif text-[24px] leading-tight md:text-[28px]`}
                   placeholder="Zermatt"
                 />
-              </label>
+              </div>
 
-              <div className="grid gap-6 sm:grid-cols-2">
-                <label className="block space-y-1.5">
+              <div className="grid gap-7 sm:grid-cols-2">
+                <div className="space-y-2">
                   <Label>Location</Label>
                   <LocationAutocompleteInput
                     value={{ label: location, lat: locationLat, lng: locationLng }}
@@ -123,8 +123,8 @@ export function SubgalleryForm({
                     className={fieldClassName()}
                     placeholder="Zermatt, Switzerland"
                   />
-                </label>
-                <label className="block space-y-1.5">
+                </div>
+                <div className="space-y-2">
                   <Label>Date or timeframe</Label>
                   <input
                     value={dateLabel}
@@ -132,10 +132,10 @@ export function SubgalleryForm({
                     className={fieldClassName()}
                     placeholder="Feb 11–13"
                   />
-                </label>
+                </div>
               </div>
 
-              <label className="block space-y-1.5">
+              <div className="space-y-2">
                 <Label>Story</Label>
                 <textarea
                   required
@@ -144,20 +144,20 @@ export function SubgalleryForm({
                   className={`${fieldClassName()} min-h-36 resize-none leading-7`}
                   placeholder="What made this stop, place, or moment worth remembering?"
                 />
-              </label>
+              </div>
             </div>
           </div>
 
-          <aside className="order-1 flex flex-col gap-6 border-b border-[color:var(--border)]/70 bg-[color:var(--paper)]/40 px-5 py-6 md:order-2 md:px-8 md:py-8 lg:border-b-0">
+          <aside className="order-1 flex flex-col gap-5 border-b border-[color:var(--border-strong)]/50 bg-[color:var(--paper)] px-5 py-6 md:order-2 md:px-8 md:py-8 lg:border-b-0">
             <header>
               <Label>Cover</Label>
-              <p className="mt-1.5 text-[13px] leading-6 text-[color:var(--ink-soft)]">
+              <p className="mt-2 text-[14px] leading-6 text-[color:var(--ink-soft)]">
                 Upload a custom cover or pick one from the photos below.
               </p>
             </header>
 
             {coverImage ? (
-              <div className="relative aspect-[20/9] overflow-hidden border border-[color:var(--border)]">
+              <div className="relative aspect-[20/9] overflow-hidden border border-[color:var(--border-strong)]/70">
                 <Image
                   src={coverImage}
                   alt="Subgallery cover preview"
@@ -168,7 +168,7 @@ export function SubgalleryForm({
                 />
               </div>
             ) : (
-              <div className="flex aspect-[20/9] items-center justify-center border border-dashed border-[color:var(--border-strong)]/40 bg-[color:var(--background)]/40 text-[13px] text-[color:var(--ink-faint)]">
+              <div className="flex aspect-[20/9] items-center justify-center border border-dashed border-[color:var(--border-strong)] bg-[color:var(--background)] text-[13px] font-medium text-[color:var(--ink-soft)]">
                 No cover selected
               </div>
             )}
@@ -187,9 +187,8 @@ export function SubgalleryForm({
           </aside>
         </div>
 
-        {/* Footer — unified save row */}
-        <div className="flex flex-col gap-3 border-t border-[color:var(--border)]/70 px-5 py-4 md:flex-row md:items-center md:justify-between md:px-8">
-          <p className="text-[12px] leading-5 text-[color:var(--ink-soft)]">
+        <div className="flex flex-col gap-3 border-t border-[color:var(--border-strong)]/50 bg-[color:var(--paper)]/50 px-5 py-4 md:flex-row md:items-center md:justify-between md:px-8">
+          <p className="text-[13px] leading-5 text-[color:var(--ink-soft)]">
             {photos.length === 0
               ? "Add at least one photo below before saving."
               : initialValue
@@ -201,7 +200,7 @@ export function SubgalleryForm({
               type="button"
               disabled={isSubmitting}
               onClick={() => router.back()}
-              className="text-[13px] text-[color:var(--ink-soft)] underline-offset-4 transition hover:text-[color:var(--ink)] hover:underline disabled:opacity-40"
+              className="text-[14px] font-medium text-[color:var(--ink-soft)] underline-offset-4 transition hover:text-[color:var(--ink)] hover:underline disabled:opacity-40"
             >
               Cancel
             </button>
@@ -221,22 +220,22 @@ export function SubgalleryForm({
           </div>
         </div>
         {submitError ? (
-          <p className="border-t border-[color:var(--error-border)]/40 bg-[color:var(--error-bg)] px-5 py-2.5 text-[13px] text-[color:var(--error-text)] md:px-8">
+          <p className="border-t border-[color:var(--error-border)] bg-[color:var(--error-bg)] px-5 py-2.5 text-[13px] font-medium text-[color:var(--error-text)] md:px-8">
             {submitError}
           </p>
         ) : null}
       </div>
 
-      {/* Photo collection — separate surface, still quiet */}
-      <section className="relative overflow-hidden border border-[color:var(--border)] bg-[color:var(--background)]/70 backdrop-blur-sm">
+      {/* Photo collection */}
+      <section className="relative overflow-hidden border border-[color:var(--border-strong)]/70 bg-[color:var(--background)] shadow-[0_6px_24px_rgba(14,22,34,0.06)]">
         <header className="flex flex-col gap-3 px-5 py-6 md:flex-row md:items-end md:justify-between md:px-8 md:py-7">
           <div>
             <Label>Photo collection</Label>
-            <h3 className="mt-2 font-serif text-[26px] leading-tight text-[color:var(--ink)] md:text-[30px]">
+            <h3 className="mt-2 font-serif text-[28px] leading-tight text-[color:var(--ink)] md:text-[32px]">
               Add and order images
             </h3>
           </div>
-          <p className="text-[12px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
             {isPhotoLimitFinite
               ? `${photos.length} / ${photoLimit} photos`
               : `${photos.length} photos`}
@@ -244,7 +243,7 @@ export function SubgalleryForm({
         </header>
 
         {reachedPhotoLimit ? (
-          <p className="border-t border-[color:var(--warning-border)] bg-[color:var(--warning-bg)] px-5 py-2.5 text-[13px] text-[color:var(--warning-text)] md:px-8">
+          <p className="border-t border-[color:var(--warning-border)] bg-[color:var(--warning-bg)] px-5 py-2.5 text-[13px] font-medium text-[color:var(--warning-text)] md:px-8">
             You&apos;ve reached the photo limit for this plan.{" "}
             <Link href="/galleries/settings/membership" className="text-[color:var(--ink)] underline underline-offset-2">
               Choose membership
@@ -253,7 +252,7 @@ export function SubgalleryForm({
           </p>
         ) : null}
 
-        <div className="border-t border-[color:var(--border)]/70">
+        <div className="border-t border-[color:var(--border-strong)]/50">
           <UploadDropzone
             label="Upload memory photos"
             hint="Drop multiple images or click to browse. They'll appear below immediately."
@@ -277,7 +276,7 @@ export function SubgalleryForm({
         </div>
 
         {photos.length > 0 ? (
-          <div className="grid gap-px bg-[color:var(--border)]/50 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-px bg-[color:var(--border-strong)]/40 md:grid-cols-2 xl:grid-cols-3">
             {photos.map((photo, index) => {
               const isCover = coverImage === photo.src;
               return (
@@ -295,17 +294,17 @@ export function SubgalleryForm({
                       unoptimized={nextImageUnoptimizedForSrc(photo.src)}
                     />
                     {isCover ? (
-                      <span className="absolute left-3 top-3 bg-[color:var(--ink)] px-2 py-[3px] text-[10px] uppercase tracking-[0.22em] text-white">
+                      <span className="absolute left-3 top-3 bg-[color:var(--ink)] px-2 py-[3px] text-[10px] font-semibold uppercase tracking-[0.22em] text-white">
                         Cover
                       </span>
                     ) : null}
                   </div>
                   <div className="flex flex-1 flex-col gap-3 px-4 py-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
                         Photo {index + 1}
                       </span>
-                      <div className="flex items-center gap-1 text-[color:var(--ink-faint)]">
+                      <div className="flex items-center gap-1">
                         <button
                           type="button"
                           aria-label="Move photo left"
@@ -313,7 +312,7 @@ export function SubgalleryForm({
                           onClick={() =>
                             setPhotos((current) => reorderList(current, index, Math.max(0, index - 1)))
                           }
-                          className="p-1 transition hover:text-[color:var(--ink)] disabled:opacity-30"
+                          className="rounded-sm border border-[color:var(--border-strong)]/70 p-1 text-[color:var(--ink-soft)] transition hover:border-[color:var(--ink-soft)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-30"
                         >
                           <ArrowLeft className="h-3.5 w-3.5" />
                         </button>
@@ -326,7 +325,7 @@ export function SubgalleryForm({
                               reorderList(current, index, Math.min(current.length - 1, index + 1)),
                             )
                           }
-                          className="p-1 transition hover:text-[color:var(--ink)] disabled:opacity-30"
+                          className="rounded-sm border border-[color:var(--border-strong)]/70 p-1 text-[color:var(--ink-soft)] transition hover:border-[color:var(--ink-soft)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-30"
                         >
                           <ArrowRight className="h-3.5 w-3.5" />
                         </button>
@@ -344,22 +343,22 @@ export function SubgalleryForm({
                       className={`${fieldClassName()} min-h-20 resize-none text-[13.5px] leading-6`}
                       placeholder="Add a caption or detail worth remembering."
                     />
-                    <div className="mt-auto flex items-center justify-between text-[12px]">
+                    <div className="mt-auto flex items-center justify-between text-[13px]">
                       <button
                         type="button"
                         onClick={() => setCoverImage(photo.src)}
                         aria-pressed={isCover}
-                        className={`inline-flex items-center gap-1.5 transition ${
+                        className={`inline-flex items-center gap-2 font-medium transition ${
                           isCover
                             ? "text-[color:var(--ink)]"
                             : "text-[color:var(--ink-soft)] hover:text-[color:var(--ink)]"
                         }`}
                       >
                         <span
-                          className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border transition ${
+                          className={`flex h-4 w-4 items-center justify-center rounded-full border transition ${
                             isCover
                               ? "border-[color:var(--ink)] bg-[color:var(--ink)] text-white"
-                              : "border-[color:var(--border-strong)]/60"
+                              : "border-[color:var(--border-strong)]"
                           }`}
                         >
                           {isCover ? <Check className="h-2.5 w-2.5" strokeWidth={3} /> : null}
@@ -371,7 +370,7 @@ export function SubgalleryForm({
                         onClick={() =>
                           setPhotos((current) => current.filter((entry) => entry.id !== photo.id))
                         }
-                        className="text-[color:var(--ink-faint)] underline-offset-4 transition hover:text-[color:var(--error-text)] hover:underline"
+                        className="font-medium text-[color:var(--ink-soft)] underline-offset-4 transition hover:text-[color:var(--error-text)] hover:underline"
                       >
                         Remove
                       </button>
@@ -382,7 +381,7 @@ export function SubgalleryForm({
             })}
           </div>
         ) : (
-          <p className="border-t border-[color:var(--border)]/70 px-5 py-10 text-center text-[13px] text-[color:var(--ink-faint)] md:px-8">
+          <p className="border-t border-[color:var(--border-strong)]/50 px-5 py-10 text-center text-[14px] text-[color:var(--ink-soft)] md:px-8">
             No photos yet — add images to start arranging the sequence.
           </p>
         )}

@@ -56,14 +56,14 @@ export function UploadDropzone({
       tabIndex={disabled ? -1 : 0}
       aria-disabled={disabled}
       aria-label={label}
-      className={`group relative flex items-center gap-4 border-y px-4 py-5 transition ${
+      className={`group relative flex items-center gap-4 border px-4 py-5 transition ${
         disabled
-          ? "cursor-not-allowed opacity-60 border-[color:var(--border)]"
+          ? "cursor-not-allowed border-[color:var(--border-strong)] opacity-60"
           : "cursor-pointer"
       } ${
         isOver
-          ? "border-[color:var(--ink)]/40 bg-[color:var(--paper)]"
-          : "border-[color:var(--border)]/70 bg-transparent hover:bg-[color:var(--paper)]/70 hover:border-[color:var(--border-strong)]/40"
+          ? "border-[color:var(--ink)] bg-[color:var(--paper-strong)]"
+          : "border-[color:var(--border-strong)] bg-[color:var(--background)] hover:border-[color:var(--ink-soft)] hover:bg-[color:var(--paper)]"
       }`}
     >
       <input
@@ -74,7 +74,7 @@ export function UploadDropzone({
         accept="image/*"
         onChange={(event) => void handleFiles(event.target.files)}
       />
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[color:var(--border)] bg-[color:var(--background)] text-[color:var(--ink-soft)]">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[color:var(--border-strong)] bg-[color:var(--paper)] text-[color:var(--ink)]">
         {busy ? (
           <LoaderCircle className="h-4 w-4 animate-spin" />
         ) : multiple ? (
@@ -84,10 +84,10 @@ export function UploadDropzone({
         )}
       </div>
       <div className="flex-1">
-        <p className="text-[14px] font-medium leading-5 text-[color:var(--ink)]">{label}</p>
+        <p className="text-[14px] font-semibold leading-5 text-[color:var(--ink)]">{label}</p>
         <p className="mt-0.5 text-[13px] leading-5 text-[color:var(--ink-soft)]">{hint}</p>
       </div>
-      <p className="hidden shrink-0 text-[11px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)] md:block">
+      <p className="hidden shrink-0 text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-soft)] md:block">
         {isOver ? "Release to upload" : "Drop or click"}
       </p>
     </div>

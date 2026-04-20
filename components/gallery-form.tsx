@@ -13,16 +13,22 @@ import { readFileAsDataUrl } from "@/lib/file";
 import { nextImageUnoptimizedForSrc, splitCommaSeparated } from "@/lib/utils";
 import type { Gallery, GalleryInput } from "@/types/memora";
 
-// Bottom-rule field: quiet, typographic, no capsule shape.
+/**
+ * Bottom-rule field: editorial, but with a strong, clickable rule and a clear
+ * hover state so users see the field is interactive.
+ */
 function fieldClassName() {
-  return "w-full border-0 border-b border-[color:var(--border-strong)]/60 bg-transparent px-0 py-2.5 text-[15px] text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--ink)]";
+  return "w-full border-0 border-b-[1.5px] border-[color:var(--border-strong)] bg-transparent px-0 py-3 text-[15px] text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] hover:border-[color:var(--ink-soft)] focus:border-[color:var(--ink)]";
 }
 
-function Label({ children }: { children: React.ReactNode }) {
+function Label({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
   return (
-    <span className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+    <label
+      htmlFor={htmlFor}
+      className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-soft)]"
+    >
       {children}
-    </span>
+    </label>
   );
 }
 
@@ -97,31 +103,31 @@ export function GalleryForm({
         </Button>
       </div>
 
-      {/* Unified writing surface — one calm paper page, not a grid of cards. */}
-      <div className="relative overflow-hidden border border-[color:var(--border)] bg-[color:var(--background)]/70 backdrop-blur-sm">
+      {/* Unified writing surface — one opaque paper page, strong edge */}
+      <div className="relative overflow-hidden border border-[color:var(--border-strong)]/70 bg-[color:var(--background)] shadow-[0_6px_24px_rgba(14,22,34,0.06)]">
         <div className="grid gap-0 lg:grid-cols-[1.15fr_0.85fr]">
           {/* Writing column */}
-          <div className="order-2 space-y-8 px-5 py-6 md:order-1 md:px-8 md:py-8 lg:border-r lg:border-[color:var(--border)]/70">
+          <div className="order-2 space-y-8 px-5 py-6 md:order-1 md:px-8 md:py-8 lg:border-r lg:border-[color:var(--border-strong)]/50">
             <header>
               <Label>Story framing</Label>
-              <p className="mt-1.5 max-w-lg text-[13px] leading-6 text-[color:var(--ink-soft)]">
+              <p className="mt-2 max-w-lg text-[14px] leading-6 text-[color:var(--ink-soft)]">
                 A gallery reads like the opening page of a journal — broad enough to hold the whole chapter, specific enough to remember how it felt.
               </p>
             </header>
 
-            <div className="space-y-6">
-              <label className="block space-y-1.5">
+            <div className="space-y-7">
+              <div className="space-y-2">
                 <Label>Title</Label>
                 <input
                   required
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
-                  className={`${fieldClassName()} font-serif text-[22px] leading-tight md:text-[26px]`}
+                  className={`${fieldClassName()} font-serif text-[24px] leading-tight md:text-[28px]`}
                   placeholder="Switzerland, 2026"
                 />
-              </label>
+              </div>
 
-              <label className="block space-y-1.5">
+              <div className="space-y-2">
                 <Label>Description</Label>
                 <textarea
                   required
@@ -130,10 +136,10 @@ export function GalleryForm({
                   className={`${fieldClassName()} min-h-36 resize-none leading-7`}
                   placeholder="Describe the mood, shape, and story of this chapter."
                 />
-              </label>
+              </div>
 
-              <div className="grid gap-6 sm:grid-cols-2">
-                <div className="space-y-1.5">
+              <div className="grid gap-7 sm:grid-cols-2">
+                <div className="space-y-2">
                   <Label>Start date</Label>
                   <DateField
                     value={startDate}
@@ -142,7 +148,7 @@ export function GalleryForm({
                     placeholder="Choose a date"
                   />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label>End date</Label>
                   <DateField
                     value={endDate}
@@ -154,7 +160,7 @@ export function GalleryForm({
                 </div>
               </div>
 
-              <label className="block space-y-1.5">
+              <div className="space-y-2">
                 <Label>Location</Label>
                 <LocationAutocompleteInput
                   value={{ label: location, lat: locationLat, lng: locationLng }}
@@ -166,9 +172,9 @@ export function GalleryForm({
                   className={fieldClassName()}
                   placeholder="Granada, Spain"
                 />
-              </label>
+              </div>
 
-              <label className="block space-y-1.5">
+              <div className="space-y-2">
                 <Label>People</Label>
                 <input
                   value={people}
@@ -176,12 +182,12 @@ export function GalleryForm({
                   className={fieldClassName()}
                   placeholder="Maya, Elias"
                 />
-                <span className="text-[11px] leading-4 text-[color:var(--ink-faint)]">
+                <span className="text-[12px] leading-5 text-[color:var(--ink-soft)]">
                   Separate names with commas.
                 </span>
-              </label>
+              </div>
 
-              <label className="block space-y-1.5">
+              <div className="space-y-2">
                 <Label>Mood</Label>
                 <input
                   value={moodTags}
@@ -189,11 +195,11 @@ export function GalleryForm({
                   className={fieldClassName()}
                   placeholder="Snow light, train days, quiet luxury"
                 />
-              </label>
+              </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label>Visibility</Label>
-                <div className="flex gap-6 pt-1">
+                <div className="flex gap-2 pt-1">
                   {(["private", "public"] as const).map((option) => {
                     const active = privacy === option;
                     return (
@@ -202,20 +208,18 @@ export function GalleryForm({
                         type="button"
                         onClick={() => setPrivacy(option)}
                         aria-pressed={active}
-                        className={`group relative pb-1.5 text-[14px] tracking-[0.01em] transition ${
+                        className={`inline-flex items-center gap-2 border px-3.5 py-2 text-[13px] font-medium tracking-[0.01em] transition ${
                           active
-                            ? "text-[color:var(--ink)]"
-                            : "text-[color:var(--ink-faint)] hover:text-[color:var(--ink-soft)]"
+                            ? "border-[color:var(--ink)] bg-[color:var(--ink)] text-white"
+                            : "border-[color:var(--border-strong)] bg-[color:var(--background)] text-[color:var(--ink-soft)] hover:border-[color:var(--ink-soft)] hover:text-[color:var(--ink)]"
                         }`}
                       >
-                        <span className="capitalize">{option}</span>
                         <span
-                          className={`absolute inset-x-0 bottom-0 h-px transition ${
-                            active
-                              ? "bg-[color:var(--ink)]"
-                              : "bg-transparent group-hover:bg-[color:var(--border-strong)]/50"
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            active ? "bg-white" : "bg-[color:var(--border-strong)]"
                           }`}
                         />
+                        <span className="capitalize">{option}</span>
                       </button>
                     );
                   })}
@@ -225,16 +229,16 @@ export function GalleryForm({
           </div>
 
           {/* Cover column */}
-          <aside className="order-1 flex flex-col gap-6 border-b border-[color:var(--border)]/70 bg-[color:var(--paper)]/40 px-5 py-6 md:order-2 md:px-8 md:py-8 lg:border-b-0">
+          <aside className="order-1 flex flex-col gap-5 border-b border-[color:var(--border-strong)]/50 bg-[color:var(--paper)] px-5 py-6 md:order-2 md:px-8 md:py-8 lg:border-b-0">
             <header>
               <Label>Cover</Label>
-              <p className="mt-1.5 text-[13px] leading-6 text-[color:var(--ink-soft)]">
+              <p className="mt-2 text-[14px] leading-6 text-[color:var(--ink-soft)]">
                 One image sets the emotional tone for the whole collection.
               </p>
             </header>
 
             {coverImage ? (
-              <div className="relative aspect-[4/3] overflow-hidden border border-[color:var(--border)]">
+              <div className="relative aspect-[4/3] overflow-hidden border border-[color:var(--border-strong)]/70">
                 <Image
                   src={coverImage}
                   alt="Gallery cover preview"
@@ -245,7 +249,7 @@ export function GalleryForm({
                 />
               </div>
             ) : (
-              <div className="flex aspect-[4/3] items-center justify-center border border-dashed border-[color:var(--border-strong)]/40 bg-[color:var(--background)]/40 text-[13px] text-[color:var(--ink-faint)]">
+              <div className="flex aspect-[4/3] items-center justify-center border border-dashed border-[color:var(--border-strong)] bg-[color:var(--background)] text-[13px] font-medium text-[color:var(--ink-soft)]">
                 No cover selected
               </div>
             )}
@@ -264,9 +268,9 @@ export function GalleryForm({
           </aside>
         </div>
 
-        {/* Footer: save row as a thin bar, not a third card. */}
-        <div className="flex flex-col gap-3 border-t border-[color:var(--border)]/70 px-5 py-4 md:flex-row md:items-center md:justify-between md:px-8">
-          <p className="text-[12px] leading-5 text-[color:var(--ink-soft)]">
+        {/* Footer: save row */}
+        <div className="flex flex-col gap-3 border-t border-[color:var(--border-strong)]/50 bg-[color:var(--paper)]/50 px-5 py-4 md:flex-row md:items-center md:justify-between md:px-8">
+          <p className="text-[13px] leading-5 text-[color:var(--ink-soft)]">
             {initialValue
               ? "Saved changes appear across every shared view."
               : "You can revise any field after the gallery is created."}
@@ -276,7 +280,7 @@ export function GalleryForm({
               type="button"
               disabled={isSubmitting}
               onClick={() => router.back()}
-              className="text-[13px] text-[color:var(--ink-soft)] underline-offset-4 transition hover:text-[color:var(--ink)] hover:underline disabled:opacity-40"
+              className="text-[14px] font-medium text-[color:var(--ink-soft)] underline-offset-4 transition hover:text-[color:var(--ink)] hover:underline disabled:opacity-40"
             >
               Cancel
             </button>
@@ -293,7 +297,7 @@ export function GalleryForm({
           </div>
         </div>
         {submitError ? (
-          <p className="border-t border-[color:var(--error-border)]/40 bg-[color:var(--error-bg)] px-5 py-2.5 text-[13px] text-[color:var(--error-text)] md:px-8">
+          <p className="border-t border-[color:var(--error-border)] bg-[color:var(--error-bg)] px-5 py-2.5 text-[13px] font-medium text-[color:var(--error-text)] md:px-8">
             {submitError}
           </p>
         ) : null}
