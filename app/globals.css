@@ -12,6 +12,13 @@
   --accent-strong: #162338;
   --border: rgba(42, 64, 89, 0.14);
   --border-strong: rgba(22, 35, 56, 0.26);
+  /* Semantic feedback tokens */
+  --error-bg: #fff7f7;
+  --error-border: #c98282;
+  --error-text: #9a4545;
+  --warning-bg: rgba(255, 249, 232, 0.92);
+  --warning-border: rgba(180, 140, 60, 0.32);
+  --warning-text: rgba(120, 88, 18, 0.9);
   --font-body:
     "Avenir Next", "Avenir", "SF Pro Text", "SF Pro Display", "Inter",
     system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;

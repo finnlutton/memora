@@ -41,7 +41,7 @@ export function PaymentForm({ plan }: { plan: MembershipPlan }) {
         Annual billing. Cancel anytime. Existing galleries remain viewable if your plan changes later.
       </p>
 
-      <div className="mt-6 rounded-sm border border-[rgba(180,140,60,0.35)] bg-[rgba(255,249,232,0.9)] px-4 py-3 text-sm leading-6 text-[rgba(130,95,20,0.9)]">
+      <div className="mt-6 rounded-[6px] border border-[color:var(--warning-border)] bg-[color:var(--warning-bg)] px-4 py-3 text-sm leading-6 text-[color:var(--warning-text)]">
         Payment processing is not yet active. Confirming your plan selection will update your account — no charge will be made.
       </div>
 

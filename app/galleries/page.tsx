@@ -125,7 +125,7 @@ export default function GalleriesPage() {
             </Button>
             {hasReachedGalleryLimit ? (
               <Button asChild variant="secondary">
-                <Link href="/galleries/settings/membership?source=gallery-limit">Choose membership</Link>
+                <Link href="/galleries/settings/membership?source=gallery-limit">Upgrade plan</Link>
               </Button>
             ) : (
               <Button asChild>
@@ -298,7 +298,7 @@ function QuickStat({ label, value }: { label: string; value: string }) {
       <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
         {label}
       </p>
-      <p className="mt-1 text-sm leading-5 text-[color:var(--ink)] md:mt-1.5 md:text-[15px] md:leading-6">{value}</p>
+      <p className="mt-1 text-[15px] font-medium leading-5 text-[color:var(--ink)] md:mt-1.5 md:text-base md:leading-6">{value}</p>
     </div>
   );
 }

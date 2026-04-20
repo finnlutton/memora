@@ -25,7 +25,7 @@ export function GalleryCard({
     });
   }
 
-  const cardClasses = `group relative overflow-hidden border bg-white/72 shadow-[0_12px_40px_rgba(34,49,71,0.09)] backdrop-blur transition duration-500 ${
+  const cardClasses = `group relative overflow-hidden rounded-[6px] border bg-white/72 shadow-[0_12px_40px_rgba(34,49,71,0.09)] backdrop-blur transition duration-500 ${
     shareSelectable
       ? selected
         ? "border-[rgba(56,88,131,0.52)] shadow-[0_16px_46px_rgba(44,70,108,0.18)]"

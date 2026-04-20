@@ -167,6 +167,15 @@ export default async function PublicSharePage({
             <p className="font-serif text-2xl leading-tight">No galleries available in this share yet.</p>
           </section>
         )}
+        <footer className="mt-10 border-t border-[rgba(30,46,72,0.08)] pt-6 text-center md:mt-14 md:pt-8">
+          <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
+          <p className="mt-2 text-sm text-[color:var(--ink-soft)]">
+            Want to preserve your own memories?{" "}
+            <Link href="/auth?mode=signup" className="text-[color:var(--ink)] underline underline-offset-4">
+              Create a free archive →
+            </Link>
+          </p>
+        </footer>
       </div>
     </main>
   );
