@@ -8,12 +8,22 @@ import { ArrowLeft, Save } from "lucide-react";
 import { LocationAutocompleteInput } from "@/components/location-autocomplete-input";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { Button } from "@/components/ui/button";
+import { DateField } from "@/components/ui/date-field";
 import { readFileAsDataUrl } from "@/lib/file";
 import { nextImageUnoptimizedForSrc, splitCommaSeparated } from "@/lib/utils";
 import type { Gallery, GalleryInput } from "@/types/memora";
 
+// Bottom-rule field: quiet, typographic, no capsule shape.
 function fieldClassName() {
-  return "w-full rounded-[1.25rem] border border-[color:var(--border)] bg-white/80 px-4 py-3 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--accent)]";
+  return "w-full border-0 border-b border-[color:var(--border-strong)]/60 bg-transparent px-0 py-2.5 text-[15px] text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--ink)]";
+}
+
+function Label({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+      {children}
+    </span>
+  );
 }
 
 export function GalleryForm({
@@ -77,7 +87,7 @@ export function GalleryForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="flex items-center justify-between">
         <Button asChild variant="ghost">
           <Link href={backHref}>
@@ -86,152 +96,207 @@ export function GalleryForm({
           </Link>
         </Button>
       </div>
-      <div className="grid gap-4 md:gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-[1.5rem] border border-white/60 bg-white/74 p-4 shadow-[0_20px_70px_rgba(34,49,71,0.08)] backdrop-blur md:rounded-[2rem] md:p-6">
-          <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
-            Story framing
-          </p>
-          <div className="mt-4 grid gap-4">
-            <label className="space-y-2">
-              <span className="text-sm text-[color:var(--ink-soft)]">Title</span>
-              <input
-                required
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                className={fieldClassName()}
-                placeholder="Switzerland Trip 2026"
-              />
-            </label>
-            <label className="space-y-2">
-              <span className="text-sm text-[color:var(--ink-soft)]">Overall description</span>
-              <textarea
-                required
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                className={`${fieldClassName()} min-h-40 resize-none`}
-                placeholder="Describe the mood, shape, and story of this chapter."
-              />
-            </label>
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="space-y-2">
-                <span className="text-sm text-[color:var(--ink-soft)]">Start date</span>
+
+      {/* Unified writing surface — one calm paper page, not a grid of cards. */}
+      <div className="relative overflow-hidden border border-[color:var(--border)] bg-[color:var(--background)]/70 backdrop-blur-sm">
+        <div className="grid gap-0 lg:grid-cols-[1.15fr_0.85fr]">
+          {/* Writing column */}
+          <div className="order-2 space-y-8 px-5 py-6 md:order-1 md:px-8 md:py-8 lg:border-r lg:border-[color:var(--border)]/70">
+            <header>
+              <Label>Story framing</Label>
+              <p className="mt-1.5 max-w-lg text-[13px] leading-6 text-[color:var(--ink-soft)]">
+                A gallery reads like the opening page of a journal — broad enough to hold the whole chapter, specific enough to remember how it felt.
+              </p>
+            </header>
+
+            <div className="space-y-6">
+              <label className="block space-y-1.5">
+                <Label>Title</Label>
                 <input
-                  type="date"
-                  value={startDate}
-                  onChange={(event) => setStartDate(event.target.value)}
-                  className={fieldClassName()}
+                  required
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  className={`${fieldClassName()} font-serif text-[22px] leading-tight md:text-[26px]`}
+                  placeholder="Switzerland, 2026"
                 />
               </label>
-              <label className="space-y-2">
-                <span className="text-sm text-[color:var(--ink-soft)]">End date</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(event) => setEndDate(event.target.value)}
-                  className={fieldClassName()}
+
+              <label className="block space-y-1.5">
+                <Label>Description</Label>
+                <textarea
+                  required
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  className={`${fieldClassName()} min-h-36 resize-none leading-7`}
+                  placeholder="Describe the mood, shape, and story of this chapter."
                 />
               </label>
-            </div>
-            <label className="space-y-2">
-              <span className="text-sm text-[color:var(--ink-soft)]">Location (optional)</span>
-              <LocationAutocompleteInput
-                value={{ label: location, lat: locationLat, lng: locationLng }}
-                onChange={(next) => {
-                  setLocation(next.label);
-                  setLocationLat(next.lat);
-                  setLocationLng(next.lng);
-                }}
-                className={fieldClassName()}
-                placeholder="Granada, Spain"
-              />
-            </label>
-            <label className="space-y-2">
-              <span className="text-sm text-[color:var(--ink-soft)]">People</span>
-              <input
-                value={people}
-                onChange={(event) => setPeople(event.target.value)}
-                className={fieldClassName()}
-                placeholder="Maya, Elias"
-              />
-            </label>
-            <label className="space-y-2">
-              <span className="text-sm text-[color:var(--ink-soft)]">Mood tags</span>
-              <input
-                value={moodTags}
-                onChange={(event) => setMoodTags(event.target.value)}
-                className={fieldClassName()}
-                placeholder="Snow light, train days, quiet luxury"
-              />
-            </label>
-            <label className="space-y-2">
-              <span className="text-sm text-[color:var(--ink-soft)]">Privacy</span>
-              <select
-                value={privacy}
-                onChange={(event) => setPrivacy(event.target.value as Gallery["privacy"])}
-                className={fieldClassName()}
-              >
-                <option value="private">Private</option>
-                <option value="public">Public</option>
-              </select>
-            </label>
-          </div>
-        </section>
-        <aside className="space-y-6">
-          <section className="rounded-[1.5rem] border border-white/60 bg-white/74 p-4 shadow-[0_20px_70px_rgba(34,49,71,0.08)] backdrop-blur md:rounded-[2rem] md:p-6">
-            <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
-              Cover image
-            </p>
-            <div className="mt-4 space-y-4">
-              <UploadDropzone
-                label="Choose a gallery cover"
-                hint="Drop a hero image here or click to browse. This sets the emotional tone for the whole collection."
-                busy={isUploading}
-                onFilesSelected={async (files) => {
-                  setIsUploading(true);
-                  const nextSrc = await readFileAsDataUrl(files[0]);
-                  setCoverImage(nextSrc);
-                  setIsUploading(false);
-                }}
-              />
-              {coverImage ? (
-                <div className="relative aspect-[4/3] overflow-hidden rounded-[1.75rem] border border-white/60">
-                  <Image
-                    src={coverImage}
-                    alt="Gallery cover preview"
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 100vw, 35vw"
-                    unoptimized={nextImageUnoptimizedForSrc(coverImage)}
+
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>Start date</Label>
+                  <DateField
+                    value={startDate}
+                    onChange={setStartDate}
+                    ariaLabel="Start date"
+                    placeholder="Choose a date"
                   />
                 </div>
-              ) : null}
+                <div className="space-y-1.5">
+                  <Label>End date</Label>
+                  <DateField
+                    value={endDate}
+                    onChange={setEndDate}
+                    ariaLabel="End date"
+                    placeholder="Choose a date"
+                    min={startDate || undefined}
+                  />
+                </div>
+              </div>
+
+              <label className="block space-y-1.5">
+                <Label>Location</Label>
+                <LocationAutocompleteInput
+                  value={{ label: location, lat: locationLat, lng: locationLng }}
+                  onChange={(next) => {
+                    setLocation(next.label);
+                    setLocationLat(next.lat);
+                    setLocationLng(next.lng);
+                  }}
+                  className={fieldClassName()}
+                  placeholder="Granada, Spain"
+                />
+              </label>
+
+              <label className="block space-y-1.5">
+                <Label>People</Label>
+                <input
+                  value={people}
+                  onChange={(event) => setPeople(event.target.value)}
+                  className={fieldClassName()}
+                  placeholder="Maya, Elias"
+                />
+                <span className="text-[11px] leading-4 text-[color:var(--ink-faint)]">
+                  Separate names with commas.
+                </span>
+              </label>
+
+              <label className="block space-y-1.5">
+                <Label>Mood</Label>
+                <input
+                  value={moodTags}
+                  onChange={(event) => setMoodTags(event.target.value)}
+                  className={fieldClassName()}
+                  placeholder="Snow light, train days, quiet luxury"
+                />
+              </label>
+
+              <div className="space-y-1.5">
+                <Label>Visibility</Label>
+                <div className="flex gap-6 pt-1">
+                  {(["private", "public"] as const).map((option) => {
+                    const active = privacy === option;
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setPrivacy(option)}
+                        aria-pressed={active}
+                        className={`group relative pb-1.5 text-[14px] tracking-[0.01em] transition ${
+                          active
+                            ? "text-[color:var(--ink)]"
+                            : "text-[color:var(--ink-faint)] hover:text-[color:var(--ink-soft)]"
+                        }`}
+                      >
+                        <span className="capitalize">{option}</span>
+                        <span
+                          className={`absolute inset-x-0 bottom-0 h-px transition ${
+                            active
+                              ? "bg-[color:var(--ink)]"
+                              : "bg-transparent group-hover:bg-[color:var(--border-strong)]/50"
+                          }`}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          </section>
-          <section className="rounded-[1.5rem] border border-white/60 bg-[color:var(--paper)] p-4 md:rounded-[2rem] md:p-6">
-            <h3 className="font-serif text-2xl text-[color:var(--ink)]">Keep it meaningful</h3>
-            <p className="mt-3 text-sm leading-7 text-[color:var(--ink-soft)]">
-              A strong gallery reads like the opening page of a journal: broad enough to hold the whole trip, specific enough to remember how it felt.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2.5 md:mt-6 md:gap-3">
-              <Button type="submit" disabled={isSubmitting || isUploading || !coverImage}>
-                <Save className="h-4 w-4" />
-                {isSubmitting
-                  ? initialValue
-                    ? "Saving gallery..."
-                    : "Creating gallery..."
-                  : initialValue
-                    ? "Save gallery"
-                    : createLabel}
-              </Button>
-              <Button type="button" variant="secondary" disabled={isSubmitting} onClick={() => router.back()}>
-                Cancel
-              </Button>
-            </div>
-            {submitError ? (
-              <p className="mt-3 text-sm text-[#9a4545]">{submitError}</p>
-            ) : null}
-          </section>
-        </aside>
+          </div>
+
+          {/* Cover column */}
+          <aside className="order-1 flex flex-col gap-6 border-b border-[color:var(--border)]/70 bg-[color:var(--paper)]/40 px-5 py-6 md:order-2 md:px-8 md:py-8 lg:border-b-0">
+            <header>
+              <Label>Cover</Label>
+              <p className="mt-1.5 text-[13px] leading-6 text-[color:var(--ink-soft)]">
+                One image sets the emotional tone for the whole collection.
+              </p>
+            </header>
+
+            {coverImage ? (
+              <div className="relative aspect-[4/3] overflow-hidden border border-[color:var(--border)]">
+                <Image
+                  src={coverImage}
+                  alt="Gallery cover preview"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 35vw"
+                  unoptimized={nextImageUnoptimizedForSrc(coverImage)}
+                />
+              </div>
+            ) : (
+              <div className="flex aspect-[4/3] items-center justify-center border border-dashed border-[color:var(--border-strong)]/40 bg-[color:var(--background)]/40 text-[13px] text-[color:var(--ink-faint)]">
+                No cover selected
+              </div>
+            )}
+
+            <UploadDropzone
+              label={coverImage ? "Replace cover image" : "Choose a cover image"}
+              hint="Drop a hero image or click to browse."
+              busy={isUploading}
+              onFilesSelected={async (files) => {
+                setIsUploading(true);
+                const nextSrc = await readFileAsDataUrl(files[0]);
+                setCoverImage(nextSrc);
+                setIsUploading(false);
+              }}
+            />
+          </aside>
+        </div>
+
+        {/* Footer: save row as a thin bar, not a third card. */}
+        <div className="flex flex-col gap-3 border-t border-[color:var(--border)]/70 px-5 py-4 md:flex-row md:items-center md:justify-between md:px-8">
+          <p className="text-[12px] leading-5 text-[color:var(--ink-soft)]">
+            {initialValue
+              ? "Saved changes appear across every shared view."
+              : "You can revise any field after the gallery is created."}
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => router.back()}
+              className="text-[13px] text-[color:var(--ink-soft)] underline-offset-4 transition hover:text-[color:var(--ink)] hover:underline disabled:opacity-40"
+            >
+              Cancel
+            </button>
+            <Button type="submit" disabled={isSubmitting || isUploading || !coverImage}>
+              <Save className="h-4 w-4" />
+              {isSubmitting
+                ? initialValue
+                  ? "Saving..."
+                  : "Creating..."
+                : initialValue
+                  ? "Save gallery"
+                  : createLabel}
+            </Button>
+          </div>
+        </div>
+        {submitError ? (
+          <p className="border-t border-[color:var(--error-border)]/40 bg-[color:var(--error-bg)] px-5 py-2.5 text-[13px] text-[color:var(--error-text)] md:px-8">
+            {submitError}
+          </p>
+        ) : null}
       </div>
     </form>
   );

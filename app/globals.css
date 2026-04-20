@@ -93,3 +93,64 @@ select {
 ::selection {
   background: rgba(61, 92, 131, 0.18);
 }
+
+/* ---------------------------------------------------------------------------
+ * Google Places Autocomplete dropdown skin.
+ * We do not replace Google's dropdown — we restyle its default container so it
+ * stops looking like a system widget and reads like the rest of the app.
+ * Scoped by the .pac-container class Google injects; no app selectors touched.
+ * ------------------------------------------------------------------------- */
+.pac-container {
+  margin-top: 6px;
+  padding: 4px 0;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow:
+    0 1px 0 rgba(14, 22, 34, 0.02),
+    0 12px 34px rgba(14, 22, 34, 0.1);
+  font-family: var(--font-body);
+  color: var(--ink);
+}
+
+.pac-container::after {
+  display: none; /* hide "powered by Google" strip — we keep attribution via Maps API ToS */
+}
+
+.pac-item {
+  padding: 8px 14px;
+  border-top: 1px solid transparent;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.pac-item + .pac-item {
+  border-top: 1px solid rgba(42, 64, 89, 0.08);
+}
+
+.pac-item:hover,
+.pac-item-selected,
+.pac-item-selected:hover {
+  background-color: var(--paper);
+  color: var(--ink);
+}
+
+.pac-item-query {
+  font-size: 14px;
+  color: var(--ink);
+  font-weight: 500;
+  padding-right: 6px;
+}
+
+.pac-matched {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.pac-icon,
+.pac-icon-marker {
+  display: none;
+}
