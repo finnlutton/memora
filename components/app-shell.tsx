@@ -319,7 +319,7 @@ function SettingsDropdown({
               setOpen(false);
               onSignOut();
             }}
-            className="mt-6 w-full border border-[#c98282] bg-[#fff7f7] px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-[#9a4545] transition hover:bg-[#ffefef]"
+            className="mt-6 w-full border border-[color:var(--error-border)] bg-[color:var(--error-bg)] px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-[color:var(--error-text)] transition hover:opacity-80"
           >
             Sign out
           </button>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Plus, Share2 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
@@ -264,29 +265,40 @@ export default function GalleriesPage() {
           return { shareUrl: payload.shareUrl };
         }}
       />
-      {shareMode && !sharePanelOpen ? (
-        <div className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-xl border border-[rgba(34,52,79,0.12)] bg-[rgba(251,253,255,0.95)] p-2 shadow-[0_14px_34px_rgba(16,24,38,0.15)] md:bottom-7 md:right-7">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => {
-              setShareMode(false);
-              setSelectedGalleryIds([]);
-              setSelectedGroupIds([]);
-              setCustomMessage("");
-            }}
+      <AnimatePresence>
+        {shareMode && !sharePanelOpen ? (
+          <motion.div
+            key="share-floating-bar"
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8, transition: { duration: 0.15 } }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-[8px] border border-[rgba(34,52,79,0.12)] bg-[rgba(251,253,255,0.97)] p-2 shadow-[0_16px_40px_rgba(16,24,38,0.18)] md:bottom-7 md:right-7"
           >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            disabled={selectedGalleryIds.length === 0 || shareLimitReached}
-            onClick={() => setSharePanelOpen(true)}
-          >
-            Continue to share
-          </Button>
-        </div>
-      ) : null}
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setShareMode(false);
+                setSelectedGalleryIds([]);
+                setSelectedGroupIds([]);
+                setCustomMessage("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={selectedGalleryIds.length === 0 || shareLimitReached}
+              onClick={() => setSharePanelOpen(true)}
+            >
+              {selectedGalleryIds.length === 0
+                ? "Select galleries"
+                : `Share ${selectedGalleryIds.length} ${selectedGalleryIds.length === 1 ? "gallery" : "galleries"}`}
+            </Button>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </AppShell>
   );
 }
