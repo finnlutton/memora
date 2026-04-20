@@ -223,7 +223,7 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
             );
           })}
         </div>
-        <main className="mx-auto w-full max-w-[1220px] px-4 py-6 md:px-8 md:py-8">{children}</main>
+        <main className="mx-auto w-full max-w-[1520px] px-4 py-6 md:px-10 md:py-10">{children}</main>
       </div>
     </div>
   );

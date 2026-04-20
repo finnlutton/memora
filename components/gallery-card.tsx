@@ -1,9 +1,26 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, Check, Images } from "lucide-react";
-import { formatDateRange, formatUpdatedLabel, countPhotos, nextImageUnoptimizedForSrc } from "@/lib/utils";
+import { Check } from "lucide-react";
+import { formatDateRange, nextImageUnoptimizedForSrc } from "@/lib/utils";
 import type { Gallery } from "@/types/memora";
 
+/**
+ * GalleryCard — editorial variant.
+ *
+ * Earlier design wrapped each gallery in a white "card" (bg, border, shadow,
+ * rounded) with a multi-line metadata body underneath. On an index of
+ * photographs the chrome dominated, the body stacked dashboard-ish
+ * metadata (chip counts, locations, updated-ago), and sparse galleries
+ * read as big empty slabs.
+ *
+ * This version treats each entry as a photograph on the page canvas: no
+ * card chrome, no shadow, no container. The cover image IS the object;
+ * the title and a single quiet meta line sit directly on the page below
+ * it. Sparse galleries take only the height they need — no empty body.
+ *
+ * Share-mode selection affordance (the circular checkbox) still pins to
+ * the image corner; the parent grid still owns click-to-toggle.
+ */
 export function GalleryCard({
   gallery,
   shareSelectable = false,
@@ -15,36 +32,30 @@ export function GalleryCard({
   selected?: boolean;
   onToggleSelected?: (galleryId: string) => void;
 }) {
-  // Prefer the persisted gallery cover. Only fall back to a subgallery cover if the gallery has no cover.
+  // Prefer the persisted gallery cover; fall back to first subgallery if absent.
   const coverImage = gallery.coverImage || gallery.subgalleries[0]?.coverImage;
 
-  if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
-    console.info("Memora: gallery card image source", {
-      galleryId: gallery.id,
-      coverImage,
-    });
-  }
+  const primaryLocation = gallery.locations[0];
+  const dateRange = formatDateRange(gallery.startDate, gallery.endDate);
+  const metaParts = [primaryLocation, dateRange].filter(Boolean);
 
-  const cardClasses = `group relative overflow-hidden rounded-[6px] border bg-white/72 shadow-[0_12px_40px_rgba(34,49,71,0.09)] backdrop-blur transition duration-500 ${
-    shareSelectable
-      ? selected
-        ? "border-[rgba(56,88,131,0.52)] shadow-[0_16px_46px_rgba(44,70,108,0.18)]"
-        : "border-white/60 hover:border-[rgba(56,88,131,0.28)]"
-      : "border-white/60 hover:-translate-y-1 hover:shadow-[0_16px_50px_rgba(34,49,71,0.14)]"
-  }`;
-
-  const cardBody = (
+  const body = (
     <>
-      <div className="relative aspect-[16/10] overflow-hidden md:aspect-[5/3]">
+      {/*
+        Cover image. 16:9 desktop (cinematic crop, less "tall brick" weight
+        at the wider 2-col width). 4:3 mobile to keep subject legibility on
+        narrow screens. Hairline border is the only chrome — intentional,
+        reads as a printed photograph's edge, not a UI card.
+      */}
+      <div className="relative aspect-[4/3] w-full overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper)] md:aspect-[16/9]">
         <Image
           src={coverImage}
           alt={gallery.title}
           fill
-          className="object-cover transition duration-700 group-hover:scale-[1.04]"
-          sizes="(max-width: 768px) 100vw, 33vw"
+          className="object-cover transition duration-[700ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.015]"
+          sizes="(max-width: 1024px) 100vw, 720px"
           unoptimized={nextImageUnoptimizedForSrc(coverImage)}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[rgba(13,25,39,0.72)] via-[rgba(13,25,39,0.18)] to-transparent" />
         {shareSelectable ? (
           <button
             type="button"
@@ -53,61 +64,63 @@ export function GalleryCard({
               event.stopPropagation();
               onToggleSelected?.(gallery.id);
             }}
-            className={`absolute right-2.5 top-2.5 inline-flex h-5.5 w-5.5 items-center justify-center rounded-full border transition md:right-3 md:top-3 md:h-6 md:w-6 ${
-              selected
-                ? "border-[color:var(--accent-strong)] bg-[color:var(--accent-strong)] text-white"
-                : "border-white/60 bg-[rgba(255,255,255,0.14)] text-transparent hover:bg-[rgba(255,255,255,0.24)]"
-            }`}
             aria-label={`Select ${gallery.title}`}
+            className={`absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border backdrop-blur transition md:right-4 md:top-4 ${
+              selected
+                ? "border-[color:var(--ink)] bg-[color:var(--ink)] text-white"
+                : "border-white/70 bg-[rgba(255,255,255,0.28)] text-transparent hover:bg-[rgba(255,255,255,0.5)]"
+            }`}
           >
-            <Check className="h-3.5 w-3.5" />
+            <Check className="h-3.5 w-3.5" strokeWidth={2.4} />
           </button>
         ) : null}
       </div>
-      <div className="space-y-1.5 px-3 py-3 md:px-3.5 md:py-3.5">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="font-serif text-base text-[color:var(--ink)] md:text-[1.02rem]">{gallery.title}</h3>
-            <p className="mt-0.5 text-xs text-[color:var(--ink-soft)]">
-              {formatDateRange(gallery.startDate, gallery.endDate)}
-            </p>
-          </div>
-          <span className="rounded-full bg-[color:var(--paper)] p-1 text-[color:var(--accent)] transition group-hover:bg-[color:var(--accent-strong)] group-hover:text-white md:p-1.5">
-            <ArrowUpRight className="h-3 w-3" />
-          </span>
-        </div>
-        <p className="line-clamp-3 text-xs leading-5 text-[color:var(--ink-soft)] md:leading-6">
-          {gallery.description}
-        </p>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-[color:var(--ink-soft)]">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border)] bg-[color:var(--paper)] px-2 py-1">
-            <Images className="h-3 w-3 text-[color:var(--accent)]" />
-            {gallery.subgalleries.length} subgalleries
-          </span>
-          <span>{countPhotos(gallery.subgalleries)} photos</span>
-          <span>{gallery.locations.slice(0, 2).join(" • ")}</span>
-        </div>
-        <p className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">
-          Updated {formatUpdatedLabel(gallery.updatedAt)}
-        </p>
+
+      {/*
+        Caption block. Directly on the page canvas — no bg, no border, no
+        padding container. Serif title reads like a printed plate caption.
+        One meta line, middle-dot separated. No description, no counts, no
+        updated-ago. If a gallery has neither location nor dates, the meta
+        line just doesn't render — no empty placeholder slab.
+      */}
+      <div className="mt-5 md:mt-6">
+        <h3 className="font-serif text-[22px] leading-[1.12] text-[color:var(--ink)] md:text-[26px]">
+          {gallery.title}
+        </h3>
+        {metaParts.length ? (
+          <p className="mt-2 text-[12px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)] md:text-[12.5px]">
+            {metaParts.join(" · ")}
+          </p>
+        ) : null}
       </div>
     </>
   );
 
+  const groupClass = "group block";
+
   if (shareSelectable) {
     return (
-      <div className={cardClasses} role="button" tabIndex={0} onClick={() => onToggleSelected?.(gallery.id)}>
-        {cardBody}
+      <div
+        className={`${groupClass} cursor-pointer`}
+        role="button"
+        tabIndex={0}
+        aria-pressed={selected}
+        onClick={() => onToggleSelected?.(gallery.id)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onToggleSelected?.(gallery.id);
+          }
+        }}
+      >
+        {body}
       </div>
     );
   }
 
   return (
-    <Link
-      href={`/galleries/${gallery.id}`}
-      className={cardClasses}
-    >
-      {cardBody}
+    <Link href={`/galleries/${gallery.id}`} className={groupClass}>
+      {body}
     </Link>
   );
 }

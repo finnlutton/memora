@@ -168,7 +168,14 @@ export default function GalleriesPage() {
               <span className="text-[color:var(--ink)]">{selectedCount} selected</span>
             </div>
           ) : null}
-          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 md:gap-4">
+          {/*
+            Editorial grid rhythm: 1-col on mobile/tablet so each photograph
+            reads as a photograph, 2-col at lg+ with generous horizontal gap
+            and larger vertical gap to create a considered rows-of-entries
+            cadence (archive, not catalog). No xl:grid-cols-3 — a single
+            decisive layout is the curated choice.
+          */}
+          <div className="grid grid-cols-1 gap-x-8 gap-y-14 lg:grid-cols-2 lg:gap-x-10 lg:gap-y-16">
           {sortedGalleries.map((gallery) => (
             <GalleryCard
               key={gallery.id}
