@@ -16,11 +16,11 @@ type DemoPin = {
 };
 
 const DEMO_PINS: DemoPin[] = [
-  { id: "nyc", title: "Winter in New York", location: "New York, USA", season: "Feb 2025", lat: 40.7128, lng: -74.006 },
-  { id: "kyoto", title: "Kyoto in Spring", location: "Kyoto, Japan", season: "Apr 2024", lat: 35.0116, lng: 135.7681 },
-  { id: "baja", title: "Baja Mornings", location: "Baja California, MX", season: "Mar 2024", lat: 26.0444, lng: -111.3456 },
-  { id: "sicily", title: "Sicily Coastline", location: "Taormina, Italy", season: "Jun 2023", lat: 37.8516, lng: 15.2853 },
-  { id: "cotswolds", title: "Cotswolds Gardens", location: "Gloucestershire, UK", season: "May 2023", lat: 51.8355, lng: -1.8433 },
+  { id: "nyc", title: "NYC Trip 2024", location: "New York, USA", season: "Feb 2024", lat: 40.7128, lng: -74.006 },
+  { id: "kyoto", title: "Kyoto Spring 2026", location: "Kyoto, Japan", season: "Apr 2026", lat: 35.0116, lng: 135.7681 },
+  { id: "baja", title: "Baja Surf Trip", location: "Baja California, MX", season: "Mar 2024", lat: 26.0444, lng: -111.3456 },
+  { id: "sicily", title: "Road Trip From Sicily", location: "Taormina, Italy", season: "Jun 2023", lat: 37.8516, lng: 15.2853 },
+  { id: "cotswolds", title: "Cotswolds Day Trip", location: "Gloucestershire, UK", season: "May 2023", lat: 51.8355, lng: -1.8433 },
   { id: "granada", title: "Granada Semester", location: "Andalucía, Spain", season: "Sep 2022", lat: 37.1773, lng: -3.5986 },
 ];
 
@@ -184,13 +184,13 @@ export function HomeMemoryGlobe() {
     <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-[1fr_1.15fr] md:gap-14 lg:gap-20">
       <div className="order-2 md:order-1">
         <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-white/72">
-          Across the world
+          Memories across the world
         </p>
         <h2 className="mt-5 font-serif text-[34px] leading-[1.02] text-white md:text-[48px] md:leading-[1.0]">
           The places you&apos;d want to walk through again.
         </h2>
         <p className="mt-6 max-w-[30rem] text-[14px] leading-7 text-white/82 md:text-[15px]">
-          Each gallery finds its place on a quiet atlas — a soft record of where you&apos;ve been and what you kept from it. Click a pin to preview a trip.
+          Open a pin to go straight to the gallery you saved there.
         </p>
 
         <ul className="mt-9 grid grid-cols-1 gap-x-8 gap-y-3 text-[13px] leading-6 text-white/85 sm:grid-cols-2">

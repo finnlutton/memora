@@ -6,6 +6,7 @@ import { AppShell } from "@/components/app-shell";
 import { HomeGalleryReveal } from "@/components/home-gallery-reveal";
 import { HomeHero } from "@/components/home-hero";
 import { HomeMemoryGlobe } from "@/components/home-memory-globe";
+import { HomeShareDemo } from "@/components/home-share-demo";
 import { HomeCloser } from "@/components/home-closer";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 import { demoGalleries } from "@/lib/demo-data";
@@ -121,6 +122,16 @@ export default function HomePage() {
           aria-hidden
           className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-[linear-gradient(90deg,transparent,rgba(150,192,240,0.22),transparent)]"
         />
+      </section>
+
+      {/*
+        Share demo — scripted interactive demonstration of the sharing flow.
+      */}
+      <section
+        aria-label="Sharing a gallery"
+        className="mx-auto w-full max-w-7xl px-4 py-20 md:px-6 md:py-28"
+      >
+        <HomeShareDemo />
       </section>
 
       {/*
