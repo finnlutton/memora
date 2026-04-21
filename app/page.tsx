@@ -5,17 +5,18 @@ import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { HomeGalleryReveal } from "@/components/home-gallery-reveal";
 import { HomeHero } from "@/components/home-hero";
+import { HomeMemoryGlobe } from "@/components/home-memory-globe";
 import { HomeCloser } from "@/components/home-closer";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 import { demoGalleries } from "@/lib/demo-data";
 
 const previewGallery = demoGalleries[0];
 
-const HERO_IMAGE = "/demo/winter-olympics-2026/cover-2026.jpg";
+const HERO_IMAGE = "/demo/winter-olympics-2026/New_Hero.JPG";
 const HERO_CAPTION = "Switzerland & Northern Italy, February 2026";
 
-const CLOSER_IMAGE = "/demo/winter-olympics-2026/lake-como.png";
-const CLOSER_CAPTION = "Lake Como, final afternoon";
+const CLOSER_IMAGE = "/demo/winter-olympics-2026/Bottom_Hero.JPG";
+const CLOSER_CAPTION = "Livigno — snowboard cross gold medal, February 2026";
 
 const REVEAL_TARGET_ID = "home-gallery-demo";
 
@@ -92,6 +93,34 @@ export default function HomePage() {
 
       <section id={REVEAL_TARGET_ID} className="mx-auto w-full max-w-7xl px-4 md:px-6">
         <HomeGalleryReveal gallery={previewGallery} />
+      </section>
+
+      {/*
+        Memory globe — marketing demo. Full-bleed dark section so the globe
+        reads as a cinematic object rather than a UI widget. Intentionally
+        distinct from the production map (components/WorldGlobe.tsx).
+      */}
+      <section
+        aria-label="Memories across the world"
+        className="relative left-1/2 right-1/2 mt-16 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden bg-[radial-gradient(ellipse_at_top,rgba(44,72,116,0.58)_0%,rgba(20,32,54,0.92)_52%,rgba(14,22,38,1)_100%)] md:mt-24"
+      >
+        {/* Soft lower wash so the edges don't crush to black */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(60,86,130,0.22)_0%,transparent_55%)]"
+        />
+        {/* Subtle top border seam */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(150,192,240,0.28),transparent)]"
+        />
+        <div className="relative mx-auto w-full max-w-7xl px-4 py-20 md:px-6 md:py-28">
+          <HomeMemoryGlobe />
+        </div>
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-[linear-gradient(90deg,transparent,rgba(150,192,240,0.22),transparent)]"
+        />
       </section>
 
       {/*

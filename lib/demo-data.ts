@@ -94,7 +94,7 @@ export const demoGalleries: Gallery[] = [
         id: "sub-lake-como",
         galleryId: "gallery-switzerland",
         title: "Lake Como",
-        coverImage: "/demo/winter-olympics-2026/lake-como.png",
+        coverImage: "/demo/winter-olympics-2026/Bottom_Hero.JPG",
         location: "Lake Como, Italy",
         dateLabel: "Feb 15-17",
         description:

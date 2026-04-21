@@ -1,10 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { useEffect, useRef, useState } from "react";
 import { Minus, Plus } from "lucide-react";
-import { GalleryMapPinIcon } from "@/components/icons/GalleryMapPinIcon";
 import type { GlobeMethods } from "react-globe.gl";
 
 const Globe = dynamic(() => import("react-globe.gl"), { ssr: false });
@@ -122,11 +120,11 @@ export function WorldGlobe({
         }
       | undefined;
 
-    material?.color?.set("#f3f8ff");
-    material?.emissive?.set("#4f7098");
+    material?.color?.set("#ffffff");
+    material?.emissive?.set("#6a8eb8");
     if (material) {
-      material.emissiveIntensity = 0.22;
-      material.shininess = 0.35;
+      material.emissiveIntensity = 0.14;
+      material.shininess = 0.55;
     }
   }, [allowWheelZoom]);
 
@@ -165,14 +163,6 @@ export function WorldGlobe({
     });
   }, [activePinPreview]);
 
-  const pinIconMarkup = useMemo(
-    () =>
-      renderToStaticMarkup(
-        <GalleryMapPinIcon className="h-[18px] w-[18px] text-[#fffa5c] drop-shadow-[0_1px_2px_rgba(20,22,35,0.22)]" />,
-      ),
-    [],
-  );
-
   const formatDateRange = (startDate?: string, endDate?: string) => {
     if (!startDate && !endDate) return "";
     const formatter = new Intl.DateTimeFormat("en-US", {
@@ -208,8 +198,8 @@ export function WorldGlobe({
         backgroundColor="rgba(0,0,0,0)"
         globeImageUrl="/textures/new_earth.jpg"
         showAtmosphere={true}
-        atmosphereColor="rgba(118, 168, 232, 0.52)"
-        atmosphereAltitude={0.1}
+        atmosphereColor="rgba(140, 184, 232, 0.58)"
+        atmosphereAltitude={0.16}
         htmlElementsData={pins}
         htmlLat="lat"
         htmlLng="lng"
@@ -224,8 +214,8 @@ export function WorldGlobe({
           };
           const marker = document.createElement("div");
           marker.dataset.mapPinMarker = "true";
-          marker.style.width = "28px";
-          marker.style.height = "28px";
+          marker.style.width = "22px";
+          marker.style.height = "22px";
           marker.style.display = "flex";
           marker.style.alignItems = "center";
           marker.style.justifyContent = "center";
@@ -233,7 +223,8 @@ export function WorldGlobe({
           marker.style.pointerEvents = "auto";
           marker.style.cursor = "pointer";
           marker.style.position = "relative";
-          marker.innerHTML = pinIconMarkup;
+          marker.innerHTML =
+            '<span class="memora-pin-pulse"></span><span class="memora-pin-ring"></span><span class="memora-pin-core"></span>';
           marker.onpointerdown = (event) => {
             event.preventDefault();
             event.stopPropagation();
