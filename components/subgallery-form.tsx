@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowLeft, GripHorizontal, Save, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Save } from "lucide-react";
 import { LocationAutocompleteInput } from "@/components/location-autocomplete-input";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,15 @@ import { createId, nextImageUnoptimizedForSrc, reorderList } from "@/lib/utils";
 import type { MemoryPhoto, Subgallery, SubgalleryInput } from "@/types/memora";
 
 function fieldClassName() {
-  return "w-full rounded-[1.25rem] border border-[color:var(--border)] bg-white/80 px-4 py-3 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--accent)]";
+  return "w-full border-0 border-b-[1.5px] border-[color:var(--border-strong)] bg-transparent px-0 py-3 text-[15px] text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] hover:border-[color:var(--ink-soft)] focus:border-[color:var(--ink)]";
+}
+
+function Label({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
+      {children}
+    </span>
+  );
 }
 
 export function SubgalleryForm({
@@ -69,7 +77,7 @@ export function SubgalleryForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="flex items-center justify-between">
         <Button asChild variant="ghost">
           <Link href={`/galleries/${galleryId}`}>
@@ -78,132 +86,164 @@ export function SubgalleryForm({
           </Link>
         </Button>
       </div>
-      <div className="grid gap-4 md:gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-[1.5rem] border border-white/60 bg-white/74 p-4 shadow-[0_20px_70px_rgba(34,49,71,0.08)] backdrop-blur md:rounded-[2rem]">
-          <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
-            Journal entry
-          </p>
-          <div className="mt-2 grid gap-2">
-            <label className="space-y-2">
-              <span className="text-sm text-[color:var(--ink-soft)]">Title</span>
-              <input
-                required
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                className={fieldClassName()}
-                placeholder="Zermatt"
-              />
-            </label>
-            <div className="grid gap-3 md:grid-cols-2">
-              <label className="space-y-2">
-                <span className="text-sm text-[color:var(--ink-soft)]">Location (optional)</span>
-                <LocationAutocompleteInput
-                  value={{ label: location, lat: locationLat, lng: locationLng }}
-                  onChange={(next) => {
-                    setLocation(next.label);
-                    setLocationLat(next.lat);
-                    setLocationLng(next.lng);
-                  }}
-                  className={fieldClassName()}
-                  placeholder="Zermatt, Switzerland"
-                />
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm text-[color:var(--ink-soft)]">Date or timeframe</span>
+
+      {/* Journal surface — opaque, stronger edge */}
+      <div className="relative overflow-hidden border border-[color:var(--border-strong)]/70 bg-[color:var(--background)] shadow-[0_6px_24px_rgba(14,22,34,0.06)]">
+        <div className="grid gap-0 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className="order-2 space-y-8 px-5 py-6 md:order-1 md:px-8 md:py-8 lg:border-r lg:border-[color:var(--border-strong)]/50">
+            <header>
+              <Label>Journal entry</Label>
+              <p className="mt-2 max-w-lg text-[14px] leading-6 text-[color:var(--ink-soft)]">
+                One stop, one scene — the piece of the trip you'll want to reread.
+              </p>
+            </header>
+
+            <div className="space-y-7">
+              <div className="space-y-2">
+                <Label>Title</Label>
                 <input
-                  value={dateLabel}
-                  onChange={(event) => setDateLabel(event.target.value)}
-                  className={fieldClassName()}
-                  placeholder="Feb 11-13"
+                  required
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  className={`${fieldClassName()} font-serif text-[24px] leading-tight md:text-[28px]`}
+                  placeholder="Zermatt"
                 />
-              </label>
-            </div>
-            <label className="space-y-2">
-              <span className="text-sm text-[color:var(--ink-soft)]">Story</span>
-              <textarea
-                required
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                className={`${fieldClassName()} min-h-[7.5rem] resize-none`}
-                placeholder="What made this stop, place, or moment worth remembering?"
-              />
-            </label>
-          </div>
-        </section>
-        <aside className="space-y-4 md:space-y-6">
-          <section className="rounded-[1.5rem] border border-white/60 bg-white/74 p-4 shadow-[0_20px_70px_rgba(34,49,71,0.08)] backdrop-blur md:rounded-[2rem]">
-            <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
-              Cover image
-            </p>
-            <div className="mt-2 space-y-2">
-              <UploadDropzone
-                label="Select a cover photo"
-                hint="You can upload a custom cover or pick one from the uploaded photos below."
-                busy={isUploadingCover}
-                onFilesSelected={async (files) => {
-                  setIsUploadingCover(true);
-                  const nextSrc = await readFileAsDataUrl(files[0]);
-                  setCoverImage(nextSrc);
-                  setIsUploadingCover(false);
-                }}
-              />
-              {coverImage ? (
-                <div className="relative aspect-[20/9] overflow-hidden rounded-[1.5rem] border border-white/60">
-                  <Image
-                    src={coverImage}
-                    alt="Subgallery cover preview"
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 100vw, 35vw"
-                    unoptimized={nextImageUnoptimizedForSrc(coverImage)}
+              </div>
+
+              <div className="grid gap-7 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Location</Label>
+                  <LocationAutocompleteInput
+                    value={{ label: location, lat: locationLat, lng: locationLng }}
+                    onChange={(next) => {
+                      setLocation(next.label);
+                      setLocationLat(next.lat);
+                      setLocationLng(next.lng);
+                    }}
+                    className={fieldClassName()}
+                    placeholder="Zermatt, Switzerland"
                   />
                 </div>
-              ) : null}
+                <div className="space-y-2">
+                  <Label>Date or timeframe</Label>
+                  <input
+                    value={dateLabel}
+                    onChange={(event) => setDateLabel(event.target.value)}
+                    className={fieldClassName()}
+                    placeholder="Feb 11–13"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Story</Label>
+                <textarea
+                  required
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  className={`${fieldClassName()} min-h-36 resize-none leading-7`}
+                  placeholder="What made this stop, place, or moment worth remembering?"
+                />
+              </div>
             </div>
-          </section>
-          <section className="rounded-[1.5rem] border border-white/60 bg-[color:var(--paper)] p-4 md:rounded-[2rem] md:p-6">
-            <h3 className="font-serif text-2xl text-[color:var(--ink)]">Photo arrangement</h3>
-            <p className="mt-3 text-sm leading-7 text-[color:var(--ink-soft)]">
-              Add the visual sequence for this memory, then lightly reorder it so the page reads in the right rhythm.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2.5 md:mt-6 md:gap-3">
-              <Button
-                type="submit"
-                disabled={isSubmitting || isUploadingCover || isUploadingPhotos || !coverImage || photos.length === 0}
-              >
-                <Save className="h-4 w-4" />
-                {isSubmitting
-                  ? initialValue
-                    ? "Saving subgallery..."
-                    : "Creating subgallery..."
-                  : initialValue
-                    ? "Save subgallery"
-                    : "Create subgallery"}
-              </Button>
-              <Button type="button" variant="secondary" disabled={isSubmitting} onClick={() => router.back()}>
-                Cancel
-              </Button>
-            </div>
-            {submitError ? (
-              <p className="mt-3 text-sm text-[#9a4545]">{submitError}</p>
-            ) : null}
-          </section>
-        </aside>
-      </div>
-      <section className="rounded-[1.5rem] border border-white/60 bg-white/74 p-4 shadow-[0_20px_70px_rgba(34,49,71,0.08)] backdrop-blur md:rounded-[2rem] md:p-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
-              Photo collection
-            </p>
-            <h3 className="mt-2 font-serif text-3xl text-[color:var(--ink)]">Add and order images</h3>
           </div>
-          <div className="text-sm text-[color:var(--ink-soft)]">
-            {isPhotoLimitFinite ? `${photos.length} / ${photoLimit} photos used` : `${photos.length} photos in this subgallery`}
+
+          <aside className="order-1 flex flex-col gap-5 border-b border-[color:var(--border-strong)]/50 bg-[color:var(--paper)] px-5 py-6 md:order-2 md:px-8 md:py-8 lg:border-b-0">
+            <header>
+              <Label>Cover</Label>
+              <p className="mt-2 text-[14px] leading-6 text-[color:var(--ink-soft)]">
+                Upload a custom cover or pick one from the photos below.
+              </p>
+            </header>
+
+            {coverImage ? (
+              <div className="relative aspect-[20/9] overflow-hidden border border-[color:var(--border-strong)]/70">
+                <Image
+                  src={coverImage}
+                  alt="Subgallery cover preview"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 35vw"
+                  unoptimized={nextImageUnoptimizedForSrc(coverImage)}
+                />
+              </div>
+            ) : (
+              <div className="flex aspect-[20/9] items-center justify-center border border-dashed border-[color:var(--border-strong)] bg-[color:var(--background)] text-[13px] font-medium text-[color:var(--ink-soft)]">
+                No cover selected
+              </div>
+            )}
+
+            <UploadDropzone
+              label={coverImage ? "Replace cover image" : "Select a cover photo"}
+              hint="Drop a hero image or click to browse."
+              busy={isUploadingCover}
+              onFilesSelected={async (files) => {
+                setIsUploadingCover(true);
+                const nextSrc = await readFileAsDataUrl(files[0]);
+                setCoverImage(nextSrc);
+                setIsUploadingCover(false);
+              }}
+            />
+          </aside>
+        </div>
+
+        <div className="flex flex-col gap-3 border-t border-[color:var(--border-strong)]/50 bg-[color:var(--paper)]/50 px-5 py-4 md:flex-row md:items-center md:justify-between md:px-8">
+          <p className="text-[13px] leading-5 text-[color:var(--ink-soft)]">
+            {photos.length === 0
+              ? "Add at least one photo below before saving."
+              : initialValue
+                ? "Your changes will replace the current scene."
+                : "You can reorder and caption photos after saving."}
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => router.back()}
+              className="text-[14px] font-medium text-[color:var(--ink-soft)] underline-offset-4 transition hover:text-[color:var(--ink)] hover:underline disabled:opacity-40"
+            >
+              Cancel
+            </button>
+            <Button
+              type="submit"
+              disabled={isSubmitting || isUploadingCover || isUploadingPhotos || !coverImage || photos.length === 0}
+            >
+              <Save className="h-4 w-4" />
+              {isSubmitting
+                ? initialValue
+                  ? "Saving..."
+                  : "Creating..."
+                : initialValue
+                  ? "Save subgallery"
+                  : "Create subgallery"}
+            </Button>
           </div>
         </div>
+        {submitError ? (
+          <p className="border-t border-[color:var(--error-border)] bg-[color:var(--error-bg)] px-5 py-2.5 text-[13px] font-medium text-[color:var(--error-text)] md:px-8">
+            {submitError}
+          </p>
+        ) : null}
+      </div>
+
+      {/* Photo collection */}
+      <section className="relative overflow-hidden border border-[color:var(--border-strong)]/70 bg-[color:var(--background)] shadow-[0_6px_24px_rgba(14,22,34,0.06)]">
+        <header className="flex flex-col gap-3 px-5 py-6 md:flex-row md:items-end md:justify-between md:px-8 md:py-7">
+          <div>
+            <Label>Photo collection</Label>
+            <h3 className="mt-2 font-serif text-[28px] leading-tight text-[color:var(--ink)] md:text-[32px]">
+              Add and order images
+            </h3>
+          </div>
+          <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
+            {isPhotoLimitFinite
+              ? `${photos.length} / ${photoLimit} photos`
+              : `${photos.length} photos`}
+          </p>
+        </header>
+
         {reachedPhotoLimit ? (
-          <p className="mt-3 text-sm text-[color:var(--ink-soft)]">
+          <p className="border-t border-[color:var(--warning-border)] bg-[color:var(--warning-bg)] px-5 py-2.5 text-[13px] font-medium text-[color:var(--warning-text)] md:px-8">
             You&apos;ve reached the photo limit for this plan.{" "}
             <Link href="/galleries/settings/membership" className="text-[color:var(--ink)] underline underline-offset-2">
               Choose membership
@@ -211,10 +251,11 @@ export function SubgalleryForm({
             .
           </p>
         ) : null}
-        <div className="mt-5">
+
+        <div className="border-t border-[color:var(--border-strong)]/50">
           <UploadDropzone
             label="Upload memory photos"
-            hint="Drop multiple images here or click to browse. They’ll appear below immediately."
+            hint="Drop multiple images or click to browse. They'll appear below immediately."
             multiple
             busy={isUploadingPhotos}
             disabled={reachedPhotoLimit}
@@ -233,92 +274,117 @@ export function SubgalleryForm({
             }}
           />
         </div>
-        <div className="mt-4 grid gap-3 md:mt-6 md:gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {photos.map((photo, index) => (
-            <div
-              key={photo.id}
-              className="overflow-hidden rounded-[1.5rem] border border-white/60 bg-white shadow-[0_14px_35px_rgba(34,49,71,0.08)]"
-            >
-              <div className="relative aspect-[4/3]">
-                <Image
-                  src={photo.src}
-                  alt={photo.caption || "Uploaded photo"}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 1280px) 50vw, 33vw"
-                  unoptimized={nextImageUnoptimizedForSrc(photo.src)}
-                />
-              </div>
-              <div className="space-y-3 p-4">
-                <div className="flex items-center justify-between text-xs uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">
-                  <span className="inline-flex items-center gap-1.5">
-                    <GripHorizontal className="h-3.5 w-3.5" />
-                    Photo {index + 1}
-                  </span>
-                  {coverImage === photo.src ? (
-                    <span className="rounded-full bg-[color:var(--paper)] px-2 py-1 text-[color:var(--accent-strong)]">
-                      Cover
-                    </span>
-                  ) : null}
-                </div>
-                <textarea
-                  value={photo.caption}
-                  onChange={(event) =>
-                    setPhotos((current) =>
-                      current.map((entry) =>
-                        entry.id === photo.id ? { ...entry, caption: event.target.value } : entry,
-                      ),
-                    )
-                  }
-                  className={`${fieldClassName()} min-h-24 resize-none`}
-                  placeholder="Add a caption or detail worth remembering."
-                />
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => setCoverImage(photo.src)}
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    Use as cover
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    disabled={index === 0}
-                    onClick={() =>
-                      setPhotos((current) => reorderList(current, index, Math.max(0, index - 1)))
-                    }
-                  >
-                    Move left
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    disabled={index === photos.length - 1}
-                    onClick={() =>
-                      setPhotos((current) =>
-                        reorderList(current, index, Math.min(current.length - 1, index + 1)),
-                      )
-                    }
-                  >
-                    Move right
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="text-[#8b4c4c] hover:bg-[#fff4f4]"
-                    onClick={() =>
-                      setPhotos((current) => current.filter((entry) => entry.id !== photo.id))
-                    }
-                  >
-                    Remove
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+
+        {photos.length > 0 ? (
+          <div className="grid gap-px bg-[color:var(--border-strong)]/40 md:grid-cols-2 xl:grid-cols-3">
+            {photos.map((photo, index) => {
+              const isCover = coverImage === photo.src;
+              return (
+                <article
+                  key={photo.id}
+                  className="relative flex flex-col bg-[color:var(--background)]"
+                >
+                  <div className="relative aspect-[4/3] overflow-hidden">
+                    <Image
+                      src={photo.src}
+                      alt={photo.caption || "Uploaded photo"}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 1280px) 50vw, 33vw"
+                      unoptimized={nextImageUnoptimizedForSrc(photo.src)}
+                    />
+                    {isCover ? (
+                      <span className="absolute left-3 top-3 bg-[color:var(--ink)] px-2 py-[3px] text-[10px] font-semibold uppercase tracking-[0.22em] text-white">
+                        Cover
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-1 flex-col gap-3 px-4 py-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
+                        Photo {index + 1}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          aria-label="Move photo left"
+                          disabled={index === 0}
+                          onClick={() =>
+                            setPhotos((current) => reorderList(current, index, Math.max(0, index - 1)))
+                          }
+                          className="rounded-sm border border-[color:var(--border-strong)]/70 p-1 text-[color:var(--ink-soft)] transition hover:border-[color:var(--ink-soft)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-30"
+                        >
+                          <ArrowLeft className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Move photo right"
+                          disabled={index === photos.length - 1}
+                          onClick={() =>
+                            setPhotos((current) =>
+                              reorderList(current, index, Math.min(current.length - 1, index + 1)),
+                            )
+                          }
+                          className="rounded-sm border border-[color:var(--border-strong)]/70 p-1 text-[color:var(--ink-soft)] transition hover:border-[color:var(--ink-soft)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-30"
+                        >
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                    <textarea
+                      value={photo.caption}
+                      onChange={(event) =>
+                        setPhotos((current) =>
+                          current.map((entry) =>
+                            entry.id === photo.id ? { ...entry, caption: event.target.value } : entry,
+                          ),
+                        )
+                      }
+                      className={`${fieldClassName()} min-h-20 resize-none text-[13.5px] leading-6`}
+                      placeholder="Add a caption or detail worth remembering."
+                    />
+                    <div className="mt-auto flex items-center justify-between text-[13px]">
+                      <button
+                        type="button"
+                        onClick={() => setCoverImage(photo.src)}
+                        aria-pressed={isCover}
+                        className={`inline-flex items-center gap-2 font-medium transition ${
+                          isCover
+                            ? "text-[color:var(--ink)]"
+                            : "text-[color:var(--ink-soft)] hover:text-[color:var(--ink)]"
+                        }`}
+                      >
+                        <span
+                          className={`flex h-4 w-4 items-center justify-center rounded-full border transition ${
+                            isCover
+                              ? "border-[color:var(--ink)] bg-[color:var(--ink)] text-white"
+                              : "border-[color:var(--border-strong)]"
+                          }`}
+                        >
+                          {isCover ? <Check className="h-2.5 w-2.5" strokeWidth={3} /> : null}
+                        </span>
+                        {isCover ? "Cover" : "Set as cover"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setPhotos((current) => current.filter((entry) => entry.id !== photo.id))
+                        }
+                        className="font-medium text-[color:var(--ink-soft)] underline-offset-4 transition hover:text-[color:var(--error-text)] hover:underline"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="border-t border-[color:var(--border-strong)]/50 px-5 py-10 text-center text-[14px] text-[color:var(--ink-soft)] md:px-8">
+            No photos yet — add images to start arranging the sequence.
+          </p>
+        )}
       </section>
     </form>
   );

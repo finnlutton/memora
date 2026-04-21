@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Apple, ArrowRight, Chrome } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { createMembershipState, getNextAuthenticatedRoute } from "@/lib/onboarding";
@@ -15,7 +15,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 
 const fieldClassName =
-  "w-full rounded-sm border border-[color:var(--border)] bg-white px-4 py-3 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--accent)] focus:ring-1 focus:ring-[color:var(--accent)]/30";
+  "w-full rounded-[6px] border border-[color:var(--border)] bg-white px-4 py-3 text-base text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--accent)] focus:ring-1 focus:ring-[color:var(--accent)]/30 md:text-sm";
 
 function safeInternalPath(value: string | null) {
   if (!value) return null;
@@ -55,6 +55,7 @@ export function AuthCard() {
   const [info, setInfo] = useState<string | null>(null);
   const [redirectTo, setRedirectTo] = useState<string | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
 
   useEffect(() => {
     // Avoid useSearchParams() to keep /auth prerender/build happy in this Next version.
@@ -77,6 +78,32 @@ export function AuthCard() {
       setMode("signin");
     }
   }, []);
+
+  const handleForgotPassword = async () => {
+    setError(null);
+    setInfo(null);
+    if (!email) {
+      setError("Enter your email address above, then click Forgot password.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: buildEmailRedirectUrl(),
+      });
+      if (resetError) {
+        setError(resetError.message);
+        return;
+      }
+      setForgotPasswordSent(true);
+      setInfo(`Password reset email sent to ${email}. Check your inbox.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to send reset email.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const submitAuth = async () => {
     setError(null);
@@ -191,16 +218,16 @@ export function AuthCard() {
     <AppShell>
       <section className="mx-auto grid max-w-6xl gap-6 py-8 xl:grid-cols-[0.78fr_1.22fr]">
         <div className="border border-[color:var(--border)] bg-[rgba(244,248,252,0.78)] p-6 md:p-8">
-          <p className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)]">
-            Entry
+          <p className="text-[10px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
+            Memora
           </p>
-          <h1 className="mt-4 font-serif text-4xl leading-tight text-[color:var(--ink)] md:text-5xl">
+          <h1 className="mt-5 font-serif text-4xl leading-tight text-[color:var(--ink)] md:text-5xl">
             {mode === "signin" ? "Return to your archive." : "Start your archive."}
           </h1>
           <p className="mt-4 max-w-md text-sm leading-7 text-[color:var(--ink-soft)]">
             {mode === "signin"
-              ? "Sign in to continue."
-              : "Create an account to begin building your archive."}
+              ? "Sign in to pick up where you left off."
+              : "Create an account to start preserving the moments that matter."}
           </p>
           {pendingEmailConfirmation ? (
             <div className="mt-5 border-t border-[color:var(--border)] pt-5">
@@ -270,27 +297,6 @@ export function AuthCard() {
             </button>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <Button
-              type="button"
-              variant="secondary"
-              className="justify-center"
-              disabled
-            >
-              <Apple className="h-4 w-4" />
-              Continue with Apple
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              className="justify-center"
-              disabled
-            >
-              <Chrome className="h-4 w-4" />
-              Continue with Google
-            </Button>
-          </div>
-
           <div className="my-6 border-t border-[color:var(--border)]" />
 
           <form
@@ -301,7 +307,7 @@ export function AuthCard() {
             className="space-y-4"
           >
             <label className="block space-y-2">
-              <span className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+              <span className="text-xs text-[color:var(--ink-soft)]">
                 Email
               </span>
               <input
@@ -317,7 +323,7 @@ export function AuthCard() {
 
             <div className={`grid gap-4 ${mode === "signup" ? "md:grid-cols-2" : ""}`}>
               <label className="block space-y-2">
-                <span className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+                <span className="text-xs text-[color:var(--ink-soft)]">
                   Password
                 </span>
                 <input
@@ -329,10 +335,20 @@ export function AuthCard() {
                   className={fieldClassName}
                   disabled={busy || isTransitioning}
                 />
+                {mode === "signin" && !forgotPasswordSent ? (
+                  <button
+                    type="button"
+                    className="mt-1 block text-left text-[11px] text-[color:var(--ink-faint)] underline underline-offset-2 hover:text-[color:var(--ink-soft)]"
+                    disabled={busy || isTransitioning}
+                    onClick={() => void handleForgotPassword()}
+                  >
+                    Forgot password?
+                  </button>
+                ) : null}
               </label>
               {mode === "signup" ? (
                 <label className="block space-y-2">
-                  <span className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+                  <span className="text-xs text-[color:var(--ink-soft)]">
                     Confirm password
                   </span>
                   <input
@@ -349,12 +365,12 @@ export function AuthCard() {
             </div>
 
             {info ? (
-              <p className="rounded-sm border border-[color:var(--border)] bg-[rgba(245,248,252,0.96)] px-3 py-2 text-sm leading-6 text-[color:var(--ink-soft)]">
+              <p className="rounded-[6px] border border-[color:var(--border)] bg-[rgba(245,248,252,0.96)] px-3 py-2 text-sm leading-6 text-[color:var(--ink-soft)]">
                 {info}
               </p>
             ) : null}
             {error ? (
-              <p className="rounded-sm border border-[#c98282] bg-[#fff7f7] px-3 py-2 text-sm leading-6 text-[#9a4545]">
+              <p className="rounded-[6px] border border-[color:var(--error-border)] bg-[color:var(--error-bg)] px-3 py-2 text-sm leading-6 text-[color:var(--error-text)]">
                 {error}
               </p>
             ) : null}

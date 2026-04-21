@@ -25,7 +25,9 @@ export async function POST() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ revokedCount: (data ?? []).length }, { status: 200 });
+    const revokedCount = (data ?? []).length;
+    console.info("Memora: user revoked all shares", { userId: user.id, revokedCount });
+    return NextResponse.json({ revokedCount }, { status: 200 });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unable to revoke share links." },

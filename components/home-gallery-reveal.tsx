@@ -14,21 +14,21 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <section className="py-10 md:py-12">
+    <section className="py-14 md:py-20">
       <div className="max-w-3xl">
-        <p className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--ink-faint)]">
-          Gallery structure
+        <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
+          How a gallery holds a trip
         </p>
-        <h2 className="mt-3 font-serif text-3xl leading-[1.02] text-[color:var(--ink)] md:text-4xl">
-          A gallery unfolds into scenes.
+        <h2 className="mt-4 font-serif text-[32px] leading-[0.98] text-[color:var(--ink)] md:text-[44px]">
+          A trip, organized as the places it passed through.
         </h2>
-        <p className="mt-4 max-w-2xl text-sm leading-7 text-[color:var(--ink-soft)]">
-          Memora organizes memories as one larger archive, then reveals the places, moments, and chapters inside it.
+        <p className="mt-5 max-w-xl text-[14px] leading-7 text-[color:var(--ink-soft)] md:text-[15px]">
+          Open a real one — Switzerland and Northern Italy, told in the cities, mountains, and afternoons it was actually made of.
         </p>
       </div>
 
-      <div className="mt-8">
-        <div className="relative overflow-hidden rounded-[10px] bg-[linear-gradient(180deg,rgba(244,248,253,0.85),rgba(239,245,251,0.62))] px-4 py-5 md:px-5 md:py-6">
+      <div className="mt-10 md:mt-12">
+        <div className="relative">
           <div className="relative min-h-[30rem] md:min-h-[44rem]">
             <AnimatePresence mode="wait" initial={false}>
               {!isOpen ? (

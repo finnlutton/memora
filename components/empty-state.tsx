@@ -14,15 +14,15 @@ export function EmptyState({
   actionLabel: string;
 }) {
   return (
-    <div className="rounded-[1.25rem] border border-dashed border-[color:var(--border-strong)] bg-white/65 px-5 py-8 text-center shadow-[0_12px_30px_rgba(36,55,78,0.06)]">
-      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--paper)] text-[color:var(--accent)]">
-        <Archive className="h-4 w-4" />
+    <div className="rounded-[8px] border border-[color:var(--border)] bg-white/70 px-6 py-12 text-center shadow-[0_8px_24px_rgba(36,55,78,0.07)]">
+      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--paper-strong)] text-[color:var(--accent)]">
+        <Archive className="h-5 w-5" />
       </div>
-      <h3 className="font-serif text-lg text-[color:var(--ink)]">{title}</h3>
-      <p className="mx-auto mt-2 max-w-md text-xs leading-6 text-[color:var(--ink-soft)]">
+      <h3 className="font-serif text-xl text-[color:var(--ink)]">{title}</h3>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-[color:var(--ink-soft)]">
         {description}
       </p>
-      <Button asChild className="mt-4">
+      <Button asChild className="mt-5">
         <Link href={actionHref}>{actionLabel}</Link>
       </Button>
     </div>

@@ -2,7 +2,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import { Resend } from "resend";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-const HELP_INBOX = "cfl63@cornell.edu";
+const HELP_INBOX = process.env.SUPPORT_EMAIL_TO ?? "cfl63@cornell.edu";
+if (!process.env.SUPPORT_EMAIL_TO) {
+  console.warn("Memora: SUPPORT_EMAIL_TO is not set — help feedback falling back to hardcoded address.");
+}
 const MAX_MESSAGE_LENGTH = 250;
 const DEFAULT_FROM_EMAIL = "support@memoragallery.com";
 const DEFAULT_FROM_NAME = "Memora Beta";
