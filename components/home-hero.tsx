@@ -72,12 +72,12 @@ export function HomeHero({
               id="home-hero-title"
               className="mt-4 font-serif text-[44px] leading-[0.94] text-white md:mt-5 md:text-[76px] lg:text-[88px]"
             >
-              Some trips are worth writing down.
+              Your experiences are worth writing down.
             </h1>
             <p className="mt-5 max-w-[34rem] text-[14px] leading-6 text-white/82 md:mt-6 md:text-[15px] md:leading-7">
-              Memora is a private home for the photographs, places, and stories you&apos;ll
-              want to revisit — organized as trips, paired with your own words, shared
-              only with the people who&apos;d care.
+              Memora is a private home for the photos, places, and stories you&apos;ll
+              want to revisit — organized as galleries, broken into specific adventures,
+              all shared extremely easily.
             </p>
 
             <div className="mt-7 flex flex-wrap items-center gap-3 md:mt-9 md:gap-4">

@@ -9,9 +9,6 @@ import { HomeMemoryGlobe } from "@/components/home-memory-globe";
 import { HomeShareDemo } from "@/components/home-share-demo";
 import { HomeCloser } from "@/components/home-closer";
 import { useMemoraStore } from "@/hooks/use-memora-store";
-import { demoGalleries } from "@/lib/demo-data";
-
-const previewGallery = demoGalleries[0];
 
 const HERO_IMAGE = "/demo/winter-olympics-2026/New_Hero.JPG";
 const HERO_CAPTION = "Switzerland & Northern Italy, February 2026";
@@ -87,13 +84,13 @@ export default function HomePage() {
             The intent
           </p>
           <p className="mt-5 font-serif text-[28px] leading-[1.18] text-[color:var(--ink)] md:text-[34px] md:leading-[1.14]">
-            The camera roll holds everything. The feed holds what performs. Memora is where you keep what matters — in your own words, for the handful of people you&apos;d read it out loud to.
+            Our camera rolls are cluttered, lack our written voices, and make curated sharing impossible. Memora solves this by providing intuitive sharing to more personal memories.
           </p>
         </div>
       </section>
 
       <section id={REVEAL_TARGET_ID} className="mx-auto w-full max-w-7xl px-4 md:px-6">
-        <HomeGalleryReveal gallery={previewGallery} />
+        <HomeGalleryReveal />
       </section>
 
       {/*
