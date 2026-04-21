@@ -54,12 +54,13 @@ export function HomeGalleryReveal({ gallery }: { gallery: Gallery }) {
                         src={gallery.coverImage}
                         alt="Winter Olympics 2026"
                         fill
+                        priority
+                        quality={95}
                         className="object-cover transition duration-500 group-hover:scale-[1.02]"
                         sizes="(max-width: 1024px) 100vw, 50rem"
                         unoptimized={nextImageUnoptimizedForSrc(gallery.coverImage)}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-[rgba(8,14,24,0.76)] via-[rgba(8,14,24,0.16)] to-[rgba(255,255,255,0.04)]" />
-                      <div className="absolute inset-0 bg-[rgba(255,255,255,0.06)]" />
                       <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
                         <p className="text-[11px] uppercase tracking-[0.28em] text-white/62">
                           Gallery

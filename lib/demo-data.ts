@@ -24,7 +24,7 @@ export const demoGalleries: Gallery[] = [
   {
     id: "gallery-switzerland",
     title: "Switzerland & Northern Italy",
-    coverImage: "/demo/winter-olympics-2026/cover-2026.jpg",
+    coverImage: "/demo/winter-olympics-2026/New_Hero.JPG",
     description:
       "A soft braid of mountain air, windowside train hours, and lakeside dinners that made the whole trip feel like a keepsake unfolding chapter by chapter.",
     startDate: "2026-02-11",
