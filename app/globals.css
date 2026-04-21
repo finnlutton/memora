@@ -245,22 +245,22 @@ select {
   width: 14px;
   height: 14px;
   transform: translate(-50%, -50%);
-  background: rgba(246, 216, 128, 0.45);
-  box-shadow: 0 0 12px rgba(246, 216, 128, 0.35);
-  animation: memora-pin-pulse 2.4s ease-out infinite;
+  background: rgba(246, 216, 128, 0.28);
+  box-shadow: 0 0 8px rgba(246, 216, 128, 0.18);
+  animation: memora-pin-pulse 4.2s ease-out infinite;
 }
 
 @keyframes memora-pin-pulse {
   0% {
     transform: translate(-50%, -50%) scale(0.8);
-    opacity: 0.9;
+    opacity: 0.55;
   }
-  70% {
-    transform: translate(-50%, -50%) scale(3);
+  75% {
+    transform: translate(-50%, -50%) scale(2.3);
     opacity: 0;
   }
   100% {
-    transform: translate(-50%, -50%) scale(3);
+    transform: translate(-50%, -50%) scale(2.3);
     opacity: 0;
   }
 }
@@ -268,7 +268,7 @@ select {
 @media (prefers-reduced-motion: reduce) {
   .memora-pin-pulse {
     animation: none;
-    opacity: 0.36;
-    transform: translate(-50%, -50%) scale(1.6);
+    opacity: 0.24;
+    transform: translate(-50%, -50%) scale(1.4);
   }
 }

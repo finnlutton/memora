@@ -99,18 +99,23 @@ export function AppShell({
         so it stays crisp.
       */}
       <header className="sticky top-0 z-30 border-b border-[color:var(--border)] bg-[color:var(--chrome)] backdrop-blur-xl">
-        <div className="mx-auto flex h-14 w-full max-w-7xl items-center justify-between gap-4 px-4 md:h-[72px] md:px-6">
+        <div className="flex h-14 w-full items-center justify-between gap-4 px-4 md:h-[72px] md:px-6">
           <Link
             href={homeHref}
-            className="inline-flex h-full items-center"
+            className="inline-flex h-full items-center overflow-visible"
             aria-label={onboarding.isAuthenticated ? "Memora dashboard" : "Memora home"}
           >
+            {/*
+              PNG has transparent whitespace around the mark, so we render the
+              image larger than the header box and rely on object-contain to
+              letterbox. The mark itself ends up visually sized ~header-tall.
+            */}
             <Image
               src={memoraLogo}
               alt="Memora"
               priority
-              sizes="240px"
-              className="h-10 w-auto object-contain object-left md:h-12"
+              sizes="320px"
+              className="h-[140px] w-auto object-contain object-left md:h-[180px]"
             />
           </Link>
           <nav className="flex shrink-0 items-center gap-1 md:gap-3">

@@ -108,6 +108,41 @@ export function HomeMemoryGlobe() {
 
   const activePin = useMemo(() => DEMO_PINS.find((p) => p.id === activeId) ?? null, [activeId]);
 
+  // While a pin is selected, keep auto-rotation paused so the attached
+  // preview stays anchored and doesn't travel to the back of the globe.
+  useEffect(() => {
+    if (!activePin) return;
+    const controls = globeRef.current?.controls?.() as { autoRotate?: boolean } | undefined;
+    if (controls) controls.autoRotate = false;
+  }, [activePin]);
+
+  // Track the selected pin's screen position every frame so the preview
+  // tracks small manual rotations or altitude transitions.
+  const [previewPos, setPreviewPos] = useState<{ x: number; y: number } | null>(null);
+  useEffect(() => {
+    if (!activePin) {
+      setPreviewPos(null);
+      return;
+    }
+    let rafId: number;
+    const tick = () => {
+      const globe = globeRef.current as unknown as {
+        getScreenCoords?: (
+          lat: number,
+          lng: number,
+          alt?: number,
+        ) => { x: number; y: number } | undefined;
+      };
+      const coords = globe?.getScreenCoords?.(activePin.lat, activePin.lng, 0);
+      if (coords && Number.isFinite(coords.x) && Number.isFinite(coords.y)) {
+        setPreviewPos({ x: coords.x, y: coords.y });
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [activePin]);
+
   const htmlElement = useCallback(
     (d: object) => {
       const pin = d as DemoPin;
@@ -128,8 +163,9 @@ export function HomeMemoryGlobe() {
         <span class="memora-pin-pulse"></span>
         <span class="memora-pin-core"></span>
       `;
+      // Hover only pauses rotation for easier aim; it does not change the
+      // preview target. Selection happens on click only.
       el.addEventListener("pointerenter", () => {
-        setActiveId(pin.id);
         pauseRotation(true);
       });
       el.addEventListener("pointerleave", () => {
@@ -154,7 +190,7 @@ export function HomeMemoryGlobe() {
           The places you&apos;d want to walk through again.
         </h2>
         <p className="mt-6 max-w-[30rem] text-[14px] leading-7 text-white/82 md:text-[15px]">
-          Each gallery finds its place on a quiet atlas — a soft record of where you&apos;ve been and what you kept from it. Hover a pin to preview a trip.
+          Each gallery finds its place on a quiet atlas — a soft record of where you&apos;ve been and what you kept from it. Click a pin to preview a trip.
         </p>
 
         <ul className="mt-9 grid grid-cols-1 gap-x-8 gap-y-3 text-[13px] leading-6 text-white/85 sm:grid-cols-2">
@@ -164,12 +200,10 @@ export function HomeMemoryGlobe() {
               <li key={pin.id}>
                 <button
                   type="button"
-                  onMouseEnter={() => {
-                    setActiveId(pin.id);
-                    pauseRotation(true);
+                  onMouseEnter={() => pauseRotation(true)}
+                  onMouseLeave={() => {
+                    if (!activeId) pauseRotation(false);
                   }}
-                  onMouseLeave={() => pauseRotation(false)}
-                  onFocus={() => setActiveId(pin.id)}
                   onClick={() => {
                     setActiveId(pin.id);
                     globeRef.current?.pointOfView(
@@ -200,7 +234,9 @@ export function HomeMemoryGlobe() {
       <div className="order-1 md:order-2">
         <div
           ref={containerRef}
-          onPointerLeave={() => pauseRotation(false)}
+          onPointerLeave={() => {
+            if (!activeId) pauseRotation(false);
+          }}
           className="relative mx-auto aspect-square w-full max-w-[620px]"
         >
           {/* Ambient halo behind the globe — softer, wider, better integrated */}
@@ -230,22 +266,32 @@ export function HomeMemoryGlobe() {
             />
           </div>
 
-          {/* Floating label */}
-          {activePin ? (
+          {/* Compact preview anchored directly above the selected pin. */}
+          {activePin && previewPos ? (
             <div
               role="status"
               aria-live="polite"
-              className="pointer-events-none absolute left-1/2 top-5 z-20 w-[min(280px,80%)] -translate-x-1/2 border border-white/18 bg-[rgba(16,26,44,0.76)] px-4 py-3 text-center backdrop-blur-md md:top-7"
+              className="pointer-events-none absolute z-20 w-44 border border-white/16 bg-[rgba(14,22,38,0.88)] px-3 py-2 text-center backdrop-blur-md"
+              style={{
+                left: previewPos.x,
+                top: previewPos.y,
+                transform: "translate(-50%, calc(-100% - 22px))",
+              }}
             >
-              <p className="text-[9.5px] font-medium uppercase tracking-[0.28em] text-white/70">
+              <p className="text-[9px] font-medium uppercase tracking-[0.24em] text-white/68">
                 {activePin.season}
               </p>
-              <p className="mt-1.5 font-serif text-[18px] leading-tight text-white md:text-[20px]">
+              <p className="mt-1 font-serif text-[14px] leading-tight text-white">
                 {activePin.title}
               </p>
-              <p className="mt-1 text-[11.5px] leading-snug text-white/78">
+              <p className="mt-0.5 text-[10.5px] leading-snug text-white/72">
                 {activePin.location}
               </p>
+              {/* Small downward pointer toward the pin */}
+              <span
+                aria-hidden
+                className="absolute left-1/2 top-full -translate-x-1/2 border-x-[6px] border-t-[7px] border-x-transparent border-t-[rgba(14,22,38,0.88)]"
+              />
             </div>
           ) : null}
         </div>
