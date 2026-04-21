@@ -214,8 +214,8 @@ export function WorldGlobe({
           };
           const marker = document.createElement("div");
           marker.dataset.mapPinMarker = "true";
-          marker.style.width = "22px";
-          marker.style.height = "22px";
+          marker.style.width = "26px";
+          marker.style.height = "26px";
           marker.style.display = "flex";
           marker.style.alignItems = "center";
           marker.style.justifyContent = "center";
@@ -224,7 +224,7 @@ export function WorldGlobe({
           marker.style.cursor = "pointer";
           marker.style.position = "relative";
           marker.innerHTML =
-            '<span class="memora-pin-pulse"></span><span class="memora-pin-ring"></span><span class="memora-pin-core"></span>';
+            '<span class="memora-pin-pulse"></span><span class="memora-pin-core"></span>';
           marker.onpointerdown = (event) => {
             event.preventDefault();
             event.stopPropagation();

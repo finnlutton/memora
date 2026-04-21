@@ -109,8 +109,8 @@ export function AppShell({
               src={memoraLogo}
               alt="Memora"
               priority
-              sizes="220px"
-              className="h-7 w-auto object-contain object-left md:h-9"
+              sizes="240px"
+              className="h-10 w-auto object-contain object-left md:h-12"
             />
           </Link>
           <nav className="flex shrink-0 items-center gap-1 md:gap-3">

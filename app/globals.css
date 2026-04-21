@@ -216,11 +216,11 @@ select {
 }
 
 /* ---------------------------------------------------------------------------
- * HomeMemoryGlobe demo pins — marketing section only (see home-memory-globe.tsx).
- * Softly pulsing glow ring around a small warm core.
+ * Globe pins — shared by HomeMemoryGlobe (marketing) and WorldGlobe (map).
+ * A bright solid core with a reinforced halo and a soft expanding pulse.
+ * Tuned to stay readable against bright land, snow, and busy textures.
  * ------------------------------------------------------------------------- */
 .memora-pin-pulse,
-.memora-pin-ring,
 .memora-pin-core {
   position: absolute;
   top: 50%;
@@ -230,40 +230,37 @@ select {
 }
 
 .memora-pin-core {
-  width: 6px;
-  height: 6px;
+  width: 9px;
+  height: 9px;
   transform: translate(-50%, -50%);
-  background: #fff3c4;
-  box-shadow: 0 0 10px rgba(246, 216, 128, 0.9), 0 0 2px rgba(255, 248, 220, 1);
-}
-
-.memora-pin-ring {
-  width: 14px;
-  height: 14px;
-  transform: translate(-50%, -50%);
-  border: 1px solid rgba(246, 216, 128, 0.55);
-  background: rgba(246, 216, 128, 0.08);
+  background: #fffaf0;
+  box-shadow:
+    0 0 0 1px rgba(90, 60, 20, 0.35),
+    0 0 6px rgba(255, 240, 190, 1),
+    0 0 14px rgba(246, 216, 128, 0.95),
+    0 0 26px rgba(246, 216, 128, 0.55);
 }
 
 .memora-pin-pulse {
   width: 14px;
   height: 14px;
   transform: translate(-50%, -50%);
-  background: rgba(246, 216, 128, 0.32);
-  animation: memora-pin-pulse 2.6s ease-out infinite;
+  background: rgba(246, 216, 128, 0.45);
+  box-shadow: 0 0 12px rgba(246, 216, 128, 0.35);
+  animation: memora-pin-pulse 2.4s ease-out infinite;
 }
 
 @keyframes memora-pin-pulse {
   0% {
-    transform: translate(-50%, -50%) scale(0.9);
-    opacity: 0.75;
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0.9;
   }
-  80% {
-    transform: translate(-50%, -50%) scale(2.6);
+  70% {
+    transform: translate(-50%, -50%) scale(3);
     opacity: 0;
   }
   100% {
-    transform: translate(-50%, -50%) scale(2.6);
+    transform: translate(-50%, -50%) scale(3);
     opacity: 0;
   }
 }
@@ -271,6 +268,7 @@ select {
 @media (prefers-reduced-motion: reduce) {
   .memora-pin-pulse {
     animation: none;
-    opacity: 0.28;
+    opacity: 0.36;
+    transform: translate(-50%, -50%) scale(1.6);
   }
 }

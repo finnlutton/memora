@@ -116,8 +116,8 @@ export function HomeMemoryGlobe() {
       el.dataset.pinId = pin.id;
       el.style.cssText = `
         position: relative;
-        width: 28px;
-        height: 28px;
+        width: 32px;
+        height: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -126,7 +126,6 @@ export function HomeMemoryGlobe() {
       `;
       el.innerHTML = `
         <span class="memora-pin-pulse"></span>
-        <span class="memora-pin-ring"></span>
         <span class="memora-pin-core"></span>
       `;
       el.addEventListener("pointerenter", () => {
