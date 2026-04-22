@@ -56,14 +56,8 @@ export function HomeCloser({ createHref, imageSrc, imageCaption }: HomeCloserPro
                 href={createHref}
                 className="inline-flex h-11 items-center justify-center bg-white px-5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink)] transition hover:bg-[color:var(--paper)] md:h-12 md:px-6 md:text-[12px]"
               >
-                Begin your first one
+                Start your archive
               </Link>
-              <a
-                href="mailto:hello@memora.app"
-                className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/82 underline decoration-white/30 underline-offset-[6px] transition hover:text-white hover:decoration-white/70 md:text-[12px]"
-              >
-                hello@memora.app
-              </a>
             </div>
           </div>
         </div>

@@ -183,13 +183,7 @@ function ContactUsBox() {
           Get in touch
         </h3>
         <p className="mt-2 text-xs leading-6 text-[color:var(--ink-soft)]">
-          Questions or feedback? Reach us at{" "}
-          <a
-            href="mailto:hello@memora.app"
-            className="text-[color:var(--ink)] underline decoration-[color:var(--ink-soft)] underline-offset-2 transition hover:decoration-[color:var(--accent-strong)]"
-          >
-            hello@memora.app
-          </a>
+          Questions or feedback? Drop a note below — we read everything.
         </p>
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3">
           <input

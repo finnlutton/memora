@@ -154,13 +154,22 @@ export default function HomePage() {
         </h2>
         <div className="mt-7 space-y-5 text-[15px] leading-7 text-[color:var(--ink-soft)]">
           <p>
-            After months abroad, my camera roll had everything and nothing — thousands of photographs, no order, no words, no way to hand a friend a trip and say &ldquo;here, read it.&rdquo;
+            Like many who have studied abroad, it&apos;s allowed me to travel far more than any period prior. Expecting this, I invested in a camera before leaving the U.S., hoping to separate photo taking from the distractions of my phone (highly recommended).
           </p>
           <p>
-            The pictures deserved more than a scroll. The trips deserved more than a post. What I wanted was somewhere to store them properly — paired with what actually happened, organized by the places they passed through, and shared only with the people who were there.
+            However, I soon found it impossible to update each of my circles of friends — as well as my immediate family, grandparents, and extended family, by sifting through my camera roll and sd card just to send separate messages, with different photos, and lacking the personal detail I&apos;d like.
           </p>
           <p>
-            Memora is that place. A quieter, more intentional home for the memories worth keeping, built so you&apos;ll still want to open them in ten years.
+            While many look to social media for this outlet, I&apos;ve found it incredibly insufficient. Ads, algorithms, likes, and comments have drawn the authenticity from your experiences and have crumbled the intent of social media.
+          </p>
+          <p>
+            Memora returns the authenticity, reflection, and meaning that your memories deserve.
+          </p>
+          <p>
+            I can confidently say that as a platform we will grow with you, not stunt you.
+          </p>
+          <p>
+            It&apos;s early stages for Memora, but so is it for you.
           </p>
         </div>
       </section>

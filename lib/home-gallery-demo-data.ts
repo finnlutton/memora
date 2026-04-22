@@ -48,7 +48,7 @@ export const HOME_GALLERY_DEMO: DemoGallery = {
   dates: "Month Year – Month Year",
   description:
     "A short, calm description of the gallery — what the trip or time period was, written in your own voice. One or two sentences works well.",
-  coverImage: `${DIR}/gallery-cover.jpg`,
+  coverImage: `${DIR}/gallery-cover.jpeg`,
   subgalleries: [
     {
       id: "sub-1",
@@ -57,23 +57,23 @@ export const HOME_GALLERY_DEMO: DemoGallery = {
       dates: "Month Year",
       description:
         "A short paragraph about this chapter — why this stretch of the trip stood on its own.",
-      coverImage: `${DIR}/subgallery-1-cover.jpg`,
+      coverImage: `${DIR}/subgallery-1-cover.jpeg`,
       scenes: [
         {
           id: "s1-1",
-          image: `${DIR}/scene-1-1.jpg`,
+          image: `${DIR}/scene-1-1.jpeg`,
           title: "Scene one",
           caption:
             "A small caption can sit here — a single thought about the moment.",
         },
         {
           id: "s1-2",
-          image: `${DIR}/scene-1-2.jpg`,
+          image: `${DIR}/scene-1-2.jpeg`,
           title: "Scene two",
         },
         {
           id: "s1-3",
-          image: `${DIR}/scene-1-3.jpg`,
+          image: `${DIR}/scene-1-3.jpeg`,
           title: "Scene three",
           caption: "Another short note, only when it adds something.",
         },
@@ -86,22 +86,22 @@ export const HOME_GALLERY_DEMO: DemoGallery = {
       dates: "Month Year",
       description:
         "Another short paragraph — a different place, a different pace, but still part of the same gallery.",
-      coverImage: `${DIR}/subgallery-2-cover.jpg`,
+      coverImage: `${DIR}/subgallery-2-cover.JPG`,
       scenes: [
         {
           id: "s2-1",
-          image: `${DIR}/scene-2-1.jpg`,
+          image: `${DIR}/scene-2-1.jpeg`,
           title: "Scene one",
         },
         {
           id: "s2-2",
-          image: `${DIR}/scene-2-2.jpg`,
+          image: `${DIR}/scene-2-2.jpeg`,
           title: "Scene two",
           caption: "A quiet line about this one.",
         },
         {
           id: "s2-3",
-          image: `${DIR}/scene-2-3.jpg`,
+          image: `${DIR}/scene-2-3.jpeg`,
           title: "Scene three",
         },
       ],
@@ -113,22 +113,22 @@ export const HOME_GALLERY_DEMO: DemoGallery = {
       dates: "Month Year",
       description:
         "One more chapter — the closing stretch, or a detour, or a day that deserved its own page.",
-      coverImage: `${DIR}/subgallery-3-cover.jpg`,
+      coverImage: `${DIR}/subgallery-3-cover.JPG`,
       scenes: [
         {
           id: "s3-1",
-          image: `${DIR}/scene-3-1.jpg`,
+          image: `${DIR}/scene-3-1.JPG`,
           title: "Scene one",
           caption: "Captions are optional — leave them empty when a photo speaks for itself.",
         },
         {
           id: "s3-2",
-          image: `${DIR}/scene-3-2.jpg`,
+          image: `${DIR}/scene-3-2.JPG`,
           title: "Scene two",
         },
         {
           id: "s3-3",
-          image: `${DIR}/scene-3-3.jpg`,
+          image: `${DIR}/scene-3-3.JPG`,
           title: "Scene three",
           caption: "A final note to close the chapter.",
         },
