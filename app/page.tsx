@@ -77,7 +77,7 @@ export default function HomePage() {
       */}
       <section
         aria-label="What Memora is for"
-        className="mx-auto flex max-w-5xl flex-col items-end px-4 py-20 md:py-28"
+        className="mx-auto flex max-w-5xl flex-col items-end px-4 py-24 md:py-32"
       >
         <div className="max-w-[38rem] text-right">
           <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
@@ -89,36 +89,42 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id={REVEAL_TARGET_ID} className="mx-auto w-full max-w-7xl px-4 md:px-6">
+      <section
+        id={REVEAL_TARGET_ID}
+        className="mx-auto w-full max-w-7xl px-4 py-24 md:px-6 md:py-32"
+      >
         <HomeGalleryReveal />
       </section>
 
       {/*
         Memory globe — marketing demo. Full-bleed dark section so the globe
         reads as a cinematic object rather than a UI widget. Intentionally
-        distinct from the production map (components/WorldGlobe.tsx).
+        distinct from the production map (components/WorldGlobe.tsx). Edges
+        fade softly into the surrounding light page instead of being cut
+        with hairlines, so the scroll feels like one continuous document.
       */}
       <section
-        aria-label="Memories across the world"
-        className="relative left-1/2 right-1/2 mt-16 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden bg-[radial-gradient(ellipse_at_top,rgba(44,72,116,0.58)_0%,rgba(20,32,54,0.92)_52%,rgba(14,22,38,1)_100%)] md:mt-24"
+        aria-label="Memora Map"
+        className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden bg-[radial-gradient(ellipse_at_top,rgba(44,72,116,0.58)_0%,rgba(20,32,54,0.92)_52%,rgba(14,22,38,1)_100%)]"
       >
         {/* Soft lower wash so the edges don't crush to black */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(60,86,130,0.22)_0%,transparent_55%)]"
         />
-        {/* Subtle top border seam */}
+        {/* Feathered top/bottom edges — a gentle handoff to the light
+            sections above and below. No hairline rule. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(150,192,240,0.28),transparent)]"
+          className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[var(--gradient-end)]/14 to-transparent md:h-24"
         />
-        <div className="relative mx-auto w-full max-w-7xl px-4 py-20 md:px-6 md:py-28">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[var(--gradient-end)]/14 to-transparent md:h-24"
+        />
+        <div className="relative mx-auto w-full max-w-7xl px-4 py-24 md:px-6 md:py-32">
           <HomeMemoryGlobe />
         </div>
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-[linear-gradient(90deg,transparent,rgba(150,192,240,0.22),transparent)]"
-        />
       </section>
 
       {/*
@@ -126,7 +132,7 @@ export default function HomePage() {
       */}
       <section
         aria-label="Sharing a gallery"
-        className="mx-auto w-full max-w-7xl px-4 py-20 md:px-6 md:py-28"
+        className="mx-auto w-full max-w-7xl px-4 py-24 md:px-6 md:py-32"
       >
         <HomeShareDemo />
       </section>
@@ -138,7 +144,7 @@ export default function HomePage() {
       <section
         id="about-product"
         aria-label="Creator's note"
-        className="mx-auto max-w-3xl px-4 py-20 md:py-28"
+        className="mx-auto max-w-3xl px-4 py-24 md:py-32"
       >
         <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
           Creator&apos;s note

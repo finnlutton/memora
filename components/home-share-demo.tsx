@@ -46,7 +46,7 @@ const SEQUENCE: { step: Step; at: number }[] = [
   { step: "browser-paste", at: 7800 },
   { step: "browser-navigate", at: 8700 },
   { step: "shared", at: 9250 },
-  { step: "idle", at: 13500 },
+  { step: "idle", at: 18250 },
 ];
 
 type CoverPattern = "hero-thumbs" | "triptych" | "quad" | "strip";
@@ -115,9 +115,9 @@ const SHARED_PAGE: Record<
 > = {
   parents: {
     audience: "For Mom & Dad",
-    title: "A few from the year.",
+    title: "Past few weekends abroad!",
     message:
-      "Made this little collection for you so you could see a few of the moments that meant the most to me.",
+      "Check these out in your own time, I left a few comments for each of you. Mom, I found a restaurant I have to take you to...",
     url: "memora.app/share/a9f2xq7t",
   },
   grandparents: {
@@ -220,19 +220,18 @@ export function HomeShareDemo() {
   return (
     <section
       aria-label="Sharing demo"
-      className="mx-auto w-full max-w-6xl px-4 py-24 md:px-6 md:py-32"
+      className="mx-auto w-full max-w-6xl px-4 md:px-6"
     >
       <div className="mx-auto max-w-3xl text-center">
         <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
           Sharing
         </p>
         <h2 className="mt-5 font-serif text-[32px] leading-[1.06] text-[color:var(--ink)] md:text-[44px] md:leading-[1.04]">
-          Give a trip to the people who&apos;d want to read it.
+          Share your content more easily than ever.
         </h2>
         <p className="mx-auto mt-6 max-w-[38rem] text-[14px] leading-7 text-[color:var(--ink-soft)] md:text-[15px]">
-          Pick a few galleries, choose who should see them, and send a single
-          private link. No feed, no algorithm — just the handful of people
-          you&apos;d read it out loud to.
+          Choose your galleries and who should see them, and share a private
+          link. No feed, no algorithm, just updating the people you care about.
         </p>
         <button
           type="button"
@@ -677,15 +676,15 @@ function SharedPagePreview({
         initial={{ opacity: 0 }}
         animate={{ opacity: showContent ? 1 : 0 }}
         transition={{ duration: 0.4, ease: EASE, delay: showContent ? 0.05 : 0 }}
-        className="flex-1 overflow-hidden px-6 py-7 md:px-12 md:py-10"
+        className="relative flex-1 overflow-hidden px-6 py-7 md:px-12 md:py-10"
       >
         <p className="text-[10px] uppercase tracking-[0.3em] text-[color:var(--ink-faint)]">
           Shared privately · {audience}
         </p>
-        <h3 className="mt-2.5 max-w-2xl font-serif text-[26px] leading-[1.08] text-[color:var(--ink)] md:text-[34px] md:leading-[1.04]">
+        <h3 className="mt-2.5 max-w-[22rem] font-serif text-[26px] leading-[1.08] text-[color:var(--ink)] md:text-[34px] md:leading-[1.04]">
           {title}
         </h3>
-        <p className="mt-4 max-w-xl text-[13px] leading-6 text-[color:var(--ink-soft)] md:text-[14.5px] md:leading-7">
+        <p className="mt-4 max-w-[22rem] text-[13px] leading-6 text-[color:var(--ink-soft)] md:text-[14.5px] md:leading-7">
           “{message}”
         </p>
 
@@ -699,7 +698,59 @@ function SharedPagePreview({
             </div>
           </div>
         ) : null}
+
+        {/* Annotation callouts — visible once the page has loaded. */}
+        {showContent ? (
+          <>
+            <Annotation
+              delay={0.35}
+              style={{ left: "calc(22rem + 0.75rem)", top: "90px" }}
+              text="Choose a personalized title for the people you're sharing with."
+            />
+            <Annotation
+              delay={0.55}
+              style={{ left: "calc(22rem + 0.75rem)", top: "188px" }}
+              text="Add a personal note along the way."
+            />
+          </>
+        ) : null}
       </motion.div>
     </div>
+  );
+}
+
+/**
+ * Annotation callout — a small captioned box with a hairline pointer to
+ * the element it's describing. Positioned absolutely by the parent.
+ */
+function Annotation({
+  text,
+  style,
+  delay = 0,
+}: {
+  text: string;
+  style: React.CSSProperties;
+  delay?: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 6 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.45, ease: EASE, delay }}
+      style={style}
+      className="pointer-events-none absolute z-20 hidden w-[210px] items-center md:flex"
+    >
+      {/* Pointer: dot on the target end, hairline running to the caption */}
+      <div className="relative flex h-px w-6 shrink-0 items-center">
+        <span
+          className="absolute left-0 h-[5px] w-[5px] -translate-y-1/2 rounded-full bg-[color:var(--accent-strong)]"
+          style={{ top: "50%" }}
+        />
+        <span className="h-px w-full bg-[color:var(--border-strong)] opacity-70" />
+      </div>
+      <div className="rounded-md border border-[color:var(--border)] bg-white/95 px-3 py-2 text-[10.5px] leading-[1.35] text-[color:var(--ink)] shadow-[0_10px_22px_-14px_rgba(18,31,48,0.22)] backdrop-blur-sm">
+        {text}
+      </div>
+    </motion.div>
   );
 }

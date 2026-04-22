@@ -184,10 +184,10 @@ export function HomeMemoryGlobe() {
     <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-[1fr_1.15fr] md:gap-14 lg:gap-20">
       <div className="order-2 md:order-1">
         <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-white/72">
-          Memories across the world
+          Memora Map
         </p>
         <h2 className="mt-5 font-serif text-[34px] leading-[1.02] text-white md:text-[48px] md:leading-[1.0]">
-          The places you&apos;d want to walk through again.
+          Your favorite trips, all in one place.
         </h2>
         <p className="mt-6 max-w-[30rem] text-[14px] leading-7 text-white/82 md:text-[15px]">
           Open a pin to go straight to the gallery you saved there.

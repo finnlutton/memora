@@ -72,12 +72,12 @@ export function HomeHero({
               id="home-hero-title"
               className="mt-4 font-serif text-[44px] leading-[0.94] text-white md:mt-5 md:text-[76px] lg:text-[88px]"
             >
-              Your experiences are worth writing down.
+              Your experiences are worth writing about.
             </h1>
             <p className="mt-5 max-w-[34rem] text-[14px] leading-6 text-white/82 md:mt-6 md:text-[15px] md:leading-7">
               Memora is a private home for the photos, places, and stories you&apos;ll
               want to revisit — organized as galleries, broken into specific adventures,
-              all shared extremely easily.
+              all shared with zero friction.
             </p>
 
             <div className="mt-7 flex flex-wrap items-center gap-3 md:mt-9 md:gap-4">
@@ -104,13 +104,6 @@ export function HomeHero({
           </div>
         </div>
 
-        {/* Authenticity caption — bottom-right, quiet. */}
-        <div className="pointer-events-none absolute bottom-6 right-5 hidden max-w-[14rem] text-right md:block md:bottom-8 md:right-10">
-          <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-white/62">
-            Cover
-          </p>
-          <p className="mt-1 text-[11px] leading-snug text-white/78">{caption}</p>
-        </div>
       </div>
     </section>
   );

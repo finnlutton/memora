@@ -36,16 +36,16 @@ export function HomeGalleryReveal() {
   };
 
   return (
-    <section className="py-16 md:py-24">
+    <section>
       <div className="mx-auto max-w-3xl text-center">
         <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
-          How a gallery holds a trip
+          Pairing Photos with Dialogue
         </p>
         <h2 className="mt-4 font-serif text-[32px] leading-[1.02] text-[color:var(--ink)] md:text-[44px]">
-          A trip or time period, broken into specific adventures.
+          A trip, broken into each adventure.
         </h2>
         <p className="mx-auto mt-5 max-w-xl text-[14px] leading-7 text-[color:var(--ink-soft)] md:text-[15px]">
-          Open my gallery below to see what I mean. If you prefer
+          Open my gallery to see what I mean. If you prefer
           organization, you won&apos;t look back.
         </p>
       </div>
