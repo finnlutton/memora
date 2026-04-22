@@ -4,6 +4,7 @@ import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import Link from "next/link";
 import { useState } from "react";
 import { AlertTriangle } from "lucide-react";
+import { AppearancePicker } from "@/components/appearance-picker";
 import { AppShell } from "@/components/app-shell";
 import { DeleteAccountDialog } from "@/components/delete-account-dialog";
 import { WorkspaceTopbar } from "@/components/workspace-topbar";
@@ -23,16 +24,39 @@ export default function WorkspaceSettingsPage() {
         subtitle="Manage your account, membership, and support actions."
       />
 
+      {/*
+        Appearance — three curated themes. Sits above account/membership
+        because it's the setting most likely to be changed on first visit,
+        and because a palette change reframes every subsequent section.
+      */}
+      <section
+        aria-labelledby="settings-appearance-heading"
+        className="mx-auto mb-6 w-full max-w-5xl border-b border-[color:var(--border)] pb-6"
+      >
+        <div className="mb-4">
+          <p
+            id="settings-appearance-heading"
+            className="text-[10px] font-medium uppercase tracking-[0.24em] text-[color:var(--ink)]"
+          >
+            Appearance
+          </p>
+          <p className="mt-2 max-w-xl text-sm text-[color:var(--ink-soft)]">
+            Choose the palette your archive is dressed in. Applies immediately, only to your account.
+          </p>
+        </div>
+        <AppearancePicker />
+      </section>
+
       <section className="mx-auto grid w-full max-w-5xl gap-5 md:grid-cols-2 md:gap-x-8 md:gap-y-6">
-        <section className="border-b border-[rgba(34,52,79,0.08)] pb-4 md:col-start-1 md:row-start-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[color:var(--ink)]">Account</p>
+        <section className="border-b border-[color:var(--border)] pb-4 md:col-start-1 md:row-start-1">
+          <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-[color:var(--ink)]">Account</p>
           <p className="mt-2 text-sm text-[color:var(--ink-soft)]">
             {onboarding.user?.email ?? "No signed-in user"}
           </p>
         </section>
 
-        <section className="border-b border-[rgba(34,52,79,0.08)] pb-4 md:col-start-2 md:row-start-1">
-          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-[color:var(--ink)]">
+        <section className="border-b border-[color:var(--border)] pb-4 md:col-start-2 md:row-start-1">
+          <p className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.24em] text-[color:var(--ink)]">
             <span>Sharing safety</span>
             <AlertTriangle className="h-3 w-3 text-[#b05b5b]" />
           </p>
@@ -44,8 +68,8 @@ export default function WorkspaceSettingsPage() {
           </div>
         </section>
 
-        <section className="border-b border-[rgba(34,52,79,0.08)] pb-4 md:col-start-1 md:row-start-2">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[color:var(--ink)]">Membership</p>
+        <section className="border-b border-[color:var(--border)] pb-4 md:col-start-1 md:row-start-2">
+          <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-[color:var(--ink)]">Membership</p>
           <p className="mt-2 text-sm text-[color:var(--ink-soft)]">
             {plan ? `${plan.name} plan` : "No plan selected"}
           </p>
@@ -59,8 +83,8 @@ export default function WorkspaceSettingsPage() {
           </div>
         </section>
 
-        <section className="border-b border-[rgba(34,52,79,0.08)] pb-4 md:col-start-2 md:row-start-2">
-          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-[color:var(--ink)]">
+        <section className="border-b border-[color:var(--border)] pb-4 md:col-start-2 md:row-start-2">
+          <p className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.24em] text-[color:var(--ink)]">
             <span>Delete account</span>
             <AlertTriangle className="h-3 w-3 text-[#b05b5b]" />
           </p>

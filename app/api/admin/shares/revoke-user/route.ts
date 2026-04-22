@@ -70,9 +70,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    const revokedCount = (data ?? []).length;
+    console.info("Memora: admin revoked shares for user", {
+      adminEmail: user.email,
+      targetUserId: resolved.id,
+      targetEmail: resolved.email,
+      revokedCount,
+    });
     return NextResponse.json(
       {
-        revokedCount: (data ?? []).length,
+        revokedCount,
         userEmail: resolved.email,
       },
       { status: 200 },

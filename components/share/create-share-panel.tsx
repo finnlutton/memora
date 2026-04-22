@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, Plus, Share2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import { createId } from "@/lib/utils";
 import type { RecipientGroup } from "@/types/share";
 
@@ -33,6 +34,7 @@ export function CreateSharePanel({
   onGroupsChange,
   onCreateShare,
 }: CreateSharePanelProps) {
+  const { addToast } = useToast();
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupMembers, setNewGroupMembers] = useState("");
@@ -93,7 +95,7 @@ export function CreateSharePanel({
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-4 md:px-6 md:pb-6 md:pt-6">
         <div className="space-y-4 md:space-y-6">
           {error ? (
-            <p className="rounded-lg border border-[#d8a5a5] bg-[#fff6f6] px-3 py-2 text-sm text-[#8f4848]">
+            <p className="rounded-[6px] border border-[color:var(--error-border)] bg-[color:var(--error-bg)] px-3 py-2 text-sm text-[color:var(--error-text)]">
               {error}
             </p>
           ) : null}
@@ -109,6 +111,7 @@ export function CreateSharePanel({
                     if (typeof navigator === "undefined" || !navigator.clipboard) return;
                     await navigator.clipboard.writeText(shareUrl);
                     setCopied(true);
+                    addToast("Link copied to clipboard", "success");
                   }}
                 >
                   {copied ? (

@@ -21,8 +21,11 @@ export default function WelcomePage() {
         <h1 className="font-serif text-4xl leading-tight text-[color:var(--ink)] md:text-6xl">
           Welcome to Memora
         </h1>
+        <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-[color:var(--ink-soft)] md:text-[15px] md:leading-8">
+          Your personal archive is ready. Collect galleries, preserve memories, and share them with the people who matter.
+        </p>
         {error ? (
-          <p className="mx-auto mt-6 max-w-xl rounded-sm border border-[#c98282] bg-[#fff7f7] px-3 py-2 text-sm leading-6 text-[#9a4545]">
+          <p className="mx-auto mt-6 max-w-xl rounded-[6px] border border-[color:var(--error-border)] bg-[color:var(--error-bg)] px-3 py-2 text-sm leading-6 text-[color:var(--error-text)]">
             {error}
           </p>
         ) : null}

@@ -92,24 +92,33 @@ export function AppShell({
       )}
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[14rem] bg-[linear-gradient(180deg,rgba(221,231,243,0.34),transparent)]" />
-      <header className="sticky top-0 z-30 overflow-visible border-b border-[color:var(--border)] bg-[rgba(250,252,255,0.96)] backdrop-blur-xl">
-        <div className="mx-auto flex h-[56px] w-full max-w-7xl items-center justify-between gap-2 overflow-visible px-4 py-1 md:h-[72px] md:gap-5 md:px-6 md:py-0">
+      {/*
+        Header: flat, intentional, anchored to the max-w-7xl column.
+        The logo is rendered at its intrinsic height — no scale transforms,
+        no overflow bleed. At retina the 1040×240 PNG oversamples ~6–7×
+        so it stays crisp.
+      */}
+      <header className="sticky top-0 z-30 border-b border-[color:var(--border)] bg-[color:var(--chrome)] backdrop-blur-xl">
+        <div className="flex h-14 w-full items-center justify-between gap-4 px-4 md:h-[72px] md:px-6">
           <Link
             href={homeHref}
-            className="flex h-[56px] min-w-0 items-center overflow-visible md:h-[70px]"
+            className="inline-flex h-full items-center overflow-visible"
             aria-label={onboarding.isAuthenticated ? "Memora dashboard" : "Memora home"}
           >
+            {/*
+              PNG has transparent whitespace around the mark, so we render the
+              image larger than the header box and rely on object-contain to
+              letterbox. The mark itself ends up visually sized ~header-tall.
+            */}
             <Image
               src={memoraLogo}
               alt="Memora"
-              width={1040}
-              height={240}
               priority
-              sizes="(max-width: 640px) 72vw, (max-width: 1024px) 60vw, 520px"
-              className="h-full w-auto max-w-[86vw] origin-left translate-y-[1px] object-contain object-left scale-[1.5] md:max-w-[48rem] md:scale-[2.2] md:translate-y-[1px]"
+              sizes="320px"
+              className="h-[140px] w-auto object-contain object-left md:h-[180px]"
             />
           </Link>
-          <nav className="flex shrink-0 items-center gap-0.5 md:gap-1">
+          <nav className="flex shrink-0 items-center gap-1 md:gap-3">
             {onboarding.isAuthenticated ? (
               <NavLink href="/galleries">My Dashboard</NavLink>
             ) : isHomePage ? (
@@ -121,7 +130,7 @@ export function AppShell({
               <Button
                 asChild
                 variant="primary"
-                className="ml-2 border border-[color:var(--accent-strong)]/20 px-3.5 py-2 text-[11px] tracking-[0.18em] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:ml-3"
+                className="ml-2 h-9 px-4 text-[11px] tracking-[0.2em] md:ml-4"
               >
                 <Link href={createHref}>Create</Link>
               </Button>
@@ -151,15 +160,17 @@ export function AppShell({
       >
         {children}
       </main>
-      {isHomePage && (
-        <footer className="mx-auto mt-8 w-full max-w-7xl px-4 pb-6 md:px-6">
-          <ContactUsBox />
-        </footer>
-      )}
+      {/*
+        The home page closes on a mood photograph inside app/page.tsx
+        (see components/home-closer.tsx) rather than a contact form.
+        ContactUsBox is kept below — currently unused on home — so it can
+        be restored quickly without recovering from history.
+      */}
     </div>
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ContactUsBox() {
   const [message, setMessage] = useState("");
   return (
@@ -233,13 +244,13 @@ function SettingsDropdown({
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="flex items-center gap-2 border border-[color:var(--border)] bg-[rgba(255,255,255,0.86)] px-3 py-2 text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:border-[color:var(--border-strong)]"
+        className="flex items-center gap-2 border border-[color:var(--border)] bg-[color:var(--chrome)] px-3 py-2 text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:border-[color:var(--border-strong)]"
       >
         Settings
         <ChevronDown className="h-3.5 w-3.5" />
       </button>
       {open ? (
-        <div className="fixed inset-x-3 top-[calc(56px+0.5rem)] z-40 max-h-[calc(100dvh-5rem)] overflow-y-auto border border-[color:var(--border)] bg-[rgba(250,252,255,0.98)] p-4 shadow-[0_16px_40px_rgba(10,20,35,0.08)] backdrop-blur md:absolute md:inset-auto md:right-0 md:top-[calc(100%+0.5rem)] md:max-h-none md:w-80 md:overflow-visible">
+        <div className="fixed inset-x-3 top-[calc(56px+0.5rem)] z-40 max-h-[calc(100dvh-5rem)] overflow-y-auto border border-[color:var(--border)] bg-[color:var(--chrome-strong)] p-4 shadow-[0_16px_40px_rgba(10,20,35,0.08)] backdrop-blur md:absolute md:inset-auto md:right-0 md:top-[calc(100%+0.5rem)] md:max-h-none md:w-80 md:overflow-visible">
           <p className="text-[10px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
             My account
           </p>
@@ -319,7 +330,7 @@ function SettingsDropdown({
               setOpen(false);
               onSignOut();
             }}
-            className="mt-6 w-full border border-[#c98282] bg-[#fff7f7] px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-[#9a4545] transition hover:bg-[#ffefef]"
+            className="mt-6 w-full border border-[color:var(--error-border)] bg-[color:var(--error-bg)] px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-[color:var(--error-text)] transition hover:opacity-80"
           >
             Sign out
           </button>

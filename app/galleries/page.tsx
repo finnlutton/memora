@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Plus, Share2 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
@@ -121,11 +122,11 @@ export default function GalleriesPage() {
               }}
             >
               <Share2 className="h-3.5 w-3.5" />
-              {shareLimitReached ? "Share limit reached" : "Share Galleries"}
+              Share Galleries
             </Button>
             {hasReachedGalleryLimit ? (
               <Button asChild variant="secondary">
-                <Link href="/galleries/settings/membership?source=gallery-limit">Choose membership</Link>
+                <Link href="/galleries/settings/membership?source=gallery-limit">Upgrade plan</Link>
               </Button>
             ) : (
               <Button asChild>
@@ -167,7 +168,14 @@ export default function GalleriesPage() {
               <span className="text-[color:var(--ink)]">{selectedCount} selected</span>
             </div>
           ) : null}
-          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 md:gap-4">
+          {/*
+            Editorial grid rhythm: 1-col on mobile/tablet so each photograph
+            reads as a photograph, 2-col at lg+ with generous horizontal gap
+            and larger vertical gap to create a considered rows-of-entries
+            cadence (archive, not catalog). No xl:grid-cols-3 — a single
+            decisive layout is the curated choice.
+          */}
+          <div className="grid grid-cols-1 gap-x-8 gap-y-14 lg:grid-cols-2 lg:gap-x-10 lg:gap-y-16">
           {sortedGalleries.map((gallery) => (
             <GalleryCard
               key={gallery.id}
@@ -188,8 +196,17 @@ export default function GalleriesPage() {
       ) : onboarding.isAuthenticated ? (
         <section className="px-6 py-20 text-center md:px-10">
           <p className="font-serif text-3xl leading-tight text-[color:var(--ink-faint)] md:text-4xl">
-            One gallery at a time...
+            No galleries yet.
           </p>
+          <p className="mt-4 text-sm leading-7 text-[color:var(--ink-soft)]">
+            Create your first gallery to start building your archive.
+          </p>
+          <Link
+            href="/galleries/new"
+            className="mt-6 inline-block border border-[color:var(--border-strong)] bg-[color:var(--paper)] px-5 py-2.5 text-sm text-[color:var(--ink)] hover:bg-[rgba(0,0,0,0.03)]"
+          >
+            Create your first gallery
+          </Link>
         </section>
       ) : (
         <EmptyState
@@ -255,41 +272,57 @@ export default function GalleriesPage() {
           return { shareUrl: payload.shareUrl };
         }}
       />
-      {shareMode && !sharePanelOpen ? (
-        <div className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-xl border border-[rgba(34,52,79,0.12)] bg-[rgba(251,253,255,0.95)] p-2 shadow-[0_14px_34px_rgba(16,24,38,0.15)] md:bottom-7 md:right-7">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => {
-              setShareMode(false);
-              setSelectedGalleryIds([]);
-              setSelectedGroupIds([]);
-              setCustomMessage("");
-            }}
+      <AnimatePresence>
+        {shareMode && !sharePanelOpen ? (
+          <motion.div
+            key="share-floating-bar"
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8, transition: { duration: 0.15 } }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-[8px] border border-[rgba(34,52,79,0.12)] bg-[rgba(251,253,255,0.97)] p-2 shadow-[0_16px_40px_rgba(16,24,38,0.18)] md:bottom-7 md:right-7"
           >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            disabled={selectedGalleryIds.length === 0 || shareLimitReached}
-            onClick={() => setSharePanelOpen(true)}
-          >
-            Continue to share
-          </Button>
-        </div>
-      ) : null}
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setShareMode(false);
+                setSelectedGalleryIds([]);
+                setSelectedGroupIds([]);
+                setCustomMessage("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={selectedGalleryIds.length === 0 || shareLimitReached}
+              onClick={() => setSharePanelOpen(true)}
+            >
+              {selectedGalleryIds.length === 0
+                ? "Select galleries"
+                : `Share ${selectedGalleryIds.length} ${selectedGalleryIds.length === 1 ? "gallery" : "galleries"}`}
+            </Button>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </AppShell>
   );
 }
 
 function QuickStat({ label, value }: { label: string; value: string }) {
+  // Editorial caption treatment — not a dashboard metric.
+  // - No vertical divider rule (was Harbor-blue hardcoded, read too grid-y).
+  // - Value drops to regular weight in --ink-soft so it reads like prose,
+  //   not a number you stare at.
   return (
-    <div className="relative px-0.5 py-0 md:px-1 md:py-0.5 md:pl-4">
-      <span className="absolute left-0 top-1 hidden h-10 w-px bg-[rgba(36,58,88,0.14)] md:block" />
+    <div className="py-0.5">
       <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
         {label}
       </p>
-      <p className="mt-1 text-sm leading-5 text-[color:var(--ink)] md:mt-1.5 md:text-[15px] md:leading-6">{value}</p>
+      <p className="mt-2 text-[14px] leading-6 text-[color:var(--ink-soft)] md:text-[15px]">
+        {value}
+      </p>
     </div>
   );
 }

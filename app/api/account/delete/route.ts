@@ -69,6 +69,8 @@ export async function DELETE() {
     const admin = createSupabaseAdminClient();
     const storagePaths = await listAllStorageObjectsUnderPrefix(user.id, admin);
 
+    console.info("Memora: account deletion started", { userId: user.id, storageFileCount: storagePaths.length });
+
     if (storagePaths.length) {
       const { error: storageError } = await admin.storage.from(STORAGE_BUCKET).remove(storagePaths);
       if (storageError) {
@@ -89,6 +91,7 @@ export async function DELETE() {
       );
     }
 
+    console.info("Memora: account deletion completed", { userId: user.id });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Memora: account deletion failed", error);

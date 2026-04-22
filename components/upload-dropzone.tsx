@@ -24,9 +24,7 @@ export function UploadDropzone({
   const handleFiles = async (fileList: FileList | null) => {
     if (disabled) return;
     const files = Array.from(fileList ?? []);
-    if (!files.length) {
-      return;
-    }
+    if (!files.length) return;
     await onFilesSelected(files);
   };
 
@@ -47,14 +45,25 @@ export function UploadDropzone({
         if (disabled) return;
         inputRef.current?.click();
       }}
-      className={`group rounded-[1.75rem] border border-dashed px-5 py-6 transition ${
+      onKeyDown={(event) => {
+        if (disabled) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          inputRef.current?.click();
+        }
+      }}
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-disabled={disabled}
+      aria-label={label}
+      className={`group relative flex items-center gap-4 border px-4 py-5 transition ${
         disabled
-          ? "cursor-not-allowed opacity-60"
+          ? "cursor-not-allowed border-[color:var(--border-strong)] opacity-60"
           : "cursor-pointer"
       } ${
         isOver
-          ? "border-[color:var(--accent)] bg-[color:var(--paper)]"
-          : "border-[color:var(--border-strong)] bg-white/70 hover:border-[color:var(--accent)] hover:bg-[color:var(--paper)]"
+          ? "border-[color:var(--ink)] bg-[color:var(--paper-strong)]"
+          : "border-[color:var(--border-strong)] bg-[color:var(--background)] hover:border-[color:var(--ink-soft)] hover:bg-[color:var(--paper)]"
       }`}
     >
       <input
@@ -65,21 +74,22 @@ export function UploadDropzone({
         accept="image/*"
         onChange={(event) => void handleFiles(event.target.files)}
       />
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[color:var(--accent)] shadow-[0_10px_24px_rgba(36,55,78,0.08)]">
-          {busy ? (
-            <LoaderCircle className="h-5 w-5 animate-spin" />
-          ) : multiple ? (
-            <UploadCloud className="h-5 w-5" />
-          ) : (
-            <ImagePlus className="h-5 w-5" />
-          )}
-        </div>
-        <div>
-          <p className="font-medium text-[color:var(--ink)]">{label}</p>
-          <p className="text-sm leading-7 text-[color:var(--ink-soft)]">{hint}</p>
-        </div>
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[color:var(--border-strong)] bg-[color:var(--paper)] text-[color:var(--ink)]">
+        {busy ? (
+          <LoaderCircle className="h-4 w-4 animate-spin" />
+        ) : multiple ? (
+          <UploadCloud className="h-4 w-4" />
+        ) : (
+          <ImagePlus className="h-4 w-4" />
+        )}
       </div>
+      <div className="flex-1">
+        <p className="text-[14px] font-semibold leading-5 text-[color:var(--ink)]">{label}</p>
+        <p className="mt-0.5 text-[13px] leading-5 text-[color:var(--ink-soft)]">{hint}</p>
+      </div>
+      <p className="hidden shrink-0 text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)] md:block">
+        {isOver ? "Release to upload" : "Drop or click"}
+      </p>
     </div>
   );
 }

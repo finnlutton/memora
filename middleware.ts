@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import type { User } from "@supabase/supabase-js";
 import { createMembershipState, getNextAuthenticatedRoute } from "@/lib/onboarding";
 import { loadProfileState } from "@/lib/profile-state";
 import { getServerSiteOrigin } from "@/lib/site-url";
@@ -55,7 +56,7 @@ export async function middleware(request: NextRequest) {
 
   // Refresh session if needed (reads/writes cookies).
   // Never block the page if Supabase cookies/session lookup fails.
-  let user: unknown = null;
+  let user: User | null = null;
   try {
     const result = await supabase.auth.getUser();
     user = result.data.user ?? null;
@@ -67,8 +68,8 @@ export async function middleware(request: NextRequest) {
     const profileState = await loadProfileState(
       supabase as unknown as ProfileQueryClient,
       {
-        id: (user as { id: string }).id,
-        email: (user as { email?: string | null }).email ?? null,
+        id: user.id,
+        email: user.email ?? null,
       },
       "middleware:/auth",
     );
@@ -93,8 +94,8 @@ export async function middleware(request: NextRequest) {
     const profileState = await loadProfileState(
       supabase as unknown as ProfileQueryClient,
       {
-        id: (user as { id: string }).id,
-        email: (user as { email?: string | null }).email ?? null,
+        id: user.id,
+        email: user.email ?? null,
       },
       `middleware:${pathname}`,
     );
