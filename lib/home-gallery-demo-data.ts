@@ -25,7 +25,7 @@ export type DemoSubgallery = {
   id: string;
   title: string;
   location: string;
-  dates: string;
+  dates?: string;
   description: string;
   coverImage: string;
   scenes: DemoScene[];
@@ -43,49 +43,53 @@ export type DemoGallery = {
 const DIR = "/demo/home-gallery";
 
 export const HOME_GALLERY_DEMO: DemoGallery = {
-  title: "Gallery title goes here",
-  location: "Location, Country",
-  dates: "Month Year – Month Year",
+  title: "Semester in Andalusia",
+  location: "Granada, Spain",
+  dates: "Jan 2026 – May 2026",
   description:
-    "A short, calm description of the gallery — what the trip or time period was, written in your own voice. One or two sentences works well.",
+    "While I was based in Granada, I spent a lot of time exploring southern Spain, and wanted to dedicate a gallery to the region. Some of these trips include Sevilla, Córdoba, Málaga, Cádiz, and Gibraltar. Click on the gallery to see more!",
   coverImage: `${DIR}/gallery-cover.jpg`,
   subgalleries: [
     {
       id: "sub-1",
-      title: "First subgallery title",
-      location: "Place one",
-      dates: "Month Year",
+      title: "Mountain biking in Granada",
+      location: "Granada",
       description:
-        "A short paragraph about this chapter — why this stretch of the trip stood on its own.",
+        "I rented a mountain bike soon after arriving in Granada to get a better chance to explore the area. Luckily, I ran into some spaniards on my first ride that became some of my best friends. This completely changed the rest of my abroad experience!",
       coverImage: `${DIR}/subgallery-1-cover.jpg`,
       scenes: [
         {
           id: "s1-1",
           image: `${DIR}/scene-1-1.jpg`,
-          title: "Scene one",
           caption:
-            "A small caption can sit here — a single thought about the moment.",
+            "This was one of my first rides. I hope I never forget the awe I felt when I first saw the city from above.",
         },
         {
           id: "s1-2",
           image: `${DIR}/scene-1-2.jpg`,
-          title: "Scene two",
+          caption:
+            "Met this Granadino named Marco and he showed me a completely new route!",
         },
         {
           id: "s1-3",
           image: `${DIR}/scene-1-3.jpg`,
-          title: "Scene three",
-          caption: "Another short note, only when it adds something.",
+          caption: "First time showing Eli the panoramic view above the Alhambra!",
+        },
+        {
+          id: "s1-4",
+          image: `${DIR}/scene-1-4.jpg`,
+          caption:
+            "Don't be fooled by her confident posing, this was shortly after I carried her bike up the hill.",
         },
       ],
     },
     {
       id: "sub-2",
-      title: "Second subgallery title",
-      location: "Place two",
-      dates: "Month Year",
+      title: "Day trip to Gibraltar",
+      location: "Gibraltar",
+      dates: "Sat, Apr 18, 2026",
       description:
-        "Another short paragraph — a different place, a different pace, but still part of the same gallery.",
+        "Eli and I had an amazing weekend road trip along the southern coast of Spain, stopping in Gibraltar on Saturday. While she was excited for the monkeys, we soon realized they were aggressive bandits that taxed us along our route to the top. Check out one of these encounters below!",
       coverImage: `${DIR}/subgallery-2-cover.jpg`,
       scenes: [
         {
@@ -96,41 +100,49 @@ export const HOME_GALLERY_DEMO: DemoGallery = {
         {
           id: "s2-2",
           image: `${DIR}/scene-2-2.jpg`,
-          title: "Scene two",
-          caption: "A quiet line about this one.",
+          caption: "Eli and I thought this looked like a sharks head/nose.",
         },
         {
           id: "s2-3",
           image: `${DIR}/scene-2-3.jpg`,
-          title: "Scene three",
+          caption: "I'm very happy I ended up home with everything I came with.",
+        },
+        {
+          id: "s2-4",
+          image: `${DIR}/scene-2-4.jpg`,
+          caption:
+            "Eli and I watched these guys do parkour for a little too long...",
         },
       ],
     },
     {
       id: "sub-3",
-      title: "Third subgallery title",
-      location: "Place three",
-      dates: "Month Year",
+      title: "Weekend trip to Sevilla!",
+      location: "Sevilla",
+      dates: "Feb 2026",
       description:
-        "One more chapter — the closing stretch, or a detour, or a day that deserved its own page.",
+        "I had a great time with my program walking around Sevilla and seeing amazing buildings like the Cathedral and Giralda. We also saw the royal tobacco factory, which has become an academic building for the University of Sevilla, one of my favorite parts of the tour! Eli and I spent day 2 walking around and getting a coffee and cheesecake. Check it out below!",
       coverImage: `${DIR}/subgallery-3-cover.jpg`,
       scenes: [
         {
           id: "s3-1",
           image: `${DIR}/scene-3-1.jpg`,
-          title: "Scene one",
-          caption: "Captions are optional — leave them empty when a photo speaks for itself.",
         },
         {
           id: "s3-2",
           image: `${DIR}/scene-3-2.jpg`,
-          title: "Scene two",
+          caption: "Our first luxury dessert in Spain. Worth it.",
         },
         {
           id: "s3-3",
           image: `${DIR}/scene-3-3.jpg`,
-          title: "Scene three",
-          caption: "A final note to close the chapter.",
+          caption:
+            "We got to sit in the sun by the Guadalquivir river right before leaving. Felt great after a few weeks of rain.",
+        },
+        {
+          id: "s3-4",
+          image: `${DIR}/scene-3-4.jpg`,
+          caption: "Thought this was cool...",
         },
       ],
     },

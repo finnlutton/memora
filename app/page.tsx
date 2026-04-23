@@ -97,71 +97,90 @@ export default function HomePage() {
       </section>
 
       {/*
-        Memory globe — marketing demo. Full-bleed dark section so the globe
-        reads as a cinematic object rather than a UI widget. Intentionally
-        distinct from the production map (components/WorldGlobe.tsx). Edges
-        fade softly into the surrounding light page instead of being cut
-        with hairlines, so the scroll feels like one continuous document.
+        Memory globe — stays on the site's normal paper. Section break is
+        done with a hairline rule and a faint, very soft radial glow behind
+        the globe — enough to say "new chapter" without changing palette.
       */}
       <section
         aria-label="Memora Map"
-        className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden bg-[radial-gradient(ellipse_at_top,rgba(44,72,116,0.58)_0%,rgba(20,32,54,0.92)_52%,rgba(14,22,38,1)_100%)]"
+        className="relative mx-auto w-full max-w-7xl px-4 py-24 md:px-6 md:py-32"
       >
-        {/* Soft lower wash so the edges don't crush to black */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(60,86,130,0.22)_0%,transparent_55%)]"
-        />
-        {/* Feathered top/bottom edges — a gentle handoff to the light
-            sections above and below. No hairline rule. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[var(--gradient-end)]/14 to-transparent md:h-24"
+          className="pointer-events-none absolute inset-x-4 top-0 h-px bg-[color:var(--border)] opacity-70 md:inset-x-6"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[var(--gradient-end)]/14 to-transparent md:h-24"
+          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_70%_50%,rgba(120,150,195,0.10)_0%,transparent_60%)]"
+        />
+        <HomeMemoryGlobe />
+      </section>
+
+      {/*
+        Share demo — full-bleed flat navy surface. The inner demo is white,
+        so the contrast reads as an editorial spread: the page body for the
+        heading, a navy plate for the showpiece. Edges feather softly so
+        the transition from the light globe section doesn't feel cut.
+      */}
+      <section
+        aria-label="Sharing a gallery"
+        className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden bg-[linear-gradient(180deg,#121c33_0%,#0f1930_55%,#0c1528_100%)]"
+      >
+        {/* Subtle cool highlight near the top to give the flat navy a
+            faint atmospheric depth without competing with the demo. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-[60%] bg-[radial-gradient(ellipse_at_top,rgba(70,104,156,0.18)_0%,transparent_65%)]"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/10 to-transparent md:h-24"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/20 to-transparent md:h-24"
         />
         <div className="relative mx-auto w-full max-w-7xl px-4 py-24 md:px-6 md:py-32">
-          <HomeMemoryGlobe />
+          <HomeShareDemo />
         </div>
       </section>
 
       {/*
-        Share demo — scripted interactive demonstration of the sharing flow.
-      */}
-      <section
-        aria-label="Sharing a gallery"
-        className="mx-auto w-full max-w-7xl px-4 py-24 md:px-6 md:py-32"
-      >
-        <HomeShareDemo />
-      </section>
-
-      {/*
-        Creator's note — retained from the earlier draft, condensed and
-        left-aligned under a quiet eyebrow. No centered stack, no card.
+        Creator's note — editorial two-column spread: a narrow title column
+        on the left (eyebrow, heading, dateline), a letter-style body on
+        the right with a drop cap, a centered pull quote that lands on the
+        emotional pivot, and a set-apart italic closing line.
       */}
       <section
         id="about-product"
         aria-label="Creator's note"
-        className="mx-auto max-w-3xl px-4 py-24 md:py-32"
+        className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden bg-[color:var(--background)] px-4 py-24 md:py-32"
       >
-        <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
-          Creator&apos;s note
-        </p>
-        <h2 className="mt-5 font-serif text-[30px] leading-[1.08] text-[color:var(--ink)] md:text-[40px]">
-          Why this exists.
-        </h2>
-        <div className="mt-7 space-y-5 text-[15px] leading-7 text-[color:var(--ink-soft)]">
-          <p>
-            After months abroad, my camera roll had everything and nothing — thousands of photographs, no order, no words, no way to hand a friend a trip and say &ldquo;here, read it.&rdquo;
-          </p>
-          <p>
-            The pictures deserved more than a scroll. The trips deserved more than a post. What I wanted was somewhere to store them properly — paired with what actually happened, organized by the places they passed through, and shared only with the people who were there.
-          </p>
-          <p>
-            Memora is that place. A quieter, more intentional home for the memories worth keeping, built so you&apos;ll still want to open them in ten years.
-          </p>
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-10 md:grid-cols-[0.85fr_1.6fr] md:gap-16">
+          <div className="md:pr-2">
+            <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
+              Creator&apos;s note
+            </p>
+            <h2 className="mt-5 font-serif text-[32px] leading-[1.04] text-[color:var(--ink)] md:text-[46px]">
+              Why this exists.
+            </h2>
+          </div>
+
+          <div className="space-y-5 text-[15px] leading-7 text-[color:var(--ink-soft)]">
+            <p className="first-letter:float-left first-letter:mr-2 first-letter:mt-1 first-letter:font-serif first-letter:text-[58px] first-letter:leading-[0.85] first-letter:text-[color:var(--ink)]">
+              Like many who have studied abroad, it&apos;s allowed me to travel far more than any prior period. Expecting this, I invested in a camera before leaving the U.S., hoping to separate photo taking from the distractions of my phone (highly recommended).
+            </p>
+            <p>
+              However, I soon found it impossible to update each of my circles of friends — as well as my immediate family, grandparents, and extended family, by sifting through my camera roll and sd card just to send separate messages, with different photos, and lacking the personal detail I&apos;d like.
+            </p>
+            <p>
+              While many look to social media for this outlet, I&apos;ve found it incredibly insufficient. Ads, algorithms, likes, and comments have drawn the authenticity from your experiences and have crumbled the intent of social media.
+            </p>
+
+            <p className="!mt-8 border-t border-[color:var(--border)] pt-6 font-serif text-[17px] italic leading-[1.5] text-[color:var(--ink)] md:text-[18px]">
+              It&apos;s early stages for Memora, but so is it for you.
+            </p>
+          </div>
         </div>
       </section>
 

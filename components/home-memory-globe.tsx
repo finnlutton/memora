@@ -173,7 +173,7 @@ export function HomeMemoryGlobe() {
       });
       el.addEventListener("click", (event) => {
         event.stopPropagation();
-        setActiveId(pin.id);
+        setActiveId((prev) => (prev === pin.id ? null : pin.id));
       });
       return el;
     },
@@ -183,17 +183,17 @@ export function HomeMemoryGlobe() {
   return (
     <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-[1fr_1.15fr] md:gap-14 lg:gap-20">
       <div className="order-2 md:order-1">
-        <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-white/72">
+        <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
           Memora Map
         </p>
-        <h2 className="mt-5 font-serif text-[34px] leading-[1.02] text-white md:text-[48px] md:leading-[1.0]">
+        <h2 className="mt-5 font-serif text-[34px] leading-[1.02] text-[color:var(--ink)] md:text-[48px] md:leading-[1.0]">
           Your favorite trips, all in one place.
         </h2>
-        <p className="mt-6 max-w-[30rem] text-[14px] leading-7 text-white/82 md:text-[15px]">
+        <p className="mt-6 max-w-[30rem] text-[14px] leading-7 text-[color:var(--ink-soft)] md:text-[15px]">
           Open a pin to go straight to the gallery you saved there.
         </p>
 
-        <ul className="mt-9 grid grid-cols-1 gap-x-8 gap-y-3 text-[13px] leading-6 text-white/85 sm:grid-cols-2">
+        <ul className="mt-9 grid grid-cols-1 gap-x-8 gap-y-3 text-[13px] leading-6 text-[color:var(--ink-soft)] sm:grid-cols-2">
           {DEMO_PINS.map((pin) => {
             const isActive = pin.id === activeId;
             return (
@@ -205,6 +205,10 @@ export function HomeMemoryGlobe() {
                     if (!activeId) pauseRotation(false);
                   }}
                   onClick={() => {
+                    if (isActive) {
+                      setActiveId(null);
+                      return;
+                    }
                     setActiveId(pin.id);
                     globeRef.current?.pointOfView(
                       { lat: pin.lat, lng: pin.lng, altitude: 1.9 },
@@ -212,15 +216,17 @@ export function HomeMemoryGlobe() {
                     );
                   }}
                   className={`group flex w-full items-center gap-3 text-left transition ${
-                    isActive ? "text-white" : "text-white/82 hover:text-white"
+                    isActive
+                      ? "text-[color:var(--ink)]"
+                      : "text-[color:var(--ink-soft)] hover:text-[color:var(--ink)]"
                   }`}
                 >
                   <span
                     aria-hidden
                     className={`inline-block h-[7px] w-[7px] rounded-full transition ${
                       isActive
-                        ? "bg-[#f6d880] shadow-[0_0_12px_rgba(246,216,128,0.8)]"
-                        : "bg-white/32 group-hover:bg-white/60"
+                        ? "bg-[color:var(--accent-strong)] shadow-[0_0_10px_rgba(44,72,116,0.45)]"
+                        : "bg-[color:var(--border-strong)] group-hover:bg-[color:var(--ink-soft)]"
                     }`}
                   />
                   <span className="font-serif text-[15px] tracking-tight">{pin.title}</span>

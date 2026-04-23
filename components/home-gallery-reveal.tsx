@@ -38,11 +38,8 @@ export function HomeGalleryReveal() {
   return (
     <section>
       <div className="mx-auto max-w-3xl text-center">
-        <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
-          Pairing Photos with Dialogue
-        </p>
-        <h2 className="mt-4 font-serif text-[32px] leading-[1.02] text-[color:var(--ink)] md:text-[44px]">
-          A trip, broken into each adventure.
+        <h2 className="font-serif text-[32px] leading-[1.02] text-[color:var(--ink)] md:text-[44px]">
+          A time period, broken into its adventures.
         </h2>
         <p className="mx-auto mt-5 max-w-xl text-[14px] leading-7 text-[color:var(--ink-soft)] md:text-[15px]">
           Open my gallery to see what I mean. If you prefer
@@ -79,16 +76,45 @@ export function HomeGalleryReveal() {
 
                 <div className="mt-0 grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-5">
                   {gallery.subgalleries.map((sub) => (
-                    <SubgalleryColumn
+                    <SubgalleryCard
                       key={sub.id}
                       sub={sub}
                       open={openSubId === sub.id}
-                      onToggle={() =>
+                      onClick={() =>
                         setOpenSubId((prev) => (prev === sub.id ? null : sub.id))
                       }
                     />
                   ))}
                 </div>
+
+                {/* ── Level 3: Scenes — pushed below the subgalleries row ─── */}
+                <AnimatePresence initial={false}>
+                  {openSubId ? (
+                    <motion.div
+                      key={openSubId}
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.44, ease: EASE }}
+                      className="overflow-hidden"
+                    >
+                      <div className="pt-4">
+                        <SceneStemConnector
+                          openIndex={gallery.subgalleries.findIndex(
+                            (s) => s.id === openSubId,
+                          )}
+                          total={gallery.subgalleries.length}
+                        />
+                        <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
+                          {(gallery.subgalleries.find((s) => s.id === openSubId)
+                            ?.scenes ?? []).map((scene, i) => (
+                            <SceneCard key={scene.id} scene={scene} index={i} />
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
               </div>
             </motion.div>
           ) : null}
@@ -153,46 +179,7 @@ function GalleryCard({
   );
 }
 
-/* ── Subgallery column (card + its scenes) ───────────────────────────── */
-
-function SubgalleryColumn({
-  sub,
-  open,
-  onToggle,
-}: {
-  sub: DemoSubgallery;
-  open: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <div className="flex min-w-0 flex-col">
-      <SubgalleryCard sub={sub} open={open} onClick={onToggle} />
-
-      <AnimatePresence initial={false}>
-        {open ? (
-          <motion.div
-            key="scenes"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.44, ease: EASE }}
-            className="overflow-hidden"
-          >
-            <div className="pt-2">
-              {/* Branching stem from subgallery to its three scenes */}
-              <BranchConnector count={sub.scenes.length} tight />
-              <div className="grid grid-cols-3 gap-2.5 md:gap-3">
-                {sub.scenes.map((scene, i) => (
-                  <SceneCard key={scene.id} scene={scene} index={i} />
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </div>
-  );
-}
+/* ── Subgallery card ─────────────────────────────────────────────────── */
 
 function SubgalleryCard({
   sub,
@@ -255,22 +242,15 @@ function SceneCard({ scene, index }: { scene: DemoScene; index: number }) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.32, ease: EASE, delay: 0.04 + index * 0.04 }}
-      className="overflow-hidden rounded-md border border-[color:var(--border)] bg-white shadow-[0_6px_16px_-12px_rgba(18,31,48,0.18)]"
+      className="flex flex-col"
     >
-      <Cover src={scene.image} alt={scene.title ?? "Scene"} aspectClass="aspect-[4/3]" />
-      {scene.title || scene.caption ? (
-        <div className="px-2.5 py-2 md:px-3 md:py-2.5">
-          {scene.title ? (
-            <p className="truncate font-serif text-[11.5px] leading-tight text-[color:var(--ink)] md:text-[12.5px]">
-              {scene.title}
-            </p>
-          ) : null}
-          {scene.caption ? (
-            <p className="mt-1 line-clamp-2 text-[10.5px] leading-[1.45] text-[color:var(--ink-soft)]">
-              {scene.caption}
-            </p>
-          ) : null}
-        </div>
+      <div className="overflow-hidden rounded-lg shadow-[0_10px_26px_-16px_rgba(18,31,48,0.24)]">
+        <Cover src={scene.image} alt={scene.title ?? "Scene"} aspectClass="aspect-[4/3]" />
+      </div>
+      {scene.caption ? (
+        <p className="mt-2 line-clamp-2 px-0.5 text-[10.5px] leading-[1.45] text-[color:var(--ink-soft)] md:text-[11px]">
+          {scene.caption}
+        </p>
       ) : null}
     </motion.article>
   );
@@ -285,7 +265,7 @@ function Meta({
   size = "sm",
 }: {
   location: string;
-  dates: string;
+  dates?: string;
   className?: string;
   size?: "xs" | "sm";
 }) {
@@ -302,10 +282,67 @@ function Meta({
         <MapPin className={iconCls} strokeWidth={1.6} />
         {location}
       </span>
-      <span className="inline-flex items-center gap-1.5">
-        <CalendarDays className={iconCls} strokeWidth={1.6} />
-        {dates}
-      </span>
+      {dates ? (
+        <span className="inline-flex items-center gap-1.5">
+          <CalendarDays className={iconCls} strokeWidth={1.6} />
+          {dates}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Scene stem connector: a vertical line dropping from the center of the
+ * opened subgallery column down to the scenes grid below, then angling to
+ * the horizontal center so the scenes clearly descend from their parent.
+ * Hidden on narrow screens where everything stacks vertically.
+ */
+function SceneStemConnector({
+  openIndex,
+  total,
+}: {
+  openIndex: number;
+  total: number;
+}) {
+  if (openIndex < 0 || total <= 0) return null;
+  // Center X of the opened subgallery card, within the shared full-width
+  // container that holds both the subgalleries grid and the scenes grid.
+  const parentPct = (100 / total) * openIndex + 100 / (2 * total);
+  // Scene centers in a 2-column full-width grid.
+  const leftChildPct = 25;
+  const rightChildPct = 75;
+  const stem = 16;
+  const drop = 14;
+  const ruleLeft = Math.min(parentPct, leftChildPct);
+  const ruleRight = Math.max(parentPct, rightChildPct);
+  return (
+    <div className="relative mx-auto hidden w-full md:block" aria-hidden>
+      {/* Parent stem: drops from the opened subgallery's center */}
+      <div className="relative" style={{ height: stem }}>
+        <div
+          className="absolute w-px bg-[color:var(--border-strong)] opacity-55"
+          style={{ left: `calc(${parentPct}% - 0.5px)`, top: 0, height: stem }}
+        />
+      </div>
+      {/* Horizontal rule joining the parent stem to both children */}
+      <div className="relative" style={{ height: 1 }}>
+        <div
+          className="absolute top-0 h-px bg-[color:var(--border-strong)] opacity-55"
+          style={{ left: `${ruleLeft}%`, right: `${100 - ruleRight}%` }}
+        />
+      </div>
+      {/* Two symmetric drops into each scene's center */}
+      <div className="relative" style={{ height: drop }}>
+        <div
+          className="absolute w-px bg-[color:var(--border-strong)] opacity-55"
+          style={{ left: `calc(${leftChildPct}% - 0.5px)`, top: 0, height: drop }}
+        />
+        <div
+          className="absolute w-px bg-[color:var(--border-strong)] opacity-55"
+          style={{ left: `calc(${rightChildPct}% - 0.5px)`, top: 0, height: drop }}
+        />
+      </div>
     </div>
   );
 }

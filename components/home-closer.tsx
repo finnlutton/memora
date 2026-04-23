@@ -23,7 +23,7 @@ export function HomeCloser({ createHref, imageSrc, imageCaption }: HomeCloserPro
   return (
     <section
       aria-labelledby="home-closer-title"
-      className="relative left-1/2 right-1/2 mt-16 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden md:mt-24"
+      className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden"
     >
       <div className="relative h-[68svh] min-h-[420px] w-full md:h-[78svh] md:min-h-[560px]">
         <Image
@@ -42,12 +42,9 @@ export function HomeCloser({ createHref, imageSrc, imageCaption }: HomeCloserPro
 
         <div className="absolute inset-x-0 bottom-0 px-5 pb-10 md:px-12 md:pb-16 lg:px-16 lg:pb-20">
           <div className="max-w-[40rem]">
-            <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-white/70">
-              Begin
-            </p>
             <h2
               id="home-closer-title"
-              className="mt-4 font-serif text-[34px] leading-[0.98] text-white md:mt-5 md:text-[52px]"
+              className="font-serif text-[34px] leading-[0.98] text-white md:text-[52px]"
             >
               There&apos;s a trip you haven&apos;t written down yet.
             </h2>
@@ -56,14 +53,8 @@ export function HomeCloser({ createHref, imageSrc, imageCaption }: HomeCloserPro
                 href={createHref}
                 className="inline-flex h-11 items-center justify-center bg-white px-5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink)] transition hover:bg-[color:var(--paper)] md:h-12 md:px-6 md:text-[12px]"
               >
-                Begin your first one
+                Start your archive
               </Link>
-              <a
-                href="mailto:hello@memora.app"
-                className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/82 underline decoration-white/30 underline-offset-[6px] transition hover:text-white hover:decoration-white/70 md:text-[12px]"
-              >
-                hello@memora.app
-              </a>
             </div>
           </div>
         </div>

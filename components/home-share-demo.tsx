@@ -23,6 +23,7 @@ type Step =
   | "select-3"
   | "panel"
   | "group"
+  | "message"
   | "creating"
   | "toast"
   | "browser-open"
@@ -33,21 +34,29 @@ type Step =
 // Milliseconds from the moment the user presses "Run share demo".
 // Steps fire in order; the final "idle" step re-enables the button.
 const SEQUENCE: { step: Step; at: number }[] = [
-  { step: "select-1", at: 550 },
-  { step: "select-2", at: 1350 },
-  { step: "select-3", at: 2150 },
-  { step: "panel", at: 2950 },
-  { step: "group", at: 4000 },
-  { step: "creating", at: 5100 },
-  { step: "toast", at: 5750 },
+  { step: "select-1", at: 650 },
+  { step: "select-2", at: 1550 },
+  { step: "select-3", at: 2450 },
+  { step: "panel", at: 3400 },
+  { step: "group", at: 4600 },
+  // Compose a short custom note to the chosen group. Typing is driven by
+  // its own interval (see MESSAGE_TEXT + the effect below), but the step
+  // must stay active long enough for the full reveal to play out.
+  { step: "message", at: 5800 },
+  { step: "creating", at: 10600 },
+  { step: "toast", at: 11250 },
   // Link is now on the clipboard. Open a browser-like surface, paste the
   // URL into the address bar, press enter — then the shared page loads.
-  { step: "browser-open", at: 6900 },
-  { step: "browser-paste", at: 7800 },
-  { step: "browser-navigate", at: 8700 },
-  { step: "shared", at: 9250 },
-  { step: "idle", at: 18250 },
+  { step: "browser-open", at: 12400 },
+  { step: "browser-paste", at: 13300 },
+  { step: "browser-navigate", at: 14200 },
+  { step: "shared", at: 14750 },
+  { step: "idle", at: 23750 },
 ];
+
+// Characters per tick during the message-typing animation. Roughly
+// ~35–40ms per character feels like hand-typing without dragging.
+const MESSAGE_TYPE_MS = 38;
 
 type CoverPattern = "hero-thumbs" | "triptych" | "quad" | "strip";
 
@@ -141,6 +150,7 @@ const EASE = [0.32, 0.72, 0, 1] as const;
 export function HomeShareDemo() {
   const [step, setStep] = useState<Step>("idle");
   const [running, setRunning] = useState(false);
+  const [messageChars, setMessageChars] = useState(0);
   const timeoutsRef = useRef<number[]>([]);
 
   const clearAll = useCallback(() => {
@@ -156,6 +166,7 @@ export function HomeShareDemo() {
     clearAll();
     setRunning(true);
     setStep("idle");
+    setMessageChars(0);
     SEQUENCE.forEach(({ step: next, at }) => {
       const id = window.setTimeout(() => {
         setStep(next);
@@ -164,6 +175,27 @@ export function HomeShareDemo() {
       timeoutsRef.current.push(id);
     });
   }, [running, clearAll]);
+
+  // Progressive message typing. When the message step activates, start an
+  // interval that reveals one character at a time. The interval stops as
+  // soon as we leave the message step (e.g. on demo re-run) so we never
+  // race two typing drivers against each other.
+  const shared = SHARED_PAGE[CHOSEN_GROUP_ID]!;
+  useEffect(() => {
+    if (step !== "message") {
+      if (step === "idle") setMessageChars(0);
+      return;
+    }
+    setMessageChars(0);
+    const total = shared.message.length;
+    let i = 0;
+    const id = window.setInterval(() => {
+      i += 1;
+      setMessageChars(i);
+      if (i >= total) window.clearInterval(id);
+    }, MESSAGE_TYPE_MS);
+    return () => window.clearInterval(id);
+  }, [step, shared.message]);
 
   // Derived flags — every on-screen element reads from `step` through these.
   const selectedCount =
@@ -174,6 +206,7 @@ export function HomeShareDemo() {
         : step === "select-3" ||
             step === "panel" ||
             step === "group" ||
+            step === "message" ||
             step === "creating" ||
             step === "toast"
           ? 3
@@ -183,12 +216,16 @@ export function HomeShareDemo() {
   const panelOpen =
     step === "panel" ||
     step === "group" ||
+    step === "message" ||
     step === "creating" ||
     step === "toast";
   const groupChosen =
     step === "group" ||
+    step === "message" ||
     step === "creating" ||
     step === "toast";
+  const messageVisible =
+    step === "message" || step === "creating" || step === "toast";
   const buttonPressed = step === "creating";
   const toastVisible = step === "toast";
   const showWorkspace =
@@ -198,6 +235,7 @@ export function HomeShareDemo() {
     step === "select-3" ||
     step === "panel" ||
     step === "group" ||
+    step === "message" ||
     step === "creating" ||
     step === "toast";
   const showBrowser =
@@ -214,7 +252,6 @@ export function HomeShareDemo() {
           ? "navigating"
           : "loaded";
 
-  const shared = SHARED_PAGE[CHOSEN_GROUP_ID]!;
   const selectedCards = CARDS.filter((c) => SELECTED_IDS.includes(c.id));
 
   return (
@@ -223,21 +260,18 @@ export function HomeShareDemo() {
       className="mx-auto w-full max-w-6xl px-4 md:px-6"
     >
       <div className="mx-auto max-w-3xl text-center">
-        <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
-          Sharing
-        </p>
-        <h2 className="mt-5 font-serif text-[32px] leading-[1.06] text-[color:var(--ink)] md:text-[44px] md:leading-[1.04]">
+        <h2 className="font-serif text-[32px] leading-[1.06] text-white md:text-[44px] md:leading-[1.04]">
           Share your content more easily than ever.
         </h2>
-        <p className="mx-auto mt-6 max-w-[38rem] text-[14px] leading-7 text-[color:var(--ink-soft)] md:text-[15px]">
-          Choose your galleries and who should see them, and share a private
+        <p className="mx-auto mt-6 max-w-[38rem] text-[14px] leading-7 text-white/78 md:text-[15px]">
+          Choose your galleries, write a custom message, and share a private
           link. No feed, no algorithm, just updating the people you care about.
         </p>
         <button
           type="button"
           onClick={run}
           disabled={running}
-          className="mt-9 inline-flex items-center gap-2.5 border border-[color:var(--accent-strong)] bg-[color:var(--accent-strong)] px-6 py-3 text-[11px] uppercase tracking-[0.24em] text-white transition hover:bg-[color:var(--accent-strong-hover)] disabled:cursor-not-allowed disabled:opacity-70"
+          className="mt-9 inline-flex items-center gap-2.5 border border-white/25 bg-white/10 px-6 py-3 text-[11px] uppercase tracking-[0.24em] text-white transition hover:bg-white/18 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Play className="h-3.5 w-3.5" fill="currentColor" strokeWidth={0} />
           {running ? "Playing demo…" : "Run share demo"}
@@ -245,7 +279,7 @@ export function HomeShareDemo() {
       </div>
 
       {/* Stage — fixed height prevents layout shift during the swap. */}
-      <div className="relative mx-auto mt-14 h-[520px] w-full max-w-5xl overflow-hidden border border-[color:var(--border-strong)] bg-[color:var(--chrome-strong)] shadow-[0_28px_70px_-30px_rgba(14,22,34,0.28)] md:h-[560px]">
+      <div className="relative mx-auto mt-14 h-[520px] w-full max-w-5xl overflow-hidden rounded-sm border border-white/10 bg-[color:var(--chrome-strong)] shadow-[0_32px_80px_-24px_rgba(0,0,0,0.55),0_0_0_1px_rgba(255,255,255,0.04)] ring-1 ring-white/5 md:h-[560px]">
         <AnimatePresence initial={false}>
           {showBrowser ? (
             <motion.div
@@ -316,7 +350,7 @@ export function HomeShareDemo() {
                       animate={{ x: 0, opacity: 1 }}
                       exit={{ x: "100%", opacity: 0 }}
                       transition={{ duration: 0.5, ease: EASE }}
-                      className="absolute bottom-0 right-0 top-10 w-[86%] border-l border-[color:var(--border)] bg-[color:var(--chrome-strong)] p-5 shadow-[-12px_0_40px_-16px_rgba(14,22,34,0.18)] md:w-[320px] md:p-6"
+                      className="absolute bottom-0 right-0 top-10 flex w-[90%] flex-col overflow-y-auto border-l border-[color:var(--border)] bg-[color:var(--chrome-strong)] p-5 shadow-[-12px_0_40px_-16px_rgba(14,22,34,0.18)] md:w-[380px] md:p-6"
                     >
                       <p className="text-[10px] uppercase tracking-[0.26em] text-[color:var(--ink-faint)]">
                         Share privately with
@@ -333,6 +367,20 @@ export function HomeShareDemo() {
                           />
                         ))}
                       </div>
+
+                      <AnimatePresence initial={false}>
+                        {messageVisible ? (
+                          <MessageComposer
+                            key="composer"
+                            groupLabel={
+                              GROUPS.find((g) => g.id === CHOSEN_GROUP_ID)
+                                ?.label ?? ""
+                            }
+                            text={shared.message}
+                            charsShown={messageChars}
+                          />
+                        ) : null}
+                      </AnimatePresence>
 
                       <motion.div
                         animate={{
@@ -384,10 +432,53 @@ export function HomeShareDemo() {
         </AnimatePresence>
       </div>
 
-      <p className="mx-auto mt-6 max-w-[38rem] text-center text-[11px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
+      <p className="mx-auto mt-6 max-w-[38rem] text-center text-[11px] uppercase tracking-[0.24em] text-white/55">
         Demo only · placeholder cards, groups, and share page
       </p>
     </section>
+  );
+}
+
+function MessageComposer({
+  groupLabel,
+  text,
+  charsShown,
+}: {
+  groupLabel: string;
+  text: string;
+  charsShown: number;
+}) {
+  const typed = text.slice(0, charsShown);
+  const typing = charsShown < text.length;
+  const recipient = groupLabel ? `your ${groupLabel.toLowerCase()}` : "them";
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 4 }}
+      transition={{ duration: 0.34, ease: EASE }}
+      className="mt-6"
+    >
+      <p className="text-[10px] uppercase tracking-[0.26em] text-[color:var(--ink-faint)]">
+        Write a custom message to {recipient}
+      </p>
+      <div className="mt-2 min-h-[96px] rounded-sm border border-[color:var(--border)] bg-white px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
+        <p className="whitespace-pre-wrap text-[12px] leading-[1.55] text-[color:var(--ink)]">
+          {typed}
+          <motion.span
+            aria-hidden
+            animate={{ opacity: typing ? [1, 1, 0, 0] : 0 }}
+            transition={{
+              duration: 0.9,
+              repeat: typing ? Infinity : 0,
+              ease: "linear",
+              times: [0, 0.5, 0.5, 1],
+            }}
+            className="ml-[1px] inline-block h-[13px] w-[1.5px] translate-y-[2px] bg-[color:var(--accent-strong)] align-middle"
+          />
+        </p>
+      </div>
+    </motion.div>
   );
 }
 
