@@ -1731,12 +1731,12 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
+        // Use the original local data URL for immediate display so the
+        // image renders right away. The storage path is what's persisted
+        // in the DB and gets resolved to a signed URL on the next load.
         const localPhotos = persistedPhotos.map((photo, index) => ({
           ...photo,
-          // Keep the in-memory `src` displayable: if upload returned a storage
-          // path, fall back to the original local source so the image renders
-          // immediately without waiting for a signed URL refresh.
-          src: photos[index]?.src && !isLikelyStoragePath(photo.src) ? photo.src : photo.src,
+          src: photos[index]?.src ?? photo.src,
         }));
 
         setActiveGalleries((current) =>
