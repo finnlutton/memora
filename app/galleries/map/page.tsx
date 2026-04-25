@@ -1,12 +1,16 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { WorldGlobe } from "@/components/WorldGlobe";
+import { UsaMemoryMap } from "@/components/UsaMemoryMap";
 import { useMemoraStore } from "@/hooks/use-memora-store";
+
+type MapView = "globe" | "usa";
 
 export default function MemoryMapPage() {
   const { galleries } = useMemoraStore();
+  const [view, setView] = useState<MapView>("globe");
 
   const mapPins = useMemo(() => {
     const pins: Array<{
@@ -77,9 +81,17 @@ export default function MemoryMapPage() {
         }}
         className="fixed bottom-0 right-0 z-0 overflow-hidden"
       >
-        {/* Globe fills the stage; ResizeObserver inside WorldGlobe handles responsive sizing. */}
+        {/*
+          Map stage: either the live WorldGlobe or the stylized U.S. silhouette.
+          Both are mounted/swapped exclusively so the globe instance is
+          re-created when switching back (cheaper than keeping it idle).
+        */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <WorldGlobe pins={mapPins} allowWheelZoom />
+          {view === "globe" ? (
+            <WorldGlobe pins={mapPins} allowWheelZoom />
+          ) : (
+            <UsaMemoryMap pins={mapPins} />
+          )}
         </div>
 
         {/* Subtle atmospheric vignette to anchor overlays against varying globe colors. */}
@@ -103,6 +115,40 @@ export default function MemoryMapPage() {
             Every pin is a place you saved. Drag to rotate, scroll to move closer, tap a pin to revisit.
           </p>
         </header>
+
+        {/*
+          View toggle — top-right. Pointer-events re-enabled so the user can
+          actually click it; the rest of the overlay layer stays inert so
+          drag-rotate on the globe is preserved.
+        */}
+        <div className="pointer-events-auto absolute right-5 top-6 z-20 md:right-10 md:top-10">
+          <div
+            role="tablist"
+            aria-label="Map view"
+            className="inline-flex items-stretch border border-[color:var(--border-strong)] bg-[rgba(250,252,255,0.94)] backdrop-blur-sm shadow-[0_6px_18px_rgba(14,22,34,0.08)]"
+          >
+            {(["globe", "usa"] as const).map((option) => {
+              const selected = view === option;
+              const label = option === "globe" ? "Globe" : "U.S.A.";
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  onClick={() => setView(option)}
+                  className={`px-3.5 py-1.5 text-[10.5px] font-medium uppercase tracking-[0.22em] transition md:px-4 md:py-2 md:text-[11px] ${
+                    selected
+                      ? "bg-[color:var(--ink)] text-white"
+                      : "text-[color:var(--ink-soft)] hover:text-[color:var(--ink)]"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Count badge — bottom-left. Separate corner from the zoom cluster. */}
         <div className="pointer-events-none absolute bottom-4 left-5 z-20 md:bottom-6 md:left-10">

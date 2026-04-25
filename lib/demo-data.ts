@@ -109,6 +109,8 @@ export const demoGalleries: Gallery[] = [
         updatedAt: now,
       },
     ],
+    directPhotos: [],
+    dividers: [],
   },
   {
     id: "gallery-andalusia",
@@ -198,5 +200,7 @@ export const demoGalleries: Gallery[] = [
         updatedAt: now,
       },
     ],
+    directPhotos: [],
+    dividers: [],
   },
 ];

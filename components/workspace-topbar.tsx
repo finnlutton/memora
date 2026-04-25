@@ -35,7 +35,7 @@ export function WorkspaceTopbar({
           {title}
         </h1>
         {subtitle ? (
-          <p className="mt-4 max-w-xl text-[13px] leading-6 text-[color:var(--ink-soft)] md:mt-5 md:text-[14px] md:leading-7">
+          <p className="mt-5 max-w-4xl border-l-2 border-[color:var(--border-strong)] pl-4 text-[14px] leading-[1.65] text-[color:var(--ink)] md:mt-6 md:pl-5 md:text-[15.5px] md:leading-[1.7]">
             {subtitle}
           </p>
         ) : null}

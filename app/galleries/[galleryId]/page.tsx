@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ArrowLeft, MoreHorizontal } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
-import { EmptyState } from "@/components/empty-state";
+import { GalleryDirectPhotos } from "@/components/gallery-direct-photos";
 import { SubgalleryCarousel } from "@/components/subgallery-carousel";
 import { WorkspaceTopbar } from "@/components/workspace-topbar";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ export default function GalleryDetailPage() {
 
   return (
     <AppShell accent="immersive">
+      <div className="flex min-h-[calc(100vh-9rem)] flex-col">
       <WorkspaceTopbar
         eyebrow="Gallery workspace"
         title={gallery.title}
@@ -92,23 +93,19 @@ export default function GalleryDetailPage() {
           </>
         }
       />
-      <section>
-        {gallery.subgalleries.length ? (
+      {gallery.subgalleries.length ? (
+        <section>
           <SubgalleryCarousel
             galleryId={gallery.id}
             subgalleries={gallery.subgalleries}
             theme="light"
             onActiveIndexChange={setActiveSubgalleryIndex}
           />
-        ) : (
-          <EmptyState
-            title="No subgalleries yet"
-            description="Break the larger memory into places, moments, or days. This is where Memora starts to feel alive."
-            actionHref={`/galleries/${gallery.id}/subgalleries/new`}
-            actionLabel="Add the first subgallery"
-          />
-        )}
-      </section>
+        </section>
+      ) : null}
+
+      <GalleryDirectPhotos gallery={gallery} />
+      </div>
     </AppShell>
   );
 }

@@ -59,7 +59,7 @@ export async function readFileAsDataUrl(file: File) {
 
 export async function filesToPhotos(
   files: File[],
-  subgalleryId: string,
+  subgalleryId: string | null,
   startingOrder = 0,
 ) {
   const photos: MemoryPhoto[] = [];

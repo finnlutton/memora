@@ -174,7 +174,10 @@ export default function HomePage() {
               However, I soon found it impossible to update each of my circles of friends — as well as my immediate family, grandparents, and extended family, by sifting through my camera roll and sd card just to send separate messages, with different photos, and lacking the personal detail I&apos;d like.
             </p>
             <p>
-              While many look to social media for this outlet, I&apos;ve found it incredibly insufficient. Ads, algorithms, likes, and comments have drawn the authenticity from your experiences and have crumbled the intent of social media.
+              While many look to social media for this outlet, I&apos;ve found it incredibly insufficient. Ads, algorithms, likes, and comments have drawn the authenticity from your experiences and have crumbled its original intent.
+            </p>
+            <p>
+              In this era of fast-paced content, Memora offers a private, quiet platform to store and organize your experiences, add layers of written content, and share it with the people you care about. Through this, we hope to bring authenticity and reflection to the moments that deserve them.
             </p>
 
             <p className="!mt-8 border-t border-[color:var(--border)] pt-6 font-serif text-[17px] italic leading-[1.5] text-[color:var(--ink)] md:text-[18px]">

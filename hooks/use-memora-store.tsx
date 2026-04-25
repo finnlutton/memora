@@ -24,7 +24,14 @@ import {
 import { canCreate, getMembershipPlan, type MembershipPlanId, type PlanResource } from "@/lib/plans";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { createId } from "@/lib/utils";
-import type { Gallery, GalleryInput, MemoryPhoto, Subgallery, SubgalleryInput } from "@/types/memora";
+import type {
+  Gallery,
+  GalleryDivider,
+  GalleryInput,
+  MemoryPhoto,
+  Subgallery,
+  SubgalleryInput,
+} from "@/types/memora";
 
 const LEGACY_STORAGE_KEY = "memora::galleries:v1";
 const DEMO_STORAGE_KEY = "memora::demo-galleries:v1";
@@ -58,6 +65,26 @@ type MemoraStore = {
     input: SubgalleryInput,
   ) => Promise<void>;
   deleteSubgallery: (galleryId: string, subgalleryId: string) => Promise<void>;
+  // Direct gallery photos (no subgallery wrapper) and date dividers.
+  addGalleryPhotos: (galleryId: string, photos: MemoryPhoto[]) => Promise<void>;
+  updateGalleryPhoto: (
+    galleryId: string,
+    photoId: string,
+    fields: {
+      caption?: string;
+      location?: string | null;
+      locationLat?: number | null;
+      locationLng?: number | null;
+    },
+  ) => Promise<void>;
+  removeGalleryPhoto: (galleryId: string, photoId: string) => Promise<void>;
+  addDivider: (galleryId: string, label: string) => Promise<string>;
+  updateDivider: (galleryId: string, dividerId: string, label: string) => Promise<void>;
+  removeDivider: (galleryId: string, dividerId: string) => Promise<void>;
+  reorderGalleryItems: (
+    galleryId: string,
+    items: Array<{ type: "photo" | "divider"; id: string }>,
+  ) => Promise<void>;
   getGallery: (galleryId: string) => Gallery | undefined;
   getSubgallery: (galleryId: string, subgalleryId: string) => Subgallery | undefined;
   resetDemo: () => void;
@@ -124,6 +151,18 @@ type PhotoRow = {
   caption: string | null;
   display_order: number | null;
   taken_at: string | null;
+  created_at: string;
+  location?: string | null;
+  location_lat?: number | null;
+  location_lng?: number | null;
+};
+
+type GalleryDividerRow = {
+  id: string;
+  user_id: string;
+  gallery_id: string;
+  label: string;
+  display_order: number | null;
   created_at: string;
 };
 
@@ -359,18 +398,31 @@ async function loadUserGalleriesFromSupabase(
   if (subgalleriesError) throw subgalleriesError;
 
   const subgalleryRows = (subgalleriesData ?? []) as SubgalleryRow[];
-  const subgalleryIds = subgalleryRows.map((subgallery) => subgallery.id);
-  const { data: photosData, error: photosError } = subgalleryIds.length
-    ? await supabase
-        .from("photos")
-        .select("*")
-        .eq("user_id", userId)
-        .in("subgallery_id", subgalleryIds)
-        .order("display_order", { ascending: true })
-    : { data: [] as PhotoRow[], error: null as unknown };
+
+  // Fetch every photo belonging to any of these galleries — both
+  // subgallery-attached and direct (subgallery_id is null). We split them
+  // apart further down. Querying by gallery_id catches both at once.
+  const { data: photosData, error: photosError } = await supabase
+    .from("photos")
+    .select("*")
+    .eq("user_id", userId)
+    .in("gallery_id", galleryIds)
+    .order("display_order", { ascending: true });
   if (photosError) throw photosError;
 
   const photoRows = (photosData ?? []) as PhotoRow[];
+
+  // Date dividers — ordered alongside direct gallery photos via the
+  // shared display_order numeric space (assigned by reorderGalleryItems).
+  const { data: dividersData, error: dividersError } = await supabase
+    .from("gallery_dividers")
+    .select("*")
+    .eq("user_id", userId)
+    .in("gallery_id", galleryIds)
+    .order("display_order", { ascending: true });
+  if (dividersError) throw dividersError;
+
+  const dividerRows = (dividersData ?? []) as GalleryDividerRow[];
 
   // If older versions accidentally persisted signed/public object URLs into the DB, normalize and self-heal best-effort.
   const galleriesToHeal = galleryRows
@@ -449,19 +501,41 @@ async function loadUserGalleriesFromSupabase(
   }
 
   const photosBySubgallery = new Map<string, MemoryPhoto[]>();
+  const directPhotosByGallery = new Map<string, MemoryPhoto[]>();
   photoRows.forEach((photo) => {
-    if (!photo.subgallery_id) return;
     const normalizedPath = normalizeForLookup(photo.storage_path);
     const entry: MemoryPhoto = {
       id: photo.id,
+      galleryId: photo.gallery_id ?? null,
       subgalleryId: photo.subgallery_id,
       src: resolvedImageMap.get(normalizedPath) ?? normalizedPath,
       caption: photo.caption ?? "",
+      location: photo.location ?? null,
+      locationLat: photo.location_lat ?? null,
+      locationLng: photo.location_lng ?? null,
       createdAt: photo.created_at,
       order: photo.display_order ?? 0,
     };
-    const current = photosBySubgallery.get(photo.subgallery_id) ?? [];
-    photosBySubgallery.set(photo.subgallery_id, [...current, entry]);
+    if (photo.subgallery_id) {
+      const current = photosBySubgallery.get(photo.subgallery_id) ?? [];
+      photosBySubgallery.set(photo.subgallery_id, [...current, entry]);
+    } else if (photo.gallery_id) {
+      const current = directPhotosByGallery.get(photo.gallery_id) ?? [];
+      directPhotosByGallery.set(photo.gallery_id, [...current, entry]);
+    }
+  });
+
+  const dividersByGallery = new Map<string, GalleryDivider[]>();
+  dividerRows.forEach((row) => {
+    const entry: GalleryDivider = {
+      id: row.id,
+      galleryId: row.gallery_id,
+      label: row.label,
+      order: row.display_order ?? 0,
+      createdAt: row.created_at,
+    };
+    const current = dividersByGallery.get(row.gallery_id) ?? [];
+    dividersByGallery.set(row.gallery_id, [...current, entry]);
   });
 
   const subgalleriesByGallery = new Map<string, Subgallery[]>();
@@ -503,6 +577,12 @@ async function loadUserGalleriesFromSupabase(
       createdAt: gallery.created_at,
       updatedAt: gallery.updated_at,
       subgalleries: subgalleriesByGallery.get(gallery.id) ?? [],
+      directPhotos: (directPhotosByGallery.get(gallery.id) ?? [])
+        .slice()
+        .sort((a, b) => a.order - b.order),
+      dividers: (dividersByGallery.get(gallery.id) ?? [])
+        .slice()
+        .sort((a, b) => a.order - b.order),
     };
   });
 }
@@ -966,6 +1046,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           createdAt: timestamp,
           updatedAt: timestamp,
           subgalleries: [],
+          directPhotos: [],
+          dividers: [],
         };
         setActiveGalleries((current) => [nextGallery, ...current]);
         console.info("Memora: create gallery local state update", {
@@ -1069,14 +1151,14 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             .select("id, cover_image_path")
             .eq("gallery_id", galleryId)
             .eq("user_id", userId);
-          const subIds = (subRows ?? []).map((s: { id: string }) => s.id);
-          const { data: photoRows } = subIds.length
-            ? await supabase
-                .from("photos")
-                .select("storage_path")
-                .eq("user_id", userId)
-                .in("subgallery_id", subIds)
-            : { data: [] as Array<{ storage_path: string }> };
+          // All photos in this gallery — both subgallery-attached and
+          // direct (subgallery_id is null) — are reachable via gallery_id,
+          // which simplifies cleanup of storage objects.
+          const { data: photoRows } = await supabase
+            .from("photos")
+            .select("storage_path")
+            .eq("user_id", userId)
+            .eq("gallery_id", galleryId);
 
           const { error } = await supabase
             .from("galleries")
@@ -1558,6 +1640,384 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           ),
         );
       },
+
+      // ── Direct gallery photos + date dividers ──────────────────────────
+      //
+      // Direct photos live in the same `photos` table as subgallery photos
+      // but with `subgallery_id = null`. Their display_order shares a single
+      // numeric space per gallery with `gallery_dividers.display_order` so
+      // the two lists can be interleaved deterministically on render and
+      // rearranged together by `reorderGalleryItems`.
+
+      async addGalleryPhotos(galleryId, photos) {
+        if (photos.length === 0) return;
+        const gallery = galleries.find((entry) => entry.id === galleryId);
+        if (!gallery) return;
+        const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);
+        if (
+          onboarding.isAuthenticated &&
+          selectedPlan &&
+          !canCreate("photos", photos.length - 1, selectedPlan).allowed
+        ) {
+          throw new Error(
+            `You've reached the photo limit on the ${selectedPlan.name} plan. Upgrade to add more photos.`,
+          );
+        }
+
+        // Determine the next available order in the shared photo+divider
+        // namespace for this gallery, so newly-added photos append after
+        // every existing item.
+        const baseOrder =
+          Math.max(
+            -1,
+            ...gallery.directPhotos.map((p) => p.order),
+            ...gallery.dividers.map((d) => d.order),
+          ) + 1;
+
+        let persistedPhotos: MemoryPhoto[] = photos.map((photo, index) => ({
+          ...photo,
+          galleryId,
+          subgalleryId: null,
+          order: baseOrder + index,
+        }));
+
+        if (onboarding.isAuthenticated) {
+          await enforcePlanLimitOnServer("photos", { desiredUsage: photos.length });
+          const supabase = createSupabaseBrowserClient();
+          const { data } = await supabase.auth.getUser();
+          const userId = data.user?.id;
+          if (!userId) {
+            throw new Error("Please sign in again to upload photos.");
+          }
+
+          const uploaded: MemoryPhoto[] = [];
+          for (let index = 0; index < persistedPhotos.length; index += 1) {
+            const photo = persistedPhotos[index];
+            const photoId =
+              photo.id && isUuid(photo.id)
+                ? photo.id
+                : typeof crypto !== "undefined"
+                  ? crypto.randomUUID()
+                  : createId("photo");
+            const persistedSrc = await uploadImageSourceIfNeeded(
+              supabase,
+              userId,
+              photo.src,
+              "photos",
+              photoId,
+            );
+            uploaded.push({ ...photo, id: photoId, src: persistedSrc });
+          }
+          persistedPhotos = uploaded;
+
+          const { error } = await supabase.from("photos").insert(
+            persistedPhotos.map((photo) => ({
+              id: photo.id,
+              user_id: userId,
+              gallery_id: galleryId,
+              subgallery_id: null,
+              storage_path: photo.src,
+              caption: photo.caption || null,
+              location: photo.location || null,
+              location_lat: photo.locationLat ?? null,
+              location_lng: photo.locationLng ?? null,
+              display_order: photo.order,
+              taken_at: null,
+            })),
+          );
+          if (error) {
+            console.error("Memora: addGalleryPhotos insert failed", { galleryId, error });
+            throw error;
+          }
+        }
+
+        const localPhotos = persistedPhotos.map((photo, index) => ({
+          ...photo,
+          // Keep the in-memory `src` displayable: if upload returned a storage
+          // path, fall back to the original local source so the image renders
+          // immediately without waiting for a signed URL refresh.
+          src: photos[index]?.src && !isLikelyStoragePath(photo.src) ? photo.src : photo.src,
+        }));
+
+        setActiveGalleries((current) =>
+          current.map((g) =>
+            g.id === galleryId
+              ? {
+                  ...g,
+                  directPhotos: [...g.directPhotos, ...localPhotos].sort(
+                    (a, b) => a.order - b.order,
+                  ),
+                  updatedAt: new Date().toISOString(),
+                }
+              : g,
+          ),
+        );
+      },
+
+      async updateGalleryPhoto(galleryId, photoId, fields) {
+        if (onboarding.isAuthenticated) {
+          const supabase = createSupabaseBrowserClient();
+          const { data } = await supabase.auth.getUser();
+          const userId = data.user?.id;
+          if (!userId) {
+            throw new Error("Please sign in again to update this photo.");
+          }
+          const update: Record<string, unknown> = {};
+          if (fields.caption !== undefined) update.caption = fields.caption || null;
+          if (fields.location !== undefined) update.location = fields.location || null;
+          if (fields.locationLat !== undefined) update.location_lat = fields.locationLat;
+          if (fields.locationLng !== undefined) update.location_lng = fields.locationLng;
+          if (Object.keys(update).length > 0) {
+            const { error } = await supabase
+              .from("photos")
+              .update(update)
+              .eq("id", photoId)
+              .eq("user_id", userId);
+            if (error) throw error;
+          }
+        }
+
+        setActiveGalleries((current) =>
+          current.map((gallery) =>
+            gallery.id === galleryId
+              ? {
+                  ...gallery,
+                  directPhotos: gallery.directPhotos.map((photo) =>
+                    photo.id === photoId
+                      ? {
+                          ...photo,
+                          ...(fields.caption !== undefined ? { caption: fields.caption } : {}),
+                          ...(fields.location !== undefined ? { location: fields.location } : {}),
+                          ...(fields.locationLat !== undefined
+                            ? { locationLat: fields.locationLat }
+                            : {}),
+                          ...(fields.locationLng !== undefined
+                            ? { locationLng: fields.locationLng }
+                            : {}),
+                        }
+                      : photo,
+                  ),
+                  updatedAt: new Date().toISOString(),
+                }
+              : gallery,
+          ),
+        );
+      },
+
+      async removeGalleryPhoto(galleryId, photoId) {
+        if (onboarding.isAuthenticated) {
+          const supabase = createSupabaseBrowserClient();
+          const { data } = await supabase.auth.getUser();
+          const userId = data.user?.id;
+          if (!userId) {
+            throw new Error("Please sign in again to remove this photo.");
+          }
+          // Capture storage_path before delete so we can clean the object up.
+          const { data: photoRow } = await supabase
+            .from("photos")
+            .select("storage_path")
+            .eq("id", photoId)
+            .eq("user_id", userId)
+            .maybeSingle();
+          const { error } = await supabase
+            .from("photos")
+            .delete()
+            .eq("id", photoId)
+            .eq("user_id", userId);
+          if (error) throw error;
+          await deleteStorageObjectsSafe(supabase, userId, [photoRow?.storage_path ?? null]);
+        }
+
+        setActiveGalleries((current) =>
+          current.map((gallery) =>
+            gallery.id === galleryId
+              ? {
+                  ...gallery,
+                  directPhotos: gallery.directPhotos.filter((p) => p.id !== photoId),
+                  updatedAt: new Date().toISOString(),
+                }
+              : gallery,
+          ),
+        );
+      },
+
+      async addDivider(galleryId, label) {
+        const gallery = galleries.find((entry) => entry.id === galleryId);
+        if (!gallery) throw new Error("Gallery not found.");
+
+        const baseOrder =
+          Math.max(
+            -1,
+            ...gallery.directPhotos.map((p) => p.order),
+            ...gallery.dividers.map((d) => d.order),
+          ) + 1;
+
+        const dividerId =
+          onboarding.isAuthenticated && typeof crypto !== "undefined"
+            ? crypto.randomUUID()
+            : createId("divider");
+
+        if (onboarding.isAuthenticated) {
+          const supabase = createSupabaseBrowserClient();
+          const { data } = await supabase.auth.getUser();
+          const userId = data.user?.id;
+          if (!userId) {
+            throw new Error("Please sign in again to add a divider.");
+          }
+          const { error } = await supabase.from("gallery_dividers").insert({
+            id: dividerId,
+            user_id: userId,
+            gallery_id: galleryId,
+            label,
+            display_order: baseOrder,
+          });
+          if (error) throw error;
+        }
+
+        const newDivider: GalleryDivider = {
+          id: dividerId,
+          galleryId,
+          label,
+          order: baseOrder,
+          createdAt: new Date().toISOString(),
+        };
+        setActiveGalleries((current) =>
+          current.map((g) =>
+            g.id === galleryId
+              ? {
+                  ...g,
+                  dividers: [...g.dividers, newDivider].sort((a, b) => a.order - b.order),
+                  updatedAt: new Date().toISOString(),
+                }
+              : g,
+          ),
+        );
+        return dividerId;
+      },
+
+      async updateDivider(galleryId, dividerId, label) {
+        if (onboarding.isAuthenticated) {
+          const supabase = createSupabaseBrowserClient();
+          const { data } = await supabase.auth.getUser();
+          const userId = data.user?.id;
+          if (!userId) {
+            throw new Error("Please sign in again to update this divider.");
+          }
+          const { error } = await supabase
+            .from("gallery_dividers")
+            .update({ label })
+            .eq("id", dividerId)
+            .eq("user_id", userId);
+          if (error) throw error;
+        }
+        setActiveGalleries((current) =>
+          current.map((gallery) =>
+            gallery.id === galleryId
+              ? {
+                  ...gallery,
+                  dividers: gallery.dividers.map((divider) =>
+                    divider.id === dividerId ? { ...divider, label } : divider,
+                  ),
+                  updatedAt: new Date().toISOString(),
+                }
+              : gallery,
+          ),
+        );
+      },
+
+      async removeDivider(galleryId, dividerId) {
+        if (onboarding.isAuthenticated) {
+          const supabase = createSupabaseBrowserClient();
+          const { data } = await supabase.auth.getUser();
+          const userId = data.user?.id;
+          if (!userId) {
+            throw new Error("Please sign in again to remove this divider.");
+          }
+          const { error } = await supabase
+            .from("gallery_dividers")
+            .delete()
+            .eq("id", dividerId)
+            .eq("user_id", userId);
+          if (error) throw error;
+        }
+        setActiveGalleries((current) =>
+          current.map((gallery) =>
+            gallery.id === galleryId
+              ? {
+                  ...gallery,
+                  dividers: gallery.dividers.filter((d) => d.id !== dividerId),
+                  updatedAt: new Date().toISOString(),
+                }
+              : gallery,
+          ),
+        );
+      },
+
+      async reorderGalleryItems(galleryId, items) {
+        // `items` is the full desired order across direct photos and
+        // dividers. We assign sequential integers (0..n-1) so the shared
+        // namespace stays compact. Photos and dividers are written to
+        // their respective tables in parallel.
+        const photoUpdates: Array<{ id: string; order: number }> = [];
+        const dividerUpdates: Array<{ id: string; order: number }> = [];
+        items.forEach((item, index) => {
+          if (item.type === "photo") photoUpdates.push({ id: item.id, order: index });
+          else dividerUpdates.push({ id: item.id, order: index });
+        });
+
+        if (onboarding.isAuthenticated) {
+          const supabase = createSupabaseBrowserClient();
+          const { data } = await supabase.auth.getUser();
+          const userId = data.user?.id;
+          if (!userId) {
+            throw new Error("Please sign in again to reorder this gallery.");
+          }
+          await Promise.all([
+            ...photoUpdates.map(({ id, order }) =>
+              supabase
+                .from("photos")
+                .update({ display_order: order })
+                .eq("id", id)
+                .eq("user_id", userId),
+            ),
+            ...dividerUpdates.map(({ id, order }) =>
+              supabase
+                .from("gallery_dividers")
+                .update({ display_order: order })
+                .eq("id", id)
+                .eq("user_id", userId),
+            ),
+          ]);
+        }
+
+        const photoOrderById = new Map(photoUpdates.map((p) => [p.id, p.order]));
+        const dividerOrderById = new Map(dividerUpdates.map((d) => [d.id, d.order]));
+        setActiveGalleries((current) =>
+          current.map((gallery) =>
+            gallery.id === galleryId
+              ? {
+                  ...gallery,
+                  directPhotos: gallery.directPhotos
+                    .map((photo) =>
+                      photoOrderById.has(photo.id)
+                        ? { ...photo, order: photoOrderById.get(photo.id)! }
+                        : photo,
+                    )
+                    .sort((a, b) => a.order - b.order),
+                  dividers: gallery.dividers
+                    .map((divider) =>
+                      dividerOrderById.has(divider.id)
+                        ? { ...divider, order: dividerOrderById.get(divider.id)! }
+                        : divider,
+                    )
+                    .sort((a, b) => a.order - b.order),
+                  updatedAt: new Date().toISOString(),
+                }
+              : gallery,
+          ),
+        );
+      },
+
       getGallery(galleryId) {
         return galleries.find((gallery) => gallery.id === galleryId);
       },

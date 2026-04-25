@@ -75,9 +75,7 @@ export function HomeHero({
               Your experiences are worth writing about.
             </h1>
             <p className="mt-5 max-w-[34rem] text-[14px] leading-6 text-white/82 md:mt-6 md:text-[15px] md:leading-7">
-              Memora is a private home for the photos, places, and stories you&apos;ll
-              want to revisit — organized as galleries, broken into specific adventures,
-              all shared with zero friction.
+              In this era of fast-paced content, Memora offers a private, quiet platform to store and organize your experiences, add layers of written content, and share it with the people you care about. Through this, we hope to bring authenticity and reflection to the moments that deserve them.
             </p>
 
             <div className="mt-7 flex flex-wrap items-center gap-3 md:mt-9 md:gap-4">
