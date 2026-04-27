@@ -1,26 +1,38 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { geoAlbersUsa } from "d3-geo";
-import {
-  ComposableMap,
-  Geographies,
-  Geography,
-  Marker,
-} from "react-simple-maps";
+import { geoAlbersUsa, geoPath } from "d3-geo";
+import { merge } from "topojson-client";
+import type {
+  GeometryCollection,
+  MultiPolygon as TopoMultiPolygon,
+  Polygon as TopoPolygon,
+  Topology,
+} from "topojson-specification";
+import type { Feature, MultiPolygon } from "geojson";
 
 /**
- * UsaMemoryMap — real continental U.S. map.
+ * UsaMemoryMap — realistic, premium continental U.S. for the memory
+ * map page.
  *
- * Backed by us-atlas state geometry (10m resolution) projected with
- * geoAlbersUsa via react-simple-maps. Pins are projected with the same
- * projection as the map (no percentage math), so they always land
- * inside the actual state borders.
+ * Built as a single merged silhouette (no state lines) projected with
+ * geoAlbersUsa. Visual depth is layered:
  *
- * Alaska + Hawaii: geoAlbersUsa includes their insets out of the box.
+ *   1. Atmospheric ocean halo (radial gradient over the whole canvas)
+ *   2. Outer glow + drop shadow filter on the landmass
+ *   3. Landmass fill: NW-lit warm paper gradient (suggests sun from
+ *      upper-left, a classic relief mood without literal terrain)
+ *   4. Soft inner shadow: SVG feFlood + feComposite-in producing a
+ *      gentle dark edge on the SE side, again echoing relief
+ *   5. Subtle organic surface noise via low-opacity feTurbulence —
+ *      reads as paper/terrain grain rather than GIS texture
+ *   6. Two-stroke coastline: a wider soft outer halo stroke + a fine
+ *      ink coastline on top, so the land feels lifted from the water
+ *   7. Premium 3-circle Memora pins on top, anchored by the Albers
+ *      projection used for both data and rendering
  *
- * Pin click reveals a small preview card (cover image + title + dates),
- * matching the WorldGlobe interaction pattern.
+ * Pins are projected with the same geoAlbersUsa instance used for the
+ * landmass path, so they always land inside the actual coastline.
  */
 
 export type UsaMapPin = {
@@ -33,22 +45,17 @@ export type UsaMapPin = {
   endDate?: string;
 };
 
-// us-atlas state outlines (10m simplified; ~155KB). Loaded by react-simple-maps.
 const USA_TOPO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
-// react-simple-maps draws into an SVG of these intrinsic dimensions; CSS
-// scales the SVG responsively. Pin preview positioning uses these dims to
-// convert projected viewBox coords → percentages.
 const MAP_WIDTH = 980;
 const MAP_HEIGHT = 551;
 const PROJ_SCALE = 1100;
 
-// A single projection instance shared across pin filtering and preview
-// positioning. geoAlbersUsa returns null for points outside the inset
-// composition, which is exactly the filter we want.
 const projection = geoAlbersUsa()
   .scale(PROJ_SCALE)
   .translate([MAP_WIDTH / 2, MAP_HEIGHT / 2]);
+
+const pathBuilder = geoPath(projection);
 
 function isProjectable(lat: number, lng: number) {
   const result = projection([lng, lat]);
@@ -73,7 +80,38 @@ export function UsaMemoryMap({ pins }: { pins: UsaMapPin[] }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // Close preview on outside click.
+  // Single merged US silhouette path. Loaded once on mount.
+  const [usPath, setUsPath] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch(USA_TOPO_URL);
+        if (!response.ok) throw new Error(`Topology fetch failed: ${response.status}`);
+        const topology = (await response.json()) as Topology;
+        // Each "state" is a Polygon or MultiPolygon in the source topology;
+        // merge() unions them into a single MultiPolygon GeoJSON geometry.
+        const states = topology.objects.states as GeometryCollection<{
+          name?: string;
+        }>;
+        const polygons = states.geometries as Array<TopoPolygon | TopoMultiPolygon>;
+        const merged = merge(topology, polygons) as MultiPolygon;
+        const featureGeo: Feature<MultiPolygon> = {
+          type: "Feature",
+          properties: {},
+          geometry: merged,
+        };
+        const d = pathBuilder(featureGeo);
+        if (!cancelled && d) setUsPath(d);
+      } catch (err) {
+        console.error("Memora: USA map topology load failed", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEffect(() => {
     if (!activeId) return;
     const onPointerDown = (e: MouseEvent) => {
@@ -116,80 +154,201 @@ export function UsaMemoryMap({ pins }: { pins: UsaMapPin[] }) {
         className="relative w-full"
         style={{ aspectRatio: `${MAP_WIDTH} / ${MAP_HEIGHT}` }}
       >
-        <ComposableMap
-          projection="geoAlbersUsa"
-          projectionConfig={{ scale: PROJ_SCALE }}
-          width={MAP_WIDTH}
-          height={MAP_HEIGHT}
-          style={{ width: "100%", height: "100%" }}
+        <svg
+          viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
+          className="absolute inset-0 h-full w-full"
+          preserveAspectRatio="xMidYMid meet"
+          aria-hidden
         >
           <defs>
-            <radialGradient id="usa-map-halo" cx="50%" cy="55%" r="70%">
-              <stop offset="0%" stopColor="rgba(140,184,232,0.18)" />
-              <stop offset="100%" stopColor="rgba(140,184,232,0)" />
+            {/* Atmospheric ocean halo behind the land. */}
+            <radialGradient id="usa-ocean-halo" cx="50%" cy="55%" r="70%">
+              <stop offset="0%" stopColor="rgba(170,200,232,0.22)" />
+              <stop offset="55%" stopColor="rgba(170,200,232,0.08)" />
+              <stop offset="100%" stopColor="rgba(170,200,232,0)" />
             </radialGradient>
-            <linearGradient id="usa-map-fill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="rgba(247,251,255,0.98)" />
-              <stop offset="100%" stopColor="rgba(224,235,249,0.92)" />
+
+            {/*
+              Land fill — NW-lit warm paper gradient. The diagonal
+              direction mimics terrain lit by sun from the upper-left,
+              the standard cartographic convention for shaded relief.
+            */}
+            <linearGradient id="usa-land-fill" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#fbf6ec" />
+              <stop offset="55%" stopColor="#f0e8d6" />
+              <stop offset="100%" stopColor="#e3d8be" />
             </linearGradient>
+
+            {/* Subtle warm-stone shadow tint on the SE flank. */}
+            <linearGradient id="usa-land-shade" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="rgba(120,98,60,0)" />
+              <stop offset="100%" stopColor="rgba(120,98,60,0.18)" />
+            </linearGradient>
+
+            {/*
+              Drop shadow + inner glow filter for the land. feDropShadow
+              gives the lift; the inner-glow chain adds a soft warm rim
+              just inside the coastline so the land reads as raised.
+            */}
+            <filter
+              id="usa-land-lift"
+              x="-10%"
+              y="-10%"
+              width="120%"
+              height="120%"
+            >
+              <feDropShadow
+                dx="0"
+                dy="2"
+                stdDeviation="3"
+                floodColor="rgba(60,46,30,0.22)"
+              />
+            </filter>
+
+            {/*
+              Inner shadow — paint a dark color, mask it to the inside
+              of the land, blur, then composite over so it reads as a
+              gentle interior depth on the SE side.
+            */}
+            <filter id="usa-inner-shadow">
+              <feFlood floodColor="rgba(96,70,40,0.28)" result="flood" />
+              <feComposite
+                in="flood"
+                in2="SourceGraphic"
+                operator="out"
+                result="outside"
+              />
+              <feGaussianBlur in="outside" stdDeviation="3" result="blurred" />
+              <feComposite
+                in="blurred"
+                in2="SourceGraphic"
+                operator="in"
+                result="innerShadow"
+              />
+              <feComposite in="innerShadow" in2="SourceGraphic" operator="over" />
+            </filter>
+
+            {/*
+              Organic surface texture — fractal noise clipped to the
+              landmass at very low opacity. Reads as paper/terrain grain
+              rather than GIS texture.
+            */}
+            <filter id="usa-noise">
+              <feTurbulence
+                type="fractalNoise"
+                baseFrequency="0.85"
+                numOctaves="2"
+                seed="7"
+              />
+              <feColorMatrix values="0 0 0 0 0.45  0 0 0 0 0.36  0 0 0 0 0.25  0 0 0 0.25 0" />
+            </filter>
+
+            <clipPath id="usa-clip">
+              {usPath ? <path d={usPath} /> : null}
+            </clipPath>
           </defs>
 
-          {/* Soft atmospheric halo over the whole canvas. */}
+          {/* Ocean atmospheric halo */}
           <rect
-            x={0}
-            y={0}
+            x="0"
+            y="0"
             width={MAP_WIDTH}
             height={MAP_HEIGHT}
-            fill="url(#usa-map-halo)"
+            fill="url(#usa-ocean-halo)"
           />
 
-          <Geographies geography={USA_TOPO_URL}>
-            {({ geographies }) =>
-              geographies.map((geo) => (
-                <Geography
-                  key={geo.rsmKey}
-                  geography={geo}
-                  fill="url(#usa-map-fill)"
-                  stroke="rgba(108,148,196,0.42)"
-                  strokeWidth={0.6}
-                  style={{
-                    default: { outline: "none" },
-                    hover: { outline: "none", fill: "rgba(220,232,247,0.95)" },
-                    pressed: { outline: "none" },
-                  }}
-                />
-              ))
-            }
-          </Geographies>
+          {usPath ? (
+            <>
+              {/* Soft outer coastline glow — wide, low-opacity stroke
+                  beneath the land for a gentle lit edge against the
+                  ocean. */}
+              <path
+                d={usPath}
+                fill="none"
+                stroke="rgba(140,184,232,0.32)"
+                strokeWidth={6}
+                strokeLinejoin="round"
+              />
 
-          {usaPins.map((pin) => (
-            <Marker key={pin.id} coordinates={[pin.lng, pin.lat]}>
-              <g
-                data-usa-pin
-                style={{ cursor: "pointer" }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveId((prev) => (prev === pin.id ? null : pin.id));
-                }}
-                aria-label={pin.title ?? "Memory location"}
-              >
-                {/* outer halo */}
-                <circle r={10} fill="rgba(108,148,196,0.18)" />
-                {/* mid ring */}
-                <circle r={5.5} fill="rgba(108,148,196,0.5)" />
-                {/* core */}
-                <circle
-                  r={2.6}
-                  fill="#ffffff"
-                  stroke="rgba(56,92,148,0.95)"
-                  strokeWidth={1.1}
+              {/* Land — base fill with drop shadow */}
+              <path
+                d={usPath}
+                fill="url(#usa-land-fill)"
+                filter="url(#usa-land-lift)"
+              />
+
+              {/* SE shading overlay clipped to the land */}
+              <path
+                d={usPath}
+                fill="url(#usa-land-shade)"
+                opacity={0.85}
+              />
+
+              {/* Inner shadow — clipped to the land, gives an interior
+                  edge that suggests slight elevation */}
+              <path
+                d={usPath}
+                fill="rgba(255,255,255,0)"
+                filter="url(#usa-inner-shadow)"
+              />
+
+              {/* Organic surface noise — confined to the landmass */}
+              <g clipPath="url(#usa-clip)">
+                <rect
+                  x="0"
+                  y="0"
+                  width={MAP_WIDTH}
+                  height={MAP_HEIGHT}
+                  filter="url(#usa-noise)"
+                  opacity={0.35}
                 />
               </g>
-            </Marker>
-          ))}
-        </ComposableMap>
 
-        {/* Preview card — anchored at the projected pin position */}
+              {/* Refined coastline ink — fine, warmer line on top */}
+              <path
+                d={usPath}
+                fill="none"
+                stroke="rgba(96,68,40,0.45)"
+                strokeWidth={0.9}
+                strokeLinejoin="round"
+              />
+            </>
+          ) : null}
+        </svg>
+
+        {/* Pins — HTML over the SVG so the preview card and click
+            handling stay simple. */}
+        {usaPins.map((pin) => {
+          const projected = projection([pin.lng, pin.lat]);
+          if (!projected) return null;
+          const xPct = (projected[0] / MAP_WIDTH) * 100;
+          const yPct = (projected[1] / MAP_HEIGHT) * 100;
+          const isActive = activeId === pin.id;
+          return (
+            <button
+              key={pin.id}
+              data-usa-pin
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveId((prev) => (prev === pin.id ? null : pin.id));
+              }}
+              style={{
+                left: `${xPct}%`,
+                top: `${yPct}%`,
+                transform: "translate(-50%, -50%)",
+              }}
+              className={`absolute z-10 inline-flex h-8 w-8 items-center justify-center rounded-full transition ${
+                isActive ? "scale-110" : "hover:scale-110"
+              }`}
+              aria-label={pin.title ?? "Memory location"}
+            >
+              <span className="memora-pin-pulse" />
+              <span className="memora-pin-core" />
+            </button>
+          );
+        })}
+
         {activePin && activeProjected ? (
           <div
             role="status"
