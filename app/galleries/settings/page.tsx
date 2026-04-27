@@ -19,8 +19,8 @@ export default function WorkspaceSettingsPage() {
   return (
     <AppShell>
       <WorkspaceTopbar
-        eyebrow="Settings"
-        title="Settings"
+        eyebrow="Account Info"
+        title="Account Info"
         subtitle="Manage your account, membership, and support actions."
       />
 

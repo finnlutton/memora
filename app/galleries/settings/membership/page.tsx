@@ -7,7 +7,7 @@ export default function MembershipPage() {
   return (
     <AppShell>
       <WorkspaceTopbar
-        eyebrow="Settings"
+        eyebrow="Account Info"
         title="Membership"
         subtitle="Choose the plan that fits how you keep memories. Switch anytime."
       />

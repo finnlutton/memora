@@ -119,16 +119,13 @@ export default function HelpPage() {
             <p className="text-xs text-[color:var(--ink-soft)]">{remainingCount} characters remaining</p>
           </label>
 
-          <div className="space-y-1.5 rounded-xl bg-[rgba(244,249,255,0.85)] px-3 py-2 text-xs text-[color:var(--ink-soft)]">
-            <p>
-              <span className="text-[color:var(--ink-faint)]">Current page:</span> {pathname}
-            </p>
-            {userEmail ? (
+          {userEmail ? (
+            <div className="space-y-1.5 rounded-xl bg-[rgba(244,249,255,0.85)] px-3 py-2 text-xs text-[color:var(--ink-soft)]">
               <p>
                 <span className="text-[color:var(--ink-faint)]">Signed-in email:</span> {userEmail}
               </p>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
 
           {error ? <p className="text-sm text-[#9a4545]">{error}</p> : null}
           {success ? <p className="text-sm text-[color:var(--ink)]">{success}</p> : null}

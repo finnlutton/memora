@@ -62,7 +62,7 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
 
   const navItems = useMemo(
     () => [
-      { href: "/galleries", label: "My Galleries", icon: MyGalleriesIcon },
+      { href: "/galleries", label: "Galleries", icon: MyGalleriesIcon },
       { href: "/galleries/clipboard", label: "Clipboard", icon: ClipboardIcon },
       { href: "/galleries/map", label: "Memory Map", icon: GlobeIcon },
       { href: "/galleries/settings", label: "Settings", icon: SettingsIcon },
