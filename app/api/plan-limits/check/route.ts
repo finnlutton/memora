@@ -104,6 +104,26 @@ export async function POST(request: NextRequest) {
         if (countRes.error) throw countRes.error;
         currentUsage = countRes.count ?? 0;
       }
+    } else if (resource === "directPhotos") {
+      // Count photos uploaded directly to a gallery (subgallery_id IS NULL).
+      // Caller passes desiredUsage = current local count + about-to-add
+      // count, OR omits it to have us count from the DB.
+      if (typeof payload.desiredUsage !== "number") {
+        if (!payload.galleryId) {
+          return NextResponse.json(
+            { error: "galleryId is required for directPhotos." },
+            { status: 400 },
+          );
+        }
+        const countRes = await supabase
+          .from("photos")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .eq("gallery_id", payload.galleryId)
+          .is("subgallery_id", null);
+        if (countRes.error) throw countRes.error;
+        currentUsage = countRes.count ?? 0;
+      }
     } else if (resource === "shares") {
       const countRes = await supabase
         .from("shares")

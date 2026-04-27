@@ -18,7 +18,12 @@ export type MembershipPlanId =
   | "lifetime"
   | "internal";
 
-export type PlanResource = "galleries" | "subgalleries" | "photos" | "shares";
+export type PlanResource =
+  | "galleries"
+  | "subgalleries"
+  | "photos"
+  | "directPhotos"
+  | "shares";
 
 export type MembershipPlan = {
   id: MembershipPlanId;
@@ -29,6 +34,8 @@ export type MembershipPlan = {
   galleryCount: number;
   subgalleriesPerGallery: number;
   photosPerSubgallery: number;
+  /** Limit for photos uploaded directly to a gallery (no subgallery). */
+  directPhotosPerGallery: number;
   /** null = unlimited */
   activeShareLinks: number | null;
   summary: string;
@@ -76,12 +83,11 @@ export const membershipPlans: MembershipPlan[] = [
     galleryCount: 2,
     subgalleriesPerGallery: 3,
     photosPerSubgallery: 15,
+    directPhotosPerGallery: 15,
     activeShareLinks: 3,
     summary: "A quiet way to start your archive.",
     features: [
       formatGalleryCount(2),
-      "3 subgalleries per gallery",
-      "15 photos per subgallery",
       "3 active share links",
     ],
     featured: false,
@@ -90,38 +96,37 @@ export const membershipPlans: MembershipPlan[] = [
   {
     id: "plus",
     name: "Plus",
-    priceMonthlyLabel: "$4.99",
-    price: annualPriceFromMonthly(4.99),
-    galleryCount: 40,
-    subgalleriesPerGallery: 15,
+    priceMonthlyLabel: "$2.99",
+    price: annualPriceFromMonthly(2.99),
+    galleryCount: 20,
+    subgalleriesPerGallery: 10,
     photosPerSubgallery: 40,
-    activeShareLinks: null,
+    directPhotosPerGallery: 40,
+    activeShareLinks: 50,
     summary: "Built for travelers and families keeping things in one place.",
     features: [
-      formatGalleryCount(40),
-      "15 subgalleries per gallery",
-      "40 photos per subgallery",
-      "Unlimited private shares",
+      formatGalleryCount(20),
+      "50 active share links",
     ],
     featured: true,
-    effectiveCost: `$${dollars(annualPriceFromMonthly(4.99) / 40)}`,
+    effectiveCost: `$${dollars(annualPriceFromMonthly(2.99) / 20)}`,
     stripeMode: "subscription",
   },
   {
     id: "max",
     name: "Max",
-    priceMonthlyLabel: "$7.99",
-    price: annualPriceFromMonthly(7.99),
+    priceMonthlyLabel: "$5.99",
+    price: annualPriceFromMonthly(5.99),
     galleryCount: UNLIMITED,
     subgalleriesPerGallery: UNLIMITED,
     photosPerSubgallery: UNLIMITED,
+    directPhotosPerGallery: UNLIMITED,
     activeShareLinks: null,
     summary: "For long-term archivists building a life's worth of memories.",
     features: [
       "Unlimited galleries",
-      "Unlimited subgalleries",
-      "Unlimited photos",
-      "Unlimited private shares",
+      "Unlimited sharing",
+      "Higher limits all around",
       "Early access to new features",
     ],
     featured: false,
@@ -131,11 +136,12 @@ export const membershipPlans: MembershipPlan[] = [
   {
     id: "lifetime",
     name: "Lifetime",
-    priceMonthlyLabel: "One-time",
-    price: 0, // actual amount lives in Stripe
+    priceMonthlyLabel: "$79.99",
+    price: 79.99,
     galleryCount: UNLIMITED,
     subgalleriesPerGallery: UNLIMITED,
     photosPerSubgallery: UNLIMITED,
+    directPhotosPerGallery: UNLIMITED,
     activeShareLinks: null,
     summary: "Pay once. Keep Max-level access for life.",
     features: [
@@ -155,6 +161,7 @@ export const membershipPlans: MembershipPlan[] = [
     galleryCount: UNLIMITED,
     subgalleriesPerGallery: UNLIMITED,
     photosPerSubgallery: UNLIMITED,
+    directPhotosPerGallery: UNLIMITED,
     activeShareLinks: null,
     summary: "Full-access internal account.",
     features: ["Unlimited everything", "No billing required"],
@@ -219,6 +226,7 @@ export function getPlanLimit(plan: MembershipPlan, resource: PlanResource): Plan
   if (resource === "galleries") return plan.galleryCount;
   if (resource === "subgalleries") return plan.subgalleriesPerGallery;
   if (resource === "photos") return plan.photosPerSubgallery;
+  if (resource === "directPhotos") return plan.directPhotosPerGallery;
   return plan.activeShareLinks;
 }
 

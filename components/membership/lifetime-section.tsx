@@ -67,14 +67,9 @@ export function LifetimeSection({
           </ul>
 
           <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="font-serif text-[28px] leading-none text-[color:var(--ink)] md:text-[32px]">
-                {plan.priceMonthlyLabel}
-              </p>
-              <p className="mt-1 text-[10.5px] font-medium uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
-                Pay once · Never billed again
-              </p>
-            </div>
+            <p className="font-serif text-[32px] leading-none text-[color:var(--ink)] md:text-[36px]">
+              {plan.priceMonthlyLabel}
+            </p>
             <button
               type="button"
               onClick={onSelect}

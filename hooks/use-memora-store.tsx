@@ -1654,13 +1654,19 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         const gallery = galleries.find((entry) => entry.id === galleryId);
         if (!gallery) return;
         const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);
+        // Direct gallery photos use their own per-gallery limit
+        // (directPhotos), not the per-subgallery photo limit.
         if (
           onboarding.isAuthenticated &&
           selectedPlan &&
-          !canCreate("photos", photos.length - 1, selectedPlan).allowed
+          !canCreate(
+            "directPhotos",
+            gallery.directPhotos.length + photos.length - 1,
+            selectedPlan,
+          ).allowed
         ) {
           throw new Error(
-            `You've reached the photo limit on the ${selectedPlan.name} plan. Upgrade to add more photos.`,
+            `You've reached the per-gallery photo limit on the ${selectedPlan.name} plan. Upgrade to add more photos.`,
           );
         }
 
@@ -1682,7 +1688,14 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         }));
 
         if (onboarding.isAuthenticated) {
-          await enforcePlanLimitOnServer("photos", { desiredUsage: photos.length });
+          // Server-side enforcement of the per-gallery direct photo
+          // limit. Pass desiredUsage = (currently in DB) + (about to add)
+          // so the server compares the post-upload total to the plan
+          // ceiling without re-counting.
+          await enforcePlanLimitOnServer("directPhotos", {
+            galleryId,
+            desiredUsage: gallery.directPhotos.length + photos.length,
+          });
           const supabase = createSupabaseBrowserClient();
           const { data } = await supabase.auth.getUser();
           const userId = data.user?.id;
