@@ -84,17 +84,20 @@ export default function ClipboardPage() {
         */}
         <header className="pointer-events-none absolute left-5 right-5 top-6 z-20 max-w-2xl md:left-12 md:top-12">
           <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-[color:var(--ink-soft)]">
-            Clipboard
+            Your clipboard
           </p>
+          {/*
+            Title IS the rotating prompt. Today's prompt is picked
+            deterministically by date in pickPromptForToday() so the
+            user sees the same heading all day, then a fresh one
+            tomorrow.
+          */}
           <h1
             id="clipboard-title"
             className="mt-2 font-serif text-[34px] leading-[0.96] text-[color:var(--ink)] md:mt-3 md:text-[58px] md:leading-[0.94]"
           >
-            What&apos;s on your mind?
-          </h1>
-          <p className="mt-3 max-w-md text-[13px] leading-6 text-[color:var(--ink-soft)] md:mt-4 md:text-[15px] md:leading-7">
             {prompt}
-          </p>
+          </h1>
         </header>
 
         {error ? (
