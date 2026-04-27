@@ -12,27 +12,31 @@ import type {
 import type { Feature, MultiPolygon } from "geojson";
 
 /**
- * UsaMemoryMap — realistic, premium continental U.S. for the memory
- * map page.
+ * UsaMemoryMap — realistic continental U.S. with real terrain imagery.
  *
- * Built as a single merged silhouette (no state lines) projected with
- * geoAlbersUsa. Visual depth is layered:
+ * Layers, bottom-up:
+ *   1. The same satellite-style Earth texture used by the marketing
+ *      globe (/textures/new_earth.jpg). Cropped via SVG clipPath to a
+ *      single merged US silhouette so only the conterminous land is
+ *      visible. Reusing the globe texture keeps the U.S. map in the
+ *      same emotional register as the rest of Memora.
+ *   2. A subtle warm tint multiplied over the imagery to integrate
+ *      with Memora's paper-tone palette and soften the satellite
+ *      saturation.
+ *   3. A drop shadow on the silhouette so the land lifts off the
+ *      page background.
+ *   4. Soft inner shadow + fine warm coastline ink for definition.
+ *   5. Premium glowing pins (same memora-pin-pulse + memora-pin-core
+ *      classes the globe uses).
  *
- *   1. Atmospheric ocean halo (radial gradient over the whole canvas)
- *   2. Outer glow + drop shadow filter on the landmass
- *   3. Landmass fill: NW-lit warm paper gradient (suggests sun from
- *      upper-left, a classic relief mood without literal terrain)
- *   4. Soft inner shadow: SVG feFlood + feComposite-in producing a
- *      gentle dark edge on the SE side, again echoing relief
- *   5. Subtle organic surface noise via low-opacity feTurbulence —
- *      reads as paper/terrain grain rather than GIS texture
- *   6. Two-stroke coastline: a wider soft outer halo stroke + a fine
- *      ink coastline on top, so the land feels lifted from the water
- *   7. Premium 3-circle Memora pins on top, anchored by the Albers
- *      projection used for both data and rendering
+ * No state borders, no SVG box, no rectangular halo. The map sits on
+ * the page's existing atmospheric background.
  *
- * Pins are projected with the same geoAlbersUsa instance used for the
- * landmass path, so they always land inside the actual coastline.
+ * Alignment note: the source texture is equirectangular full-world;
+ * the silhouette is geoAlbersUsa. At this rendering scale the residual
+ * projection difference inside the conterminous US is small (a few
+ * pixels at the coastlines), so positioning the equirectangular crop
+ * to match the silhouette's projected bounding box looks right.
  */
 
 export type UsaMapPin = {
@@ -46,10 +50,20 @@ export type UsaMapPin = {
 };
 
 const USA_TOPO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
+const RELIEF_TEXTURE_URL = "/textures/new_earth.jpg";
 
 const MAP_WIDTH = 980;
 const MAP_HEIGHT = 551;
 const PROJ_SCALE = 1100;
+
+// Conterminous-US bounding box in lat/lng for placing the
+// equirectangular relief texture. These values are intentionally a
+// touch wider than the strict bbox so the texture visibly fills the
+// silhouette through any residual projection mismatch.
+const US_LNG_W = -125;
+const US_LNG_E = -66;
+const US_LAT_N = 50;
+const US_LAT_S = 24;
 
 const projection = geoAlbersUsa()
   .scale(PROJ_SCALE)
@@ -80,8 +94,16 @@ export function UsaMemoryMap({ pins }: { pins: UsaMapPin[] }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // Single merged US silhouette path. Loaded once on mount.
+  // Merged US silhouette path + projected bbox, both derived from the
+  // topology fetched once on mount.
   const [usPath, setUsPath] = useState<string | null>(null);
+  const [reliefBox, setReliefBox] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -89,8 +111,6 @@ export function UsaMemoryMap({ pins }: { pins: UsaMapPin[] }) {
         const response = await fetch(USA_TOPO_URL);
         if (!response.ok) throw new Error(`Topology fetch failed: ${response.status}`);
         const topology = (await response.json()) as Topology;
-        // Each "state" is a Polygon or MultiPolygon in the source topology;
-        // merge() unions them into a single MultiPolygon GeoJSON geometry.
         const states = topology.objects.states as GeometryCollection<{
           name?: string;
         }>;
@@ -102,7 +122,36 @@ export function UsaMemoryMap({ pins }: { pins: UsaMapPin[] }) {
           geometry: merged,
         };
         const d = pathBuilder(featureGeo);
-        if (!cancelled && d) setUsPath(d);
+        if (cancelled) return;
+        if (d) setUsPath(d);
+
+        // Compute the projected bbox so we can place the
+        // equirectangular relief texture such that its US portion
+        // covers the silhouette.
+        const projW = projection([US_LNG_W, (US_LAT_N + US_LAT_S) / 2]);
+        const projE = projection([US_LNG_E, (US_LAT_N + US_LAT_S) / 2]);
+        const projN = projection([(US_LNG_W + US_LNG_E) / 2, US_LAT_N]);
+        const projS = projection([(US_LNG_W + US_LNG_E) / 2, US_LAT_S]);
+        if (projW && projE && projN && projS) {
+          const minX = projW[0];
+          const maxX = projE[0];
+          const minY = projN[1];
+          const maxY = projS[1];
+          // Source equirectangular texture: full world, 360° lng × 180° lat.
+          // The US occupies a sub-rectangle of that. We size the full
+          // texture so its US sub-rectangle equals our projected bbox,
+          // then position so the corners line up.
+          const usFracX = (US_LNG_E - US_LNG_W) / 360; // ≈ 0.164
+          const usFracY = (US_LAT_N - US_LAT_S) / 180; // ≈ 0.144
+          const fullW = (maxX - minX) / usFracX;
+          const fullH = (maxY - minY) / usFracY;
+          // Distance from texture's left edge to where the US starts.
+          const leftFrac = (US_LNG_W + 180) / 360; // ≈ 0.153
+          const topFrac = (90 - US_LAT_N) / 180; // ≈ 0.222
+          const x = minX - leftFrac * fullW;
+          const y = minY - topFrac * fullH;
+          setReliefBox({ x, y, width: fullW, height: fullH });
+        }
       } catch (err) {
         console.error("Memora: USA map topology load failed", err);
       }
@@ -161,35 +210,12 @@ export function UsaMemoryMap({ pins }: { pins: UsaMapPin[] }) {
           aria-hidden
         >
           <defs>
-            {/* Atmospheric ocean halo behind the land. */}
-            <radialGradient id="usa-ocean-halo" cx="50%" cy="55%" r="70%">
-              <stop offset="0%" stopColor="rgba(170,200,232,0.22)" />
-              <stop offset="55%" stopColor="rgba(170,200,232,0.08)" />
-              <stop offset="100%" stopColor="rgba(170,200,232,0)" />
-            </radialGradient>
+            {/* Silhouette clip — wraps the relief texture into the US shape. */}
+            <clipPath id="usa-clip">
+              {usPath ? <path d={usPath} /> : null}
+            </clipPath>
 
-            {/*
-              Land fill — NW-lit warm paper gradient. The diagonal
-              direction mimics terrain lit by sun from the upper-left,
-              the standard cartographic convention for shaded relief.
-            */}
-            <linearGradient id="usa-land-fill" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#fbf6ec" />
-              <stop offset="55%" stopColor="#f0e8d6" />
-              <stop offset="100%" stopColor="#e3d8be" />
-            </linearGradient>
-
-            {/* Subtle warm-stone shadow tint on the SE flank. */}
-            <linearGradient id="usa-land-shade" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="rgba(120,98,60,0)" />
-              <stop offset="100%" stopColor="rgba(120,98,60,0.18)" />
-            </linearGradient>
-
-            {/*
-              Drop shadow + inner glow filter for the land. feDropShadow
-              gives the lift; the inner-glow chain adds a soft warm rim
-              just inside the coastline so the land reads as raised.
-            */}
+            {/* Drop shadow lift for the land. */}
             <filter
               id="usa-land-lift"
               x="-10%"
@@ -205,110 +231,76 @@ export function UsaMemoryMap({ pins }: { pins: UsaMapPin[] }) {
               />
             </filter>
 
-            {/*
-              Inner shadow — paint a dark color, mask it to the inside
-              of the land, blur, then composite over so it reads as a
-              gentle interior depth on the SE side.
-            */}
+            {/* Soft warm inner shadow for a hint of edge depth. */}
             <filter id="usa-inner-shadow">
-              <feFlood floodColor="rgba(96,70,40,0.28)" result="flood" />
+              <feFlood floodColor="rgba(96,70,40,0.25)" result="flood" />
               <feComposite
                 in="flood"
                 in2="SourceGraphic"
                 operator="out"
                 result="outside"
               />
-              <feGaussianBlur in="outside" stdDeviation="3" result="blurred" />
+              <feGaussianBlur in="outside" stdDeviation="2.4" result="blurred" />
               <feComposite
                 in="blurred"
                 in2="SourceGraphic"
                 operator="in"
-                result="innerShadow"
               />
-              <feComposite in="innerShadow" in2="SourceGraphic" operator="over" />
             </filter>
 
-            {/*
-              Organic surface texture — fractal noise clipped to the
-              landmass at very low opacity. Reads as paper/terrain grain
-              rather than GIS texture.
-            */}
-            <filter id="usa-noise">
-              <feTurbulence
-                type="fractalNoise"
-                baseFrequency="0.85"
-                numOctaves="2"
-                seed="7"
-              />
-              <feColorMatrix values="0 0 0 0 0.45  0 0 0 0 0.36  0 0 0 0 0.25  0 0 0 0.25 0" />
-            </filter>
-
-            <clipPath id="usa-clip">
-              {usPath ? <path d={usPath} /> : null}
-            </clipPath>
+            {/* Subtle warm tint applied as an overlay so the satellite
+                imagery integrates with Memora's paper palette. */}
+            <linearGradient id="usa-warm-tint" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="rgba(255,239,205,0.18)" />
+              <stop offset="100%" stopColor="rgba(120,86,52,0.18)" />
+            </linearGradient>
           </defs>
 
-          {/* Ocean atmospheric halo */}
-          <rect
-            x="0"
-            y="0"
-            width={MAP_WIDTH}
-            height={MAP_HEIGHT}
-            fill="url(#usa-ocean-halo)"
-          />
-
-          {usPath ? (
+          {usPath && reliefBox ? (
             <>
-              {/* Soft outer coastline glow — wide, low-opacity stroke
-                  beneath the land for a gentle lit edge against the
-                  ocean. */}
+              {/* 1. Drop shadow base — a copy of the silhouette filled
+                  with a warm color, so feDropShadow has substance to
+                  cast from. The actual landmass on top covers it. */}
               <path
                 d={usPath}
-                fill="none"
-                stroke="rgba(140,184,232,0.32)"
-                strokeWidth={6}
-                strokeLinejoin="round"
-              />
-
-              {/* Land — base fill with drop shadow */}
-              <path
-                d={usPath}
-                fill="url(#usa-land-fill)"
+                fill="#ddc9a4"
                 filter="url(#usa-land-lift)"
               />
 
-              {/* SE shading overlay clipped to the land */}
-              <path
-                d={usPath}
-                fill="url(#usa-land-shade)"
-                opacity={0.85}
-              />
+              {/* 2. Real terrain imagery clipped to the silhouette. */}
+              <g clipPath="url(#usa-clip)">
+                <image
+                  href={RELIEF_TEXTURE_URL}
+                  x={reliefBox.x}
+                  y={reliefBox.y}
+                  width={reliefBox.width}
+                  height={reliefBox.height}
+                  preserveAspectRatio="none"
+                />
+                {/* 3. Warm-tone overlay on the imagery so it reads as
+                    a Memora artifact rather than a NASA tile. */}
+                <rect
+                  x={0}
+                  y={0}
+                  width={MAP_WIDTH}
+                  height={MAP_HEIGHT}
+                  fill="url(#usa-warm-tint)"
+                />
+              </g>
 
-              {/* Inner shadow — clipped to the land, gives an interior
-                  edge that suggests slight elevation */}
+              {/* 4. Inner shadow — gentle warm rim on the inside of
+                  the coastline. */}
               <path
                 d={usPath}
                 fill="rgba(255,255,255,0)"
                 filter="url(#usa-inner-shadow)"
               />
 
-              {/* Organic surface noise — confined to the landmass */}
-              <g clipPath="url(#usa-clip)">
-                <rect
-                  x="0"
-                  y="0"
-                  width={MAP_WIDTH}
-                  height={MAP_HEIGHT}
-                  filter="url(#usa-noise)"
-                  opacity={0.35}
-                />
-              </g>
-
-              {/* Refined coastline ink — fine, warmer line on top */}
+              {/* 5. Fine ink coastline. */}
               <path
                 d={usPath}
                 fill="none"
-                stroke="rgba(96,68,40,0.45)"
+                stroke="rgba(76,52,30,0.55)"
                 strokeWidth={0.9}
                 strokeLinejoin="round"
               />
@@ -316,8 +308,7 @@ export function UsaMemoryMap({ pins }: { pins: UsaMapPin[] }) {
           ) : null}
         </svg>
 
-        {/* Pins — HTML over the SVG so the preview card and click
-            handling stay simple. */}
+        {/* Pins layered above. */}
         {usaPins.map((pin) => {
           const projected = projection([pin.lng, pin.lat]);
           if (!projected) return null;
