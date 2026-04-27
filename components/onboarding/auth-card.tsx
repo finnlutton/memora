@@ -273,7 +273,7 @@ export function AuthCard() {
         </div>
 
         <div className="border border-[color:var(--border)] bg-[rgba(255,255,255,0.86)] p-6 md:p-8">
-          <div className="flex gap-2 border-b border-[color:var(--border)] pb-5">
+          <div className="mb-6 flex gap-2 border-b border-[color:var(--border)] pb-5">
             <button
               type="button"
               onClick={() => setMode("signup")}
@@ -298,7 +298,6 @@ export function AuthCard() {
             </button>
           </div>
 
-          <div className="my-6 border-t border-[color:var(--border)]" />
 
           <form
             onSubmit={(event) => {
