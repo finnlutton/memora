@@ -1,40 +1,27 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { geoAlbersUsa } from "d3-geo";
+import {
+  ComposableMap,
+  Geographies,
+  Geography,
+  Marker,
+} from "react-simple-maps";
 
 /**
- * UsaMemoryMap — stylized continental U.S. alternative to WorldGlobe.
+ * UsaMemoryMap — real continental U.S. map.
  *
- * Pins are positioned via a flat equirectangular projection inside the
- * continental U.S. bounding box. Lat/lng outside the bounds are filtered.
- * The silhouette is intentionally impressionistic — premium and quiet
- * rather than cartographically perfect (per spec).
+ * Backed by us-atlas state geometry (10m resolution) projected with
+ * geoAlbersUsa via react-simple-maps. Pins are projected with the same
+ * projection as the map (no percentage math), so they always land
+ * inside the actual state borders.
+ *
+ * Alaska + Hawaii: geoAlbersUsa includes their insets out of the box.
  *
  * Pin click reveals a small preview card (cover image + title + dates),
  * matching the WorldGlobe interaction pattern.
  */
-
-const USA_BOUNDS = {
-  minLat: 24.396308,
-  maxLat: 49.384358,
-  minLng: -124.848974,
-  maxLng: -66.885444,
-};
-
-function projectUsaPoint(lat: number, lng: number) {
-  const x = ((lng - USA_BOUNDS.minLng) / (USA_BOUNDS.maxLng - USA_BOUNDS.minLng)) * 100;
-  const y = ((USA_BOUNDS.maxLat - lat) / (USA_BOUNDS.maxLat - USA_BOUNDS.minLat)) * 100;
-  return { x, y };
-}
-
-function isInUsaBounds(lat: number, lng: number) {
-  return (
-    lat >= USA_BOUNDS.minLat &&
-    lat <= USA_BOUNDS.maxLat &&
-    lng >= USA_BOUNDS.minLng &&
-    lng <= USA_BOUNDS.maxLng
-  );
-}
 
 export type UsaMapPin = {
   id: string;
@@ -46,78 +33,68 @@ export type UsaMapPin = {
   endDate?: string;
 };
 
-/**
- * Stylized continental U.S. silhouette. Hand-tuned to occupy the full
- * viewBox so it shares its coordinate space with `projectUsaPoint`. The
- * shape is impressionistic — premium silhouette, not GIS-accurate. Swap
- * for a higher-fidelity path later without changing pin math.
- */
-const USA_SVG_PATH =
-  "M 70 80 " +
-  "L 75 60 " +
-  "C 80 45 120 35 180 32 " +
-  "C 240 28 300 25 380 25 " +
-  "C 460 25 540 25 620 28 " +
-  "C 700 30 770 35 815 50 " +
-  "C 850 60 875 75 880 80 " +
-  "L 890 50 " +
-  "C 895 35 905 25 920 25 " +
-  "C 935 25 945 35 945 50 " +
-  "C 945 70 940 90 935 110 " +
-  "C 935 130 945 160 950 195 " +
-  "C 955 230 950 260 935 280 " +
-  "C 920 295 900 305 885 312 " +
-  "C 870 320 855 330 840 340 " +
-  "C 825 350 810 358 795 360 " +
-  "L 785 360 " +
-  "C 775 360 770 365 770 380 " +
-  "L 775 410 " +
-  "C 778 430 782 450 786 465 " +
-  "C 788 472 785 478 780 478 " +
-  "C 775 478 770 475 765 465 " +
-  "C 758 445 752 425 748 405 " +
-  "C 745 390 738 380 725 380 " +
-  "C 700 380 670 380 640 380 " +
-  "C 600 380 560 385 525 388 " +
-  "C 490 391 460 392 430 388 " +
-  "C 395 383 360 375 325 365 " +
-  "C 290 354 255 340 220 322 " +
-  "C 185 304 155 280 130 258 " +
-  "C 105 235 90 215 80 195 " +
-  "C 70 175 70 150 75 130 " +
-  "C 80 110 70 95 70 80 Z";
+// us-atlas state outlines (10m simplified; ~155KB). Loaded by react-simple-maps.
+const USA_TOPO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
+
+// react-simple-maps draws into an SVG of these intrinsic dimensions; CSS
+// scales the SVG responsively. Pin preview positioning uses these dims to
+// convert projected viewBox coords → percentages.
+const MAP_WIDTH = 980;
+const MAP_HEIGHT = 551;
+const PROJ_SCALE = 1100;
+
+// A single projection instance shared across pin filtering and preview
+// positioning. geoAlbersUsa returns null for points outside the inset
+// composition, which is exactly the filter we want.
+const projection = geoAlbersUsa()
+  .scale(PROJ_SCALE)
+  .translate([MAP_WIDTH / 2, MAP_HEIGHT / 2]);
+
+function isProjectable(lat: number, lng: number) {
+  const result = projection([lng, lat]);
+  return (
+    result !== null &&
+    Number.isFinite(result[0]) &&
+    Number.isFinite(result[1])
+  );
+}
 
 function formatDateRange(start?: string, end?: string) {
   if (!start && !end) return "";
-  if (start && end && start !== end) {
-    return `${start} – ${end}`;
-  }
+  if (start && end && start !== end) return `${start} – ${end}`;
   return start || end || "";
 }
 
 export function UsaMemoryMap({ pins }: { pins: UsaMapPin[] }) {
   const usaPins = useMemo(
-    () => pins.filter((p) => isInUsaBounds(p.lat, p.lng)),
+    () => pins.filter((p) => isProjectable(p.lat, p.lng)),
     [pins],
   );
   const [activeId, setActiveId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // Close preview on outside click (anywhere except a pin button).
+  // Close preview on outside click.
   useEffect(() => {
     if (!activeId) return;
     const onPointerDown = (e: MouseEvent) => {
       const target = e.target as HTMLElement | null;
       if (!target) return;
-      if (!target.closest("[data-usa-pin]")) {
-        setActiveId(null);
-      }
+      if (!target.closest("[data-usa-pin]")) setActiveId(null);
     };
     window.addEventListener("mousedown", onPointerDown);
     return () => window.removeEventListener("mousedown", onPointerDown);
   }, [activeId]);
 
   const activePin = usaPins.find((p) => p.id === activeId) ?? null;
+  const activeProjected = useMemo(() => {
+    if (!activePin) return null;
+    const result = projection([activePin.lng, activePin.lat]);
+    if (!result) return null;
+    return {
+      xPct: (result[0] / MAP_WIDTH) * 100,
+      yPct: (result[1] / MAP_HEIGHT) * 100,
+    };
+  }, [activePin]);
 
   if (usaPins.length === 0) {
     return (
@@ -137,109 +114,116 @@ export function UsaMemoryMap({ pins }: { pins: UsaMapPin[] }) {
       <div
         ref={containerRef}
         className="relative w-full"
-        style={{ aspectRatio: "1000 / 500" }}
+        style={{ aspectRatio: `${MAP_WIDTH} / ${MAP_HEIGHT}` }}
       >
-        {/* Silhouette + soft halo */}
-        <svg
-          viewBox="0 0 1000 500"
-          className="absolute inset-0 h-full w-full"
-          preserveAspectRatio="xMidYMid meet"
-          aria-hidden
+        <ComposableMap
+          projection="geoAlbersUsa"
+          projectionConfig={{ scale: PROJ_SCALE }}
+          width={MAP_WIDTH}
+          height={MAP_HEIGHT}
+          style={{ width: "100%", height: "100%" }}
         >
           <defs>
-            <radialGradient id="usa-map-halo" cx="50%" cy="55%" r="65%">
-              <stop offset="0%" stopColor="rgba(140,184,232,0.22)" />
+            <radialGradient id="usa-map-halo" cx="50%" cy="55%" r="70%">
+              <stop offset="0%" stopColor="rgba(140,184,232,0.18)" />
               <stop offset="100%" stopColor="rgba(140,184,232,0)" />
             </radialGradient>
             <linearGradient id="usa-map-fill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="rgba(245,249,254,0.96)" />
-              <stop offset="100%" stopColor="rgba(220,232,247,0.85)" />
+              <stop offset="0%" stopColor="rgba(247,251,255,0.98)" />
+              <stop offset="100%" stopColor="rgba(224,235,249,0.92)" />
             </linearGradient>
           </defs>
-          <rect x="0" y="0" width="1000" height="500" fill="url(#usa-map-halo)" />
-          <path
-            d={USA_SVG_PATH}
-            fill="url(#usa-map-fill)"
-            stroke="rgba(108,148,196,0.45)"
-            strokeWidth={1.5}
-            strokeLinejoin="round"
+
+          {/* Soft atmospheric halo over the whole canvas. */}
+          <rect
+            x={0}
+            y={0}
+            width={MAP_WIDTH}
+            height={MAP_HEIGHT}
+            fill="url(#usa-map-halo)"
           />
-        </svg>
 
-        {/* Pins layered above the silhouette */}
-        {usaPins.map((pin) => {
-          const { x, y } = projectUsaPoint(pin.lat, pin.lng);
-          const isActive = activeId === pin.id;
-          return (
-            <button
-              key={pin.id}
-              data-usa-pin
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setActiveId((prev) => (prev === pin.id ? null : pin.id));
-              }}
-              style={{
-                left: `${x}%`,
-                top: `${y}%`,
-                transform: "translate(-50%, -50%)",
-              }}
-              className={`absolute z-10 inline-flex h-8 w-8 items-center justify-center rounded-full transition ${
-                isActive ? "scale-110" : "hover:scale-110"
-              }`}
-              aria-label={pin.title ?? "Memory location"}
-            >
-              {/* Reuse the same pin pulse + core as the globe (globals.css). */}
-              <span className="memora-pin-pulse" />
-              <span className="memora-pin-core" />
-            </button>
-          );
-        })}
-
-        {/* Preview card — anchored above the active pin */}
-        {activePin
-          ? (() => {
-              const { x, y } = projectUsaPoint(activePin.lat, activePin.lng);
-              const dateRange = formatDateRange(activePin.startDate, activePin.endDate);
-              return (
-                <div
-                  role="status"
-                  aria-live="polite"
-                  className="pointer-events-none absolute z-30 w-56 overflow-hidden border border-[color:var(--border-strong)] bg-[rgba(250,252,255,0.97)] shadow-[0_18px_36px_-12px_rgba(14,22,34,0.22)]"
+          <Geographies geography={USA_TOPO_URL}>
+            {({ geographies }) =>
+              geographies.map((geo) => (
+                <Geography
+                  key={geo.rsmKey}
+                  geography={geo}
+                  fill="url(#usa-map-fill)"
+                  stroke="rgba(108,148,196,0.42)"
+                  strokeWidth={0.6}
                   style={{
-                    left: `${x}%`,
-                    top: `${y}%`,
-                    transform: "translate(-50%, calc(-100% - 22px))",
+                    default: { outline: "none" },
+                    hover: { outline: "none", fill: "rgba(220,232,247,0.95)" },
+                    pressed: { outline: "none" },
                   }}
-                >
-                  {activePin.coverImage ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={activePin.coverImage}
-                      alt={activePin.title ?? ""}
-                      className="h-24 w-full object-cover"
-                    />
-                  ) : null}
-                  <div className="space-y-1 px-3.5 py-2.5">
-                    {activePin.title ? (
-                      <p className="font-serif text-[15px] leading-tight text-[color:var(--ink)]">
-                        {activePin.title}
-                      </p>
-                    ) : null}
-                    {dateRange ? (
-                      <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-[color:var(--ink-faint)]">
-                        {dateRange}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              );
-            })()
-          : null}
+                />
+              ))
+            }
+          </Geographies>
+
+          {usaPins.map((pin) => (
+            <Marker key={pin.id} coordinates={[pin.lng, pin.lat]}>
+              <g
+                data-usa-pin
+                style={{ cursor: "pointer" }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveId((prev) => (prev === pin.id ? null : pin.id));
+                }}
+                aria-label={pin.title ?? "Memory location"}
+              >
+                {/* outer halo */}
+                <circle r={10} fill="rgba(108,148,196,0.18)" />
+                {/* mid ring */}
+                <circle r={5.5} fill="rgba(108,148,196,0.5)" />
+                {/* core */}
+                <circle
+                  r={2.6}
+                  fill="#ffffff"
+                  stroke="rgba(56,92,148,0.95)"
+                  strokeWidth={1.1}
+                />
+              </g>
+            </Marker>
+          ))}
+        </ComposableMap>
+
+        {/* Preview card — anchored at the projected pin position */}
+        {activePin && activeProjected ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="pointer-events-none absolute z-30 w-56 overflow-hidden border border-[color:var(--border-strong)] bg-[rgba(250,252,255,0.97)] shadow-[0_18px_36px_-12px_rgba(14,22,34,0.22)]"
+            style={{
+              left: `${activeProjected.xPct}%`,
+              top: `${activeProjected.yPct}%`,
+              transform: "translate(-50%, calc(-100% - 18px))",
+            }}
+          >
+            {activePin.coverImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={activePin.coverImage}
+                alt={activePin.title ?? ""}
+                className="h-24 w-full object-cover"
+              />
+            ) : null}
+            <div className="space-y-1 px-3.5 py-2.5">
+              {activePin.title ? (
+                <p className="font-serif text-[15px] leading-tight text-[color:var(--ink)]">
+                  {activePin.title}
+                </p>
+              ) : null}
+              {formatDateRange(activePin.startDate, activePin.endDate) ? (
+                <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-[color:var(--ink-faint)]">
+                  {formatDateRange(activePin.startDate, activePin.endDate)}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
 }
-
-UsaMemoryMap.isInUsaBounds = isInUsaBounds;
-UsaMemoryMap.projectUsaPoint = projectUsaPoint;
