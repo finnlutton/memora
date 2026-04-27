@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LogOut, PanelLeft } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { ClipboardIcon } from "@/components/icons/ClipboardIcon";
 import { GlobeIcon } from "@/components/icons/GlobeIcon";
 import { HelpIcon } from "@/components/icons/HelpIcon";
 import { MyGalleriesIcon } from "@/components/icons/MyGalleriesIcon";
@@ -62,6 +63,7 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
   const navItems = useMemo(
     () => [
       { href: "/galleries", label: "My Galleries", icon: MyGalleriesIcon },
+      { href: "/galleries/clipboard", label: "Clipboard", icon: ClipboardIcon },
       { href: "/galleries/map", label: "Memory Map", icon: GlobeIcon },
       { href: "/galleries/help", label: "Help", icon: HelpIcon },
       { href: "/galleries/settings", label: "Settings", icon: SettingsIcon },
@@ -70,6 +72,7 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
   );
 
   const isItemActive = (href: string) => {
+    // /galleries is exact-match so it doesn't claim every nested route.
     if (href === "/galleries") return pathname === "/galleries";
     return pathname === href || pathname.startsWith(`${href}/`);
   };
