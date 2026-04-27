@@ -9,6 +9,7 @@ import { AppShell } from "@/components/app-shell";
 import { DeleteAccountDialog } from "@/components/delete-account-dialog";
 import { WorkspaceTopbar } from "@/components/workspace-topbar";
 import { BillingStatusCard } from "@/components/membership/billing-status-card";
+import { LegalLinks } from "@/components/legal-links";
 import { Button } from "@/components/ui/button";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 
@@ -100,6 +101,11 @@ export default function WorkspaceSettingsPage() {
           </div>
         </section>
       </section>
+
+      {/* Legal footer — quiet, sits below the settings grid. */}
+      <footer className="mt-10 border-t border-[color:var(--border)] pt-5 md:mt-14">
+        <LegalLinks />
+      </footer>
     </AppShell>
   );
 }

@@ -175,6 +175,15 @@ export default async function PublicSharePage({
               Create a free archive →
             </Link>
           </p>
+          <p className="mt-4 text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">
+            <Link href="/terms" className="transition hover:text-[color:var(--ink-soft)]">
+              Terms
+            </Link>
+            <span aria-hidden className="mx-2 opacity-60">·</span>
+            <Link href="/privacy" className="transition hover:text-[color:var(--ink-soft)]">
+              Privacy
+            </Link>
+          </p>
         </footer>
       </div>
     </main>

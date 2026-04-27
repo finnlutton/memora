@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { LegalLinks } from "@/components/legal-links";
 import { Button } from "@/components/ui/button";
 import { createMembershipState, getNextAuthenticatedRoute } from "@/lib/onboarding";
 import {
@@ -385,6 +386,17 @@ export function AuthCard() {
                   : "Create account"}
               <ArrowRight className="h-4 w-4" />
             </Button>
+
+            {/*
+              Acknowledgement (signup) / quiet legal footer (signin). Sits
+              just under the primary action so it's read at decision time,
+              but understated so it doesn't compete with the CTA.
+            */}
+            {mode === "signup" ? (
+              <LegalLinks variant="agree" className="mt-3 text-[11.5px] leading-5 text-[color:var(--ink-soft)]" />
+            ) : (
+              <LegalLinks className="mt-3 text-[10.5px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]" />
+            )}
           </form>
         </div>
       </section>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LifetimeSection } from "@/components/membership/lifetime-section";
@@ -174,6 +175,25 @@ export function MembershipPlansPanel() {
           onSelect={() => handleSelect(lifetimePlan)}
         />
       ) : null}
+
+      {/* Legal acknowledgement near checkout. Quiet line beneath the plans. */}
+      <p className="text-center text-[11.5px] leading-5 text-[color:var(--ink-soft)]">
+        Continuing checkout means you agree to Memora&apos;s{" "}
+        <Link
+          href="/terms"
+          className="text-[color:var(--ink)] underline decoration-[color:var(--ink-faint)] underline-offset-[3px] transition hover:decoration-[color:var(--ink-soft)]"
+        >
+          Terms of Service
+        </Link>{" "}
+        and{" "}
+        <Link
+          href="/privacy"
+          className="text-[color:var(--ink)] underline decoration-[color:var(--ink-faint)] underline-offset-[3px] transition hover:decoration-[color:var(--ink-soft)]"
+        >
+          Privacy Policy
+        </Link>
+        .
+      </p>
 
       {error ? (
         <p className="border border-[#c98282] bg-[#fff7f7] px-3 py-2 text-[13px] leading-6 text-[#9a4545]">
