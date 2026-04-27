@@ -7,6 +7,7 @@ import { Plus, Share2 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { GalleryCard } from "@/components/gallery-card";
+import { GalleryCardSkeletonGrid } from "@/components/gallery-card-skeleton";
 import { CreateSharePanel } from "@/components/share/create-share-panel";
 import { WorkspaceTopbar } from "@/components/workspace-topbar";
 import { Button } from "@/components/ui/button";
@@ -172,9 +173,9 @@ export default function GalleriesPage() {
       ) : null}
 
       {!hydrated ? (
-        <div className="rounded-[2rem] border border-white/60 bg-white/70 px-6 py-12 text-center text-[color:var(--ink-soft)]">
-          Loading your memories...
-        </div>
+        <section className="mt-5 md:mt-7">
+          <GalleryCardSkeletonGrid count={2} />
+        </section>
       ) : sortedGalleries.length ? (
         <section className="mt-5 space-y-3 md:mt-7 md:space-y-4">
           {shareMode ? (

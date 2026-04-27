@@ -389,39 +389,45 @@ async function loadUserGalleriesFromSupabase(
   if (galleryRows.length === 0) return [] as Gallery[];
 
   const galleryIds = galleryRows.map((gallery) => gallery.id);
-  const { data: subgalleriesData, error: subgalleriesError } = await supabase
-    .from("subgalleries")
-    .select("*")
-    .eq("user_id", userId)
-    .in("gallery_id", galleryIds)
-    .order("display_order", { ascending: true });
+
+  // Subgalleries, photos, and dividers all depend only on the gallery
+  // IDs we already have — fan them out in parallel. Previously this was
+  // three sequential round-trips (3× the wait). Promise.all collapses
+  // the slowest single query as the floor.
+  const [
+    { data: subgalleriesData, error: subgalleriesError },
+    { data: photosData, error: photosError },
+    { data: dividersData, error: dividersError },
+  ] = await Promise.all([
+    supabase
+      .from("subgalleries")
+      .select("*")
+      .eq("user_id", userId)
+      .in("gallery_id", galleryIds)
+      .order("display_order", { ascending: true }),
+    // Photos: fetch by gallery_id so we catch both subgallery-attached
+    // and direct (subgallery_id is null) in one round trip.
+    supabase
+      .from("photos")
+      .select("*")
+      .eq("user_id", userId)
+      .in("gallery_id", galleryIds)
+      .order("display_order", { ascending: true }),
+    // Dividers share the per-gallery display_order namespace with
+    // direct photos.
+    supabase
+      .from("gallery_dividers")
+      .select("*")
+      .eq("user_id", userId)
+      .in("gallery_id", galleryIds)
+      .order("display_order", { ascending: true }),
+  ]);
   if (subgalleriesError) throw subgalleriesError;
-
-  const subgalleryRows = (subgalleriesData ?? []) as SubgalleryRow[];
-
-  // Fetch every photo belonging to any of these galleries — both
-  // subgallery-attached and direct (subgallery_id is null). We split them
-  // apart further down. Querying by gallery_id catches both at once.
-  const { data: photosData, error: photosError } = await supabase
-    .from("photos")
-    .select("*")
-    .eq("user_id", userId)
-    .in("gallery_id", galleryIds)
-    .order("display_order", { ascending: true });
   if (photosError) throw photosError;
-
-  const photoRows = (photosData ?? []) as PhotoRow[];
-
-  // Date dividers — ordered alongside direct gallery photos via the
-  // shared display_order numeric space (assigned by reorderGalleryItems).
-  const { data: dividersData, error: dividersError } = await supabase
-    .from("gallery_dividers")
-    .select("*")
-    .eq("user_id", userId)
-    .in("gallery_id", galleryIds)
-    .order("display_order", { ascending: true });
   if (dividersError) throw dividersError;
 
+  const subgalleryRows = (subgalleriesData ?? []) as SubgalleryRow[];
+  const photoRows = (photosData ?? []) as PhotoRow[];
   const dividerRows = (dividersData ?? []) as GalleryDividerRow[];
 
   // If older versions accidentally persisted signed/public object URLs into the DB, normalize and self-heal best-effort.
@@ -1252,46 +1258,49 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             });
           }
 
-          const uploadedPhotos: typeof persistedPhotos = [];
-          for (let index = 0; index < persistedPhotos.length; index += 1) {
-            const photo = persistedPhotos[index];
-            const photoId =
-              photo.id && isUuid(photo.id)
-                ? photo.id
-                : typeof crypto !== "undefined"
-                  ? crypto.randomUUID()
-                  : createId("photo");
-            if (process.env.NODE_ENV !== "production") {
-              console.info("Memora: create subgallery photo upload start", {
-                galleryId,
-                subgalleryId,
+          // Upload all subgallery photos in parallel. The previous
+          // sequential for-loop blew up to N×latency on first creation;
+          // Promise.all collapses that to ~1×latency for the user.
+          const uploadedPhotos = await Promise.all(
+            persistedPhotos.map(async (photo, index) => {
+              const photoId =
+                photo.id && isUuid(photo.id)
+                  ? photo.id
+                  : typeof crypto !== "undefined"
+                    ? crypto.randomUUID()
+                    : createId("photo");
+              if (process.env.NODE_ENV !== "production") {
+                console.info("Memora: create subgallery photo upload start", {
+                  galleryId,
+                  subgalleryId,
+                  photoId,
+                  index,
+                });
+              }
+              const persistedSrc = await uploadImageSourceIfNeeded(
+                supabase,
+                userId,
+                photo.src,
+                "photos",
                 photoId,
-                index,
-              });
-            }
-            const persistedSrc = await uploadImageSourceIfNeeded(
-              supabase,
-              userId,
-              photo.src,
-              "photos",
-              photoId,
-            );
-            if (process.env.NODE_ENV !== "production") {
-              console.info("Memora: create subgallery photo upload complete", {
-                galleryId,
-                subgalleryId,
-                photoId,
-                index,
-                persistedSrc,
-              });
-            }
-            uploadedPhotos.push({
-              ...photo,
-              id: photoId,
-              src: persistedSrc,
-              order: index,
-            });
-          }
+              );
+              if (process.env.NODE_ENV !== "production") {
+                console.info("Memora: create subgallery photo upload complete", {
+                  galleryId,
+                  subgalleryId,
+                  photoId,
+                  index,
+                  persistedSrc,
+                });
+              }
+              return {
+                ...photo,
+                id: photoId,
+                src: persistedSrc,
+                order: index,
+              };
+            }),
+          );
           persistedPhotos = uploadedPhotos;
 
           const range = parseDateLabelToRange(input.dateLabel);
@@ -1703,24 +1712,27 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             throw new Error("Please sign in again to upload photos.");
           }
 
-          const uploaded: MemoryPhoto[] = [];
-          for (let index = 0; index < persistedPhotos.length; index += 1) {
-            const photo = persistedPhotos[index];
-            const photoId =
-              photo.id && isUuid(photo.id)
-                ? photo.id
-                : typeof crypto !== "undefined"
-                  ? crypto.randomUUID()
-                  : createId("photo");
-            const persistedSrc = await uploadImageSourceIfNeeded(
-              supabase,
-              userId,
-              photo.src,
-              "photos",
-              photoId,
-            );
-            uploaded.push({ ...photo, id: photoId, src: persistedSrc });
-          }
+          // Upload in parallel — Supabase storage handles concurrency
+          // fine and parallelism collapses N×latency to ~1×latency for
+          // the user. Order is preserved via Promise.all index alignment.
+          const uploaded = await Promise.all(
+            persistedPhotos.map(async (photo) => {
+              const photoId =
+                photo.id && isUuid(photo.id)
+                  ? photo.id
+                  : typeof crypto !== "undefined"
+                    ? crypto.randomUUID()
+                    : createId("photo");
+              const persistedSrc = await uploadImageSourceIfNeeded(
+                supabase,
+                userId,
+                photo.src,
+                "photos",
+                photoId,
+              );
+              return { ...photo, id: photoId, src: persistedSrc };
+            }),
+          );
           persistedPhotos = uploaded;
 
           const { error } = await supabase.from("photos").insert(

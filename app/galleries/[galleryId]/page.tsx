@@ -22,14 +22,29 @@ export default function GalleryDetailPage() {
 
   if (!gallery) {
     return (
-      <AppShell>
+      <AppShell accent="immersive">
         {hydrated ? (
           <div className="rounded-[1.25rem] border border-white/60 bg-white/70 px-4 py-8 text-center text-sm text-[color:var(--ink-soft)]">
             Gallery not found.
           </div>
         ) : (
-          <div className="rounded-[1.25rem] border border-white/60 bg-white/70 px-4 py-8 text-center text-sm text-[color:var(--ink-soft)]">
-            Loading gallery...
+          // While the store hydrates, paint a soft skeleton matching the
+          // detail page rhythm — eyebrow, title, action row — so layout
+          // doesn't shift when real data arrives.
+          <div aria-hidden className="space-y-6">
+            <div className="space-y-3">
+              <div className="memora-shimmer h-3 w-32 rounded-sm" />
+              <div className="memora-shimmer h-10 w-2/3 rounded-sm md:h-14" />
+              <div className="memora-shimmer h-4 w-3/4 max-w-2xl rounded-sm" />
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="memora-shimmer aspect-[4/5] rounded-sm"
+                />
+              ))}
+            </div>
           </div>
         )}
       </AppShell>
