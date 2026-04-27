@@ -74,18 +74,28 @@ export function ClipboardCanvas({
   }, []);
 
   // Drag state lives in refs so re-renders during drag don't slow us down.
+  // `moved` flips to true on the first pointermove that exceeds the
+  // intentional-drag threshold; a clean click without movement leaves
+  // it false so we never write a position update for a tap.
+  const DRAG_THRESHOLD_PX = 4;
   const dragStateRef = useRef<{
     id: string;
     pointerId: number;
     offsetX: number;
     offsetY: number;
+    /** Pointer-down origin in viewport coords for threshold checks. */
+    startClientX: number;
+    startClientY: number;
+    moved: boolean;
   } | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
 
-  const handlePointerDown = (item: ClipboardItem) => (
-    e: React.PointerEvent<HTMLDivElement>,
-  ) => {
+  const handlePointerDown = (
+    item: ClipboardItem,
+    initialX: number,
+    initialY: number,
+  ) => (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     const card = e.currentTarget;
     const cardRect = card.getBoundingClientRect();
@@ -96,9 +106,16 @@ export function ClipboardCanvas({
       pointerId: e.pointerId,
       offsetX,
       offsetY,
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      moved: false,
     };
     setDragId(item.id);
-    setDragPos({ x: cardRect.left, y: cardRect.top });
+    // Seed dragPos with the card's CURRENT canvas-relative coords so a
+    // click without movement releases at the same spot. (Previous bug:
+    // we seeded with viewport-relative cardRect.left/top, which made a
+    // simple click jump the card to the click coordinates.)
+    setDragPos({ x: initialX, y: initialY });
     card.setPointerCapture(e.pointerId);
   };
 
@@ -106,6 +123,12 @@ export function ClipboardCanvas({
     const drag = dragStateRef.current;
     const canvas = canvasRef.current;
     if (!drag || drag.pointerId !== e.pointerId || !canvas) return;
+    if (!drag.moved) {
+      const dx = e.clientX - drag.startClientX;
+      const dy = e.clientY - drag.startClientY;
+      if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
+      drag.moved = true;
+    }
     const canvasRect = canvas.getBoundingClientRect();
     let nextX = e.clientX - canvasRect.left - drag.offsetX;
     let nextY = e.clientY - canvasRect.top - drag.offsetY;
@@ -118,10 +141,13 @@ export function ClipboardCanvas({
     const drag = dragStateRef.current;
     if (!drag || drag.pointerId !== e.pointerId) return;
     const finalPos = dragPos;
+    const moved = drag.moved;
     dragStateRef.current = null;
     setDragId(null);
     setDragPos(null);
-    if (finalPos) {
+    // Only persist a new position when the user actually dragged. A
+    // pure click (no movement) leaves the card exactly where it was.
+    if (moved && finalPos) {
       void onUpdatePosition(drag.id, finalPos.x, finalPos.y);
     }
   };
@@ -175,7 +201,7 @@ export function ClipboardCanvas({
         return (
           <div
             key={item.id}
-            onPointerDown={handlePointerDown(item)}
+            onPointerDown={handlePointerDown(item, baseX, baseY)}
             style={{
               left: x,
               top: y,
