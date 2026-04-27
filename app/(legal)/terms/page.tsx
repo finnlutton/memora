@@ -6,8 +6,6 @@ export const metadata: Metadata = {
     "The terms governing access to and use of Memora — galleries, sharing links, subscriptions, and related tools.",
 };
 
-const GOVERNING_STATE = "[INSERT STATE]";
-
 export default function TermsOfServicePage() {
   return (
     <article className="prose-memora">
@@ -334,8 +332,8 @@ export default function TermsOfServicePage() {
 
         <Section heading="20. Governing Law">
           <p>
-            These Terms are governed by the laws of the State of{" "}
-            {GOVERNING_STATE}, without regard to conflict-of-law principles.
+            These Terms are governed by the laws of the State of New York,
+            without regard to conflict-of-law principles.
           </p>
         </Section>
 

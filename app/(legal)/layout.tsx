@@ -1,5 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
+import { LegalBackLink } from "@/components/legal-back-link";
 import memoraLogo from "../../Logo/MemoraLogo.png";
 
 /**
@@ -30,12 +32,24 @@ export default function LegalLayout({
               className="h-[110px] w-auto object-contain object-left md:h-[140px]"
             />
           </Link>
-          <Link
-            href="/"
-            className="text-[11px] font-medium uppercase tracking-[0.2em] text-[color:var(--ink-soft)] transition hover:text-[color:var(--ink)]"
+          {/*
+            Smart back link — uses ?return=... from the URL when present
+            (e.g. coming from /auth) so users land back on the page they
+            came from, not the marketing home. Suspense boundary required
+            because useSearchParams reads from the request.
+          */}
+          <Suspense
+            fallback={
+              <Link
+                href="/"
+                className="text-[11px] font-medium uppercase tracking-[0.2em] text-[color:var(--ink-soft)]"
+              >
+                Back to Memora
+              </Link>
+            }
           >
-            Back to Memora
-          </Link>
+            <LegalBackLink />
+          </Suspense>
         </div>
       </header>
       <main className="mx-auto w-full max-w-3xl px-5 py-12 md:py-20">

@@ -393,9 +393,16 @@ export function AuthCard() {
               but understated so it doesn't compete with the CTA.
             */}
             {mode === "signup" ? (
-              <LegalLinks variant="agree" className="mt-3 text-[11.5px] leading-5 text-[color:var(--ink-soft)]" />
+              <LegalLinks
+                variant="agree"
+                returnTo="/auth?mode=signup"
+                className="mt-3 text-[11.5px] leading-5 text-[color:var(--ink-soft)]"
+              />
             ) : (
-              <LegalLinks className="mt-3 text-[10.5px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]" />
+              <LegalLinks
+                returnTo="/auth?mode=signin"
+                className="mt-3 text-[10.5px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]"
+              />
             )}
           </form>
         </div>

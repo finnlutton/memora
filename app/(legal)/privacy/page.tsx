@@ -6,8 +6,6 @@ export const metadata: Metadata = {
     "How Memora collects, uses, and protects information about its users and their photos.",
 };
 
-const SUPPORT_EMAIL = "[INSERT SUPPORT EMAIL]";
-
 export default function PrivacyPolicyPage() {
   return (
     <article className="prose-memora">
@@ -234,11 +232,7 @@ export default function PrivacyPolicyPage() {
             service where available.
           </p>
           <p>
-            To request deletion of your account and associated content,
-            contact us at:
-          </p>
-          <p className="font-medium text-[color:var(--ink)]">{SUPPORT_EMAIL}</p>
-          <p>
+            You may also delete your account from your account settings.
             We may need to verify your identity before processing deletion
             requests.
           </p>
@@ -251,8 +245,9 @@ export default function PrivacyPolicyPage() {
           </p>
           <p>
             If you believe a child under 13 has provided us with personal
-            information, please contact us at {SUPPORT_EMAIL}, and we will
-            take appropriate steps to delete it.
+            information, please contact us through the support channels
+            available in the app and we will take appropriate steps to
+            delete it.
           </p>
           <p>
             Users should not upload or share photos of children unless they
@@ -264,10 +259,9 @@ export default function PrivacyPolicyPage() {
           <p>
             Depending on your location, you may have rights to access,
             correct, delete, or restrict the use of your personal
-            information.
+            information. To make a request, contact us through the support
+            channels available in the app.
           </p>
-          <p>To make a request, contact us at:</p>
-          <p className="font-medium text-[color:var(--ink)]">{SUPPORT_EMAIL}</p>
         </Section>
 
         <Section heading="14. International Users">
