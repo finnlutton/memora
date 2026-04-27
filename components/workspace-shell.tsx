@@ -75,7 +75,7 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
   // destinations above.
   const utilityItems = [
     { href: "/galleries/help", label: "Help", icon: HelpIcon },
-    { href: "/galleries/settings", label: "Settings", icon: SettingsIcon },
+    { href: "/galleries/settings", label: "Account Info", icon: SettingsIcon },
   ];
 
   const isItemActive = (href: string) => {
