@@ -65,19 +65,18 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
       { href: "/galleries", label: "Galleries", icon: MyGalleriesIcon },
       { href: "/galleries/clipboard", label: "Clipboard", icon: ClipboardIcon },
       { href: "/galleries/map", label: "Memory Map", icon: GlobeIcon },
-      { href: "/galleries/settings", label: "Settings", icon: SettingsIcon },
     ],
     [],
   );
 
-  // Help is intentionally outside the primary nav — it's a utility,
-  // not a destination. Lives in the bottom row above Sign out so
-  // discoverability is preserved without making it feel core.
-  const helpItem = {
-    href: "/galleries/help",
-    label: "Help",
-    icon: HelpIcon,
-  };
+  // Help and Settings are utilities, not primary destinations. They
+  // live in the bottom block above Sign out so discoverability stays
+  // intact without making them visually compete with the real
+  // destinations above.
+  const utilityItems = [
+    { href: "/galleries/help", label: "Help", icon: HelpIcon },
+    { href: "/galleries/settings", label: "Settings", icon: SettingsIcon },
+  ];
 
   const isItemActive = (href: string) => {
     // /galleries is exact-match so it doesn't claim every nested route.
@@ -184,16 +183,17 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
 
           <div className="mt-auto px-2 pt-2">
             <div className="mb-2 h-px bg-[color:var(--border)]" aria-hidden="true" />
-            {/* Help — utility row, sits above Sign out. Same visual
-                shape as the primary nav items so the active state is
-                still legible if someone is on the help page. */}
-            {(() => {
-              const active = isItemActive(helpItem.href);
-              const Icon = helpItem.icon;
+            {/* Utility rows — Help, then Settings. Same shape as the
+                primary nav items so the active state is still legible
+                when the user is on either page. */}
+            {utilityItems.map((item) => {
+              const active = isItemActive(item.href);
+              const Icon = item.icon;
               return (
                 <Link
-                  href={helpItem.href}
-                  title={collapsed ? helpItem.label : undefined}
+                  key={item.href}
+                  href={item.href}
+                  title={collapsed ? item.label : undefined}
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "group relative mb-1 flex h-10 items-center gap-3 rounded-md pr-2 text-[13px] transition-colors",
@@ -218,11 +218,11 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
                       collapsed ? "max-w-0 opacity-0" : "max-w-[150px] opacity-100",
                     )}
                   >
-                    {helpItem.label}
+                    {item.label}
                   </span>
                 </Link>
               );
-            })()}
+            })}
             <button
               type="button"
               onClick={onSignOut}
@@ -252,10 +252,10 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
           style={{ height: `${MOBILE_CHROME_HEIGHT}px` }}
           className="flex items-center gap-1.5 overflow-x-auto border-b border-[color:var(--border)] bg-[color:var(--chrome)] px-3 backdrop-blur-xl md:hidden"
         >
-          {/* Primary destinations + Help appended at the end so it
-              tags along with the strip without claiming a primary
-              slot. */}
-          {[...navItems, helpItem].map((item) => {
+          {/* Primary destinations + utility links (Help, Settings)
+              appended at the end so they tag along with the strip
+              without claiming primary slots. */}
+          {[...navItems, ...utilityItems].map((item) => {
             const active = isItemActive(item.href);
             const Icon = item.icon;
             return (
