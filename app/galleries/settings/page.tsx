@@ -8,67 +8,12 @@ import { AppearancePicker } from "@/components/appearance-picker";
 import { AppShell } from "@/components/app-shell";
 import { DeleteAccountDialog } from "@/components/delete-account-dialog";
 import { WorkspaceTopbar } from "@/components/workspace-topbar";
+import { BillingStatusCard } from "@/components/membership/billing-status-card";
 import { Button } from "@/components/ui/button";
 import { useMemoraStore } from "@/hooks/use-memora-store";
-import { getMembershipPlan } from "@/lib/plans";
-
-function ManageBillingButton() {
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-
-  const onClick = async () => {
-    if (busy) return;
-    setBusy(true);
-    setMessage(null);
-    try {
-      const response = await fetch("/api/stripe/create-portal-session", {
-        method: "POST",
-      });
-      const data = (await response.json()) as {
-        url?: string;
-        message?: string;
-        error?: string;
-        kind?: string;
-      };
-      if (response.ok && data.url) {
-        window.location.href = data.url;
-        return;
-      }
-      // Graceful messages for internal accounts / no-customer cases.
-      setMessage(
-        data.message ?? data.error ?? "Could not open billing portal.",
-      );
-    } catch (err) {
-      console.error("Memora: portal redirect failed", err);
-      setMessage("Could not reach billing portal. Try again in a moment.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div>
-      <Button
-        type="button"
-        variant="secondary"
-        className="px-3.5 py-2 text-[11px] tracking-[0.16em]"
-        onClick={onClick}
-        disabled={busy}
-      >
-        {busy ? "Opening…" : "Manage billing"}
-      </Button>
-      {message ? (
-        <p className="mt-2 max-w-sm text-[12px] leading-5 text-[color:var(--ink-soft)]">
-          {message}
-        </p>
-      ) : null}
-    </div>
-  );
-}
 
 export default function WorkspaceSettingsPage() {
   const { onboarding } = useMemoraStore();
-  const plan = getMembershipPlan(onboarding.selectedPlanId);
 
   return (
     <AppShell>
@@ -123,18 +68,20 @@ export default function WorkspaceSettingsPage() {
         </section>
 
         <section className="border-b border-[color:var(--border)] pb-4 md:col-start-1 md:row-start-2">
-          <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-[color:var(--ink)]">Membership</p>
-          <p className="mt-2 text-sm text-[color:var(--ink-soft)]">
-            {plan ? `${plan.name} plan` : "No plan selected"}
+          <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-[color:var(--ink)]">
+            Membership
           </p>
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-3 space-y-3">
+            <BillingStatusCard />
             <Button
               asChild
-              className="bg-[#00A86B] px-3.5 py-2 text-[11px] tracking-[0.16em] hover:bg-[#00925d]"
+              variant="ghost"
+              className="px-0 text-[11px] tracking-[0.16em]"
             >
-              <Link href="/galleries/settings/membership">Choose membership</Link>
+              <Link href="/galleries/settings/membership">
+                Compare plans →
+              </Link>
             </Button>
-            <ManageBillingButton />
           </div>
         </section>
 

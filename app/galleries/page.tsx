@@ -141,7 +141,24 @@ export default function GalleriesPage() {
       />
 
       <section className="mb-3 grid gap-3 md:mb-4 md:grid-cols-3 md:gap-6">
-        <QuickStat label="Membership" value={selectedPlan?.name ?? "No plan selected"} />
+        {/*
+          Membership stat doubles as the dashboard's plan affordance — a
+          single small link to Settings → Membership. Keeps the dashboard
+          clean (no banners, no extra cards) while still giving users a
+          one-click path to manage their plan.
+        */}
+        <Link
+          href="/galleries/settings/membership"
+          className="group block py-0.5"
+          aria-label="Manage membership"
+        >
+          <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+            Membership
+          </p>
+          <p className="mt-2 text-[14px] leading-6 text-[color:var(--ink-soft)] underline decoration-transparent underline-offset-[5px] transition group-hover:decoration-[color:var(--ink-faint)] md:text-[15px]">
+            {selectedPlan?.name ?? "No plan selected"}
+          </p>
+        </Link>
         <QuickStat label="Archive usage" value={usageLabel} />
         <QuickStat label="Sharing usage" value={shareUsageLabel} />
       </section>
