@@ -9,11 +9,18 @@ export default function MembershipPage() {
       <WorkspaceTopbar
         eyebrow="Settings"
         title="Membership"
-        subtitle="Review your current plan and upgrade as your memory library grows."
+        subtitle="Choose the plan that fits how you keep memories. Switch anytime."
       />
-      <div className="mx-auto mb-6 w-full max-w-2xl">
+
+      {/*
+        Status summary at the top — current plan, renewal/active-until,
+        cancel-at-period-end, internal-account messaging — followed by
+        the recurring plan row and the standalone Lifetime section.
+      */}
+      <div className="mx-auto mb-8 w-full max-w-3xl md:mb-10">
         <BillingStatusCard />
       </div>
+
       <MembershipPlansPanel />
     </AppShell>
   );
