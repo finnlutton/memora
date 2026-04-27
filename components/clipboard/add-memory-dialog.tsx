@@ -1,7 +1,7 @@
 "use client";
 
 import * as Dialog from "@radix-ui/react-dialog";
-import { ImagePlus, Type, X } from "lucide-react";
+import { ImagePlus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { ClipboardLayout } from "@/hooks/use-clipboard-items";
 
@@ -136,25 +136,16 @@ export function AddMemoryDialog({
               <ChoiceButton
                 label="Text"
                 hint="Just a thought"
-                icon={<Type className="h-4 w-4" strokeWidth={1.6} />}
                 onClick={() => handleChoose("text")}
               />
               <ChoiceButton
                 label="Photo"
                 hint="Just an image"
-                icon={<ImagePlus className="h-4 w-4" strokeWidth={1.6} />}
                 onClick={() => handleChoose("photo")}
               />
               <ChoiceButton
                 label="Text + photo"
                 hint="A note with one image"
-                icon={
-                  <span className="flex items-center gap-1">
-                    <Type className="h-3.5 w-3.5" strokeWidth={1.6} />
-                    <span className="text-[color:var(--ink-faint)]">+</span>
-                    <ImagePlus className="h-3.5 w-3.5" strokeWidth={1.6} />
-                  </span>
-                }
                 onClick={() => handleChoose("text_photo")}
               />
             </div>
@@ -257,23 +248,18 @@ export function AddMemoryDialog({
 function ChoiceButton({
   label,
   hint,
-  icon,
   onClick,
 }: {
   label: string;
   hint: string;
-  icon: React.ReactNode;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group flex flex-col items-start gap-2 border border-[color:var(--border-strong)] bg-white px-3.5 py-3 text-left transition hover:border-[color:var(--ink)] hover:bg-[color:var(--paper)]"
+      className="group flex flex-col items-start gap-1.5 border border-[color:var(--border-strong)] bg-white px-3.5 py-4 text-left transition hover:border-[color:var(--ink)] hover:bg-[color:var(--paper)]"
     >
-      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[color:var(--border-strong)] bg-[color:var(--paper)] text-[color:var(--ink)]">
-        {icon}
-      </span>
       <span className="text-[13px] font-semibold text-[color:var(--ink)]">
         {label}
       </span>
