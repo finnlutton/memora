@@ -65,11 +65,19 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
       { href: "/galleries", label: "My Galleries", icon: MyGalleriesIcon },
       { href: "/galleries/clipboard", label: "Clipboard", icon: ClipboardIcon },
       { href: "/galleries/map", label: "Memory Map", icon: GlobeIcon },
-      { href: "/galleries/help", label: "Help", icon: HelpIcon },
       { href: "/galleries/settings", label: "Settings", icon: SettingsIcon },
     ],
     [],
   );
+
+  // Help is intentionally outside the primary nav — it's a utility,
+  // not a destination. Lives in the bottom row above Sign out so
+  // discoverability is preserved without making it feel core.
+  const helpItem = {
+    href: "/galleries/help",
+    label: "Help",
+    icon: HelpIcon,
+  };
 
   const isItemActive = (href: string) => {
     // /galleries is exact-match so it doesn't claim every nested route.
@@ -176,6 +184,45 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
 
           <div className="mt-auto px-2 pt-2">
             <div className="mb-2 h-px bg-[color:var(--border)]" aria-hidden="true" />
+            {/* Help — utility row, sits above Sign out. Same visual
+                shape as the primary nav items so the active state is
+                still legible if someone is on the help page. */}
+            {(() => {
+              const active = isItemActive(helpItem.href);
+              const Icon = helpItem.icon;
+              return (
+                <Link
+                  href={helpItem.href}
+                  title={collapsed ? helpItem.label : undefined}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "group relative mb-1 flex h-10 items-center gap-3 rounded-md pr-2 text-[13px] transition-colors",
+                    active
+                      ? "bg-[color:var(--active-tint)] text-[color:var(--ink)]"
+                      : "text-[color:var(--ink-soft)] hover:bg-[color:var(--hover-tint)] hover:text-[color:var(--ink)]",
+                  )}
+                >
+                  {active ? (
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-0 top-1.5 bottom-1.5 w-[2px] rounded-full bg-[color:var(--ink)]"
+                    />
+                  ) : null}
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center">
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <span
+                    style={labelTransitionStyle}
+                    className={cn(
+                      "min-w-0 truncate",
+                      collapsed ? "max-w-0 opacity-0" : "max-w-[150px] opacity-100",
+                    )}
+                  >
+                    {helpItem.label}
+                  </span>
+                </Link>
+              );
+            })()}
             <button
               type="button"
               onClick={onSignOut}
@@ -205,7 +252,10 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
           style={{ height: `${MOBILE_CHROME_HEIGHT}px` }}
           className="flex items-center gap-1.5 overflow-x-auto border-b border-[color:var(--border)] bg-[color:var(--chrome)] px-3 backdrop-blur-xl md:hidden"
         >
-          {navItems.map((item) => {
+          {/* Primary destinations + Help appended at the end so it
+              tags along with the strip without claiming a primary
+              slot. */}
+          {[...navItems, helpItem].map((item) => {
             const active = isItemActive(item.href);
             const Icon = item.icon;
             return (
