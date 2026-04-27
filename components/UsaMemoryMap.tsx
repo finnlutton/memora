@@ -183,18 +183,10 @@ export function UsaMemoryMap({ pins }: { pins: UsaMapPin[] }) {
     };
   }, [activePin]);
 
-  if (usaPins.length === 0) {
-    return (
-      <div className="mx-auto flex w-full max-w-md flex-col items-center px-6 py-16 text-center">
-        <div className="font-serif text-[20px] leading-tight text-[color:var(--ink)] md:text-[24px]">
-          U.S.A. Map
-        </div>
-        <p className="mt-3 text-[13px] leading-6 text-[color:var(--ink-soft)]">
-          Add a U.S. location to see it appear on your map.
-        </p>
-      </div>
-    );
-  }
+  // Note: we always render the map — even with zero US-located pins.
+  // The silhouette itself is the experience; an empty US is still
+  // worth seeing. A small unobtrusive caption appears in the corner
+  // if there are no pins to plot.
 
   return (
     <div className="relative mx-auto w-full max-w-5xl px-4 md:px-8">
@@ -339,6 +331,13 @@ export function UsaMemoryMap({ pins }: { pins: UsaMapPin[] }) {
             </button>
           );
         })}
+
+        {/* Small unobtrusive caption when no US locations exist yet. */}
+        {usaPins.length === 0 ? (
+          <p className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10.5px] font-medium uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+            Add a U.S. location to see it appear here.
+          </p>
+        ) : null}
 
         {activePin && activeProjected ? (
           <div
