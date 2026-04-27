@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { compressImageFile } from "@/lib/file";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 
@@ -160,10 +161,15 @@ export function useClipboardItems() {
       const id =
         typeof crypto !== "undefined" ? crypto.randomUUID() : `clip-${Date.now()}`;
 
-      // Upload photo first if present.
+      // Upload photo first if present. We always run the file through
+      // a client-side resize + JPEG re-encode (max 1920 px long edge,
+      // q=82) so we don't ship a raw 12 MP camera JPEG to storage —
+      // typical reduction is 5–15× while preserving visual quality at
+      // the sizes the clipboard actually displays.
       let photoPath: string | null = null;
       if (input.file) {
-        const { blob, ext } = await fileToBlobAndExt(input.file);
+        const compressed = await compressImageFile(input.file);
+        const { blob, ext } = await fileToBlobAndExt(compressed);
         const candidatePath = `${userId}/clipboard/${id}-${Date.now()}.${ext}`;
         const { error: uploadError } = await supabase.storage
           .from(BUCKET)

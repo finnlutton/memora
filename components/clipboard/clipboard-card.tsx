@@ -1,6 +1,7 @@
 "use client";
 
 import { Pencil, Trash2 } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import type { ClipboardItem } from "@/hooks/use-clipboard-items";
 
@@ -94,14 +95,17 @@ export function ClipboardCard({
           onPointerDown={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={item.photoUrl ?? ""}
-            alt={item.content ?? "Clipboard memory"}
-            draggable={false}
-            className="h-full w-full object-cover"
-            loading="lazy"
-          />
+          {item.photoUrl ? (
+            <Image
+              src={item.photoUrl}
+              alt={item.content ?? "Clipboard memory"}
+              fill
+              sizes="(max-width: 640px) 90vw, 320px"
+              quality={82}
+              draggable={false}
+              className="object-cover"
+            />
+          ) : null}
         </div>
       ) : null}
 

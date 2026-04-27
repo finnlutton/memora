@@ -57,6 +57,55 @@ export async function readFileAsDataUrl(file: File) {
   }
 }
 
+/**
+ * Resize + re-encode an image File before upload so we don't ship a
+ * raw 12 MP camera JPEG to storage. Caps the long edge at 1920 px and
+ * re-encodes as JPEG @ q=82 — visually identical at the sizes Memora
+ * actually displays, but typically 5–15× smaller on disk and over the
+ * wire. Falls back to the original File on any failure (SSR, non-image
+ * MIME, decode error, missing canvas API).
+ */
+export async function compressImageFile(file: File): Promise<File> {
+  if (typeof window === "undefined" || !file.type.startsWith("image/")) {
+    return file;
+  }
+  try {
+    const bitmap = await createImageBitmap(file);
+    try {
+      let { width, height } = bitmap;
+      const max = MAX_EDGE_PX;
+      if (width > max || height > max) {
+        if (width >= height) {
+          height = Math.round((height * max) / width);
+          width = max;
+        } else {
+          width = Math.round((width * max) / height);
+          height = max;
+        }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return file;
+      ctx.drawImage(bitmap, 0, 0, width, height);
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob((b) => resolve(b), "image/jpeg", JPEG_QUALITY),
+      );
+      if (!blob) return file;
+      const baseName = file.name.replace(/\.[^.]+$/, "") || "photo";
+      return new File([blob], `${baseName}.jpg`, { type: "image/jpeg" });
+    } finally {
+      bitmap.close();
+    }
+  } catch {
+    // If anything goes wrong (HEIC without browser support, decode
+    // failure, etc.), fall back to the original file rather than
+    // blocking the upload.
+    return file;
+  }
+}
+
 export async function filesToPhotos(
   files: File[],
   subgalleryId: string | null,
