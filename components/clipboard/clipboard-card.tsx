@@ -87,9 +87,11 @@ export function ClipboardCard({
     >
       {hasPhoto ? (
         // Stop drag on the image so the user can long-press / right-click
-        // it without it grabbing the card.
+        // it without it grabbing the card. Pointer events too — the
+        // canvas listens for pointerdown.
         <div
           className="relative aspect-[4/3] w-full overflow-hidden bg-[color:var(--paper-strong)]"
+          onPointerDown={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -121,6 +123,7 @@ export function ClipboardCard({
                   void commitEdit();
                 }
               }}
+              onPointerDown={(e) => e.stopPropagation()}
               onMouseDown={(e) => e.stopPropagation()}
               rows={Math.max(3, draft.split("\n").length + 1)}
               className="w-full resize-none border-none bg-transparent font-serif text-[14.5px] leading-7 text-[color:var(--ink)] outline-none"
@@ -138,9 +141,15 @@ export function ClipboardCard({
         </p>
       </div>
 
-      {/* Hover affordances — only the actionable bits stop the drag. */}
+      {/*
+        Hover affordances. We stop pointerdown (not just mousedown) so
+        the canvas's drag-start listener — which uses pointer events —
+        doesn't kidnap the click and end up writing a new position when
+        the user only meant to tap the trash or pencil.
+      */}
       <div
         className="absolute right-2 top-2 flex gap-1 opacity-0 transition group-hover:opacity-100"
+        onPointerDown={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
       >
         {item.layoutType !== "photo" ? (
