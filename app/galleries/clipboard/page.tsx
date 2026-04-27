@@ -98,6 +98,16 @@ export default function ClipboardPage() {
           >
             {prompt}
           </h1>
+          {/*
+            Tiny inline loading caption — sits in the title block so the
+            warm paper background paints from the very first frame and
+            the user never sees a mismatched gray "Loading…" panel.
+          */}
+          {loading ? (
+            <p className="mt-3 text-[10.5px] font-medium uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+              Loading…
+            </p>
+          ) : null}
         </header>
 
         {error ? (
@@ -106,13 +116,7 @@ export default function ClipboardPage() {
           </p>
         ) : null}
 
-        {loading ? (
-          <div className="memora-shimmer flex h-full w-full items-center justify-center" aria-busy>
-            <p className="text-[12px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
-              Loading your clipboard…
-            </p>
-          </div>
-        ) : (
+        {loading ? null : (
           <>
             {/* Desktop: drag canvas. Hidden on mobile. */}
             <div className="hidden md:block">
