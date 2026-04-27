@@ -23,6 +23,9 @@ import type { ClipboardItem } from "@/hooks/use-clipboard-items";
 const CANVAS_HEIGHT = 2200;
 const CARD_WIDTH = 320; // matches max-w of ClipboardCard
 const CARD_DEFAULT_HEIGHT = 220;
+// Reserve the top of the canvas for the floating editorial header so
+// fallback-positioned cards don't render under the title block.
+const HEADER_SAFE_TOP_PX = 240;
 
 // Stable pseudo-random scatter for cards without saved coords. Hashing
 // the uuid keeps initial positions deterministic so reloads don't shift
@@ -38,9 +41,13 @@ function hashToUnit(seed: string, salt: number): number {
 
 function fallbackPosition(item: ClipboardItem, canvasWidth: number) {
   const safeWidth = Math.max(canvasWidth - CARD_WIDTH - 32, 320);
-  const safeHeight = Math.max(CANVAS_HEIGHT - CARD_DEFAULT_HEIGHT - 32, 320);
+  const safeHeight = Math.max(
+    CANVAS_HEIGHT - CARD_DEFAULT_HEIGHT - HEADER_SAFE_TOP_PX - 32,
+    320,
+  );
   const x = 16 + Math.round(hashToUnit(item.id, 7) * safeWidth);
-  const y = 16 + Math.round(hashToUnit(item.id, 13) * safeHeight);
+  const y =
+    HEADER_SAFE_TOP_PX + Math.round(hashToUnit(item.id, 13) * safeHeight);
   return { x, y };
 }
 
@@ -170,7 +177,7 @@ export function ClipboardCanvas({
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       style={{ height: CANVAS_HEIGHT }}
-      className="memora-clipboard-paper relative w-full select-none overflow-hidden"
+      className="relative w-full select-none overflow-hidden"
       aria-label="Clipboard canvas — click to add a memory"
       role="region"
     >
