@@ -44,7 +44,7 @@ export function PricingCard({
       </div>
 
       <div className="mt-3 flex flex-1 flex-col justify-between border-t border-[color:var(--border)] pt-3 md:mt-4 md:pt-4">
-        <ul className={plan.id === "pro" ? "space-y-1.5" : "space-y-2"}>
+        <ul className={plan.id === "max" ? "space-y-1.5" : "space-y-2"}>
           {plan.features.map((feature) => (
             <li key={feature} className="flex items-start gap-2 text-xs leading-5 text-[color:var(--ink-soft)] md:text-sm md:leading-6">
               <Check className="mt-0.5 h-3.5 w-3.5 text-[color:var(--accent-strong)]" />

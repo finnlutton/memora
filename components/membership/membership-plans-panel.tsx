@@ -4,7 +4,14 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PricingCard } from "@/components/onboarding/pricing-card";
 import { useMemoraStore } from "@/hooks/use-memora-store";
-import { membershipPlans } from "@/lib/plans";
+import { isPaidPlan, publicMembershipPlans } from "@/lib/plans";
+
+const PLAN_DISPLAY_ORDER: Array<"free" | "plus" | "max" | "lifetime"> = [
+  "free",
+  "plus",
+  "max",
+  "lifetime",
+];
 
 export function MembershipPlansPanel() {
   const router = useRouter();
@@ -13,9 +20,9 @@ export function MembershipPlansPanel() {
   const [error, setError] = useState<string | null>(null);
   const submitLockRef = useRef(false);
 
-  const orderedPlans = ["free", "lite", "plus", "pro"]
-    .map((id) => membershipPlans.find((plan) => plan.id === id))
-    .filter((plan): plan is (typeof membershipPlans)[number] => Boolean(plan));
+  const orderedPlans = PLAN_DISPLAY_ORDER
+    .map((id) => publicMembershipPlans.find((plan) => plan.id === id))
+    .filter((plan): plan is (typeof publicMembershipPlans)[number] => Boolean(plan));
 
   return (
     <section className="mx-auto w-full max-w-5xl space-y-5">
@@ -24,22 +31,25 @@ export function MembershipPlansPanel() {
           <PricingCard
             key={plan.id}
             plan={plan}
-            isCurrent={onboarding.onboardingComplete && onboarding.selectedPlanId === plan.id}
+            isCurrent={
+              onboarding.onboardingComplete &&
+              onboarding.selectedPlanId === plan.id
+            }
             buttonLabel={
-              onboarding.onboardingComplete && onboarding.selectedPlanId === plan.id
+              onboarding.onboardingComplete &&
+              onboarding.selectedPlanId === plan.id
                 ? "Current plan"
                 : busyPlanId === plan.id
-                  ? "Saving plan..."
+                  ? plan.id === "free"
+                    ? "Saving plan..."
+                    : "Redirecting…"
                   : plan.id === "free"
                     ? "Start Free"
                     : "Choose Plan"
             }
             isBusy={busyPlanId === plan.id}
             onSelect={async (selectedPlan) => {
-              if (busyPlanId || submitLockRef.current) {
-                return;
-              }
-
+              if (busyPlanId || submitLockRef.current) return;
               submitLockRef.current = true;
               setError(null);
 
@@ -50,7 +60,10 @@ export function MembershipPlansPanel() {
                 return;
               }
 
-              if (onboarding.onboardingComplete && onboarding.selectedPlanId === selectedPlan.id) {
+              if (
+                onboarding.onboardingComplete &&
+                onboarding.selectedPlanId === selectedPlan.id
+              ) {
                 router.push("/galleries");
                 submitLockRef.current = false;
                 return;
@@ -58,13 +71,39 @@ export function MembershipPlansPanel() {
 
               setBusyPlanId(selectedPlan.id);
               try {
+                if (isPaidPlan(selectedPlan.id)) {
+                  // Paid plans go through Stripe Checkout. The server
+                  // resolves the price from env vars; we only send the
+                  // planId.
+                  const response = await fetch(
+                    "/api/stripe/create-checkout-session",
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ planId: selectedPlan.id }),
+                    },
+                  );
+                  const data = (await response.json()) as {
+                    url?: string;
+                    error?: string;
+                  };
+                  if (!response.ok || !data.url) {
+                    throw new Error(
+                      data.error ?? "Could not start checkout. Please try again.",
+                    );
+                  }
+                  window.location.href = data.url;
+                  return;
+                }
+
+                // Free plan: keep the existing local-write flow.
                 await completeCheckout(selectedPlan.id);
                 router.replace("/galleries");
               } catch (checkoutError) {
                 setError(
                   checkoutError instanceof Error
                     ? checkoutError.message
-                    : "We couldn't save your selected plan. Please try again.",
+                    : "We couldn't process that plan change. Please try again.",
                 );
               } finally {
                 setBusyPlanId(null);

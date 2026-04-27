@@ -47,9 +47,25 @@ export async function POST(request: NextRequest) {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("selected_plan")
+      .select("selected_plan, is_internal_account")
       .eq("id", user.id)
-      .maybeSingle<{ selected_plan: string | null }>();
+      .maybeSingle<{
+        selected_plan: string | null;
+        is_internal_account: boolean | null;
+      }>();
+
+    // Internal/founder accounts bypass plan limits entirely. Return early
+    // with a permissive response so callers proceed without further work.
+    if (profile?.is_internal_account) {
+      return NextResponse.json({
+        ok: true,
+        resource,
+        currentPlan: "internal",
+        limit: null,
+        currentUsage: 0,
+      });
+    }
+
     const plan = getMembershipPlan(normalizePlanId(profile?.selected_plan ?? null));
     if (!plan) {
       return NextResponse.json({ error: "No plan configuration available." }, { status: 500 });
