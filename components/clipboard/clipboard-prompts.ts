@@ -27,7 +27,6 @@ export const CLIPBOARD_PROMPTS = [
   "What are you grateful for today?",
   "What did you learn today?",
   "What made you laugh today?",
-  "What do you wish you had taken a picture of?",
   "What picture from today reflects it best?",
   "Was anything ordinary but felt meaningful?",
   "What place did you enjoy being today?",
