@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { CalendarDays, ChevronDown, MapPin } from "lucide-react";
+import Image from "next/image";
 import { useState } from "react";
 import {
   HOME_GALLERY_DEMO,
@@ -152,7 +153,12 @@ function GalleryCard({
       className="group relative w-full max-w-[42rem] overflow-hidden rounded-xl border border-[color:var(--border)] bg-white text-left shadow-[0_18px_48px_-24px_rgba(18,31,48,0.22)]"
       aria-expanded={open}
     >
-      <Cover src={image} alt={title} aspectClass="aspect-[1.55/1]" />
+      <Cover
+        src={image}
+        alt={title}
+        aspectClass="aspect-[1.55/1]"
+        sizes="(max-width: 768px) 100vw, 672px"
+      />
       <div className="px-6 py-5 md:px-8 md:py-6">
         <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-[color:var(--ink-faint)]">
           Gallery
@@ -202,7 +208,12 @@ function SubgalleryCard({
       className="relative flex h-full flex-col overflow-hidden rounded-lg border bg-white text-left shadow-[0_10px_26px_-18px_rgba(18,31,48,0.22)]"
       aria-expanded={open}
     >
-      <Cover src={sub.coverImage} alt={sub.title} aspectClass="aspect-[5/4]" />
+      <Cover
+        src={sub.coverImage}
+        alt={sub.title}
+        aspectClass="aspect-[5/4]"
+        sizes="(max-width: 768px) 100vw, 340px"
+      />
       <div className="flex-1 px-4 py-4 md:px-5 md:py-5">
         <p className="text-[9.5px] font-medium uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
           Subgallery
@@ -245,7 +256,12 @@ function SceneCard({ scene, index }: { scene: DemoScene; index: number }) {
       className="flex flex-col"
     >
       <div className="overflow-hidden rounded-lg shadow-[0_10px_26px_-16px_rgba(18,31,48,0.24)]">
-        <Cover src={scene.image} alt={scene.title ?? "Scene"} aspectClass="aspect-[4/3]" />
+        <Cover
+          src={scene.image}
+          alt={scene.title ?? "Scene"}
+          aspectClass="aspect-[4/3]"
+          sizes="(max-width: 768px) 50vw, 480px"
+        />
       </div>
       {scene.caption ? (
         <p className="mt-2 line-clamp-2 px-0.5 text-[10.5px] leading-[1.45] text-[color:var(--ink-soft)] md:text-[11px]">
@@ -404,19 +420,27 @@ function BranchConnector({
 }
 
 /**
- * Cover — renders an <img> if the source exists, falls back gracefully to
- * a soft neutral placeholder (no broken-image icon) when the file is
- * missing. Uses a plain <img> so `onError` fires reliably; since these are
- * small demo assets this is fine.
+ * Cover — wraps next/image with the same soft neutral fallback used
+ * before. The home gallery section sits below the fold, so we lazy-load
+ * everything by default. The container's CSS gradient acts as the
+ * placeholder while the image streams in (no extra blur asset needed).
+ *
+ * `sizes` defaults to a hint that matches the typical render widths
+ * across the gallery reveal — gallery cover, subgallery card, scene
+ * tile. Callers can override for tighter precision.
  */
 function Cover({
   src,
   alt,
   aspectClass,
+  sizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
+  priority = false,
 }: {
   src: string;
   alt: string;
   aspectClass: string;
+  sizes?: string;
+  priority?: boolean;
 }) {
   const [errored, setErrored] = useState(false);
   return (
@@ -424,13 +448,16 @@ function Cover({
       className={`relative w-full overflow-hidden ${aspectClass} bg-[linear-gradient(145deg,#eef2f7_0%,#dde5ee_100%)]`}
     >
       {!errored ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
           src={src}
           alt={alt}
-          className="absolute inset-0 h-full w-full object-cover"
+          fill
+          sizes={sizes}
+          quality={80}
+          priority={priority}
+          loading={priority ? "eager" : "lazy"}
+          className="object-cover"
           onError={() => setErrored(true)}
-          loading="lazy"
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center">
