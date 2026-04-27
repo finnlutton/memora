@@ -122,36 +122,27 @@ export function UsaMemoryMap({ pins }: { pins: UsaMapPin[] }) {
           geometry: merged,
         };
         const d = pathBuilder(featureGeo);
-        if (cancelled) return;
-        if (d) setUsPath(d);
+        if (cancelled || !d) return;
+        setUsPath(d);
 
-        // Compute the projected bbox so we can place the
-        // equirectangular relief texture such that its US portion
-        // covers the silhouette.
-        const projW = projection([US_LNG_W, (US_LAT_N + US_LAT_S) / 2]);
-        const projE = projection([US_LNG_E, (US_LAT_N + US_LAT_S) / 2]);
-        const projN = projection([(US_LNG_W + US_LNG_E) / 2, US_LAT_N]);
-        const projS = projection([(US_LNG_W + US_LNG_E) / 2, US_LAT_S]);
-        if (projW && projE && projN && projS) {
-          const minX = projW[0];
-          const maxX = projE[0];
-          const minY = projN[1];
-          const maxY = projS[1];
-          // Source equirectangular texture: full world, 360° lng × 180° lat.
-          // The US occupies a sub-rectangle of that. We size the full
-          // texture so its US sub-rectangle equals our projected bbox,
-          // then position so the corners line up.
-          const usFracX = (US_LNG_E - US_LNG_W) / 360; // ≈ 0.164
-          const usFracY = (US_LAT_N - US_LAT_S) / 180; // ≈ 0.144
-          const fullW = (maxX - minX) / usFracX;
-          const fullH = (maxY - minY) / usFracY;
-          // Distance from texture's left edge to where the US starts.
-          const leftFrac = (US_LNG_W + 180) / 360; // ≈ 0.153
-          const topFrac = (90 - US_LAT_N) / 180; // ≈ 0.222
-          const x = minX - leftFrac * fullW;
-          const y = minY - topFrac * fullH;
-          setReliefBox({ x, y, width: fullW, height: fullH });
-        }
+        // Use the path's own projected bounding box. This is
+        // guaranteed valid because we just successfully built the
+        // path — no risk of geoAlbersUsa returning null at the
+        // edge corners.
+        const [[minX, minY], [maxX, maxY]] = pathBuilder.bounds(featureGeo);
+
+        // Source equirectangular texture: full world, 360° lng × 180° lat.
+        // The US occupies a sub-rectangle of that. Size the full
+        // texture so its US sub-rectangle equals our projected bbox.
+        const usFracX = (US_LNG_E - US_LNG_W) / 360; // ≈ 0.164
+        const usFracY = (US_LAT_N - US_LAT_S) / 180; // ≈ 0.144
+        const fullW = (maxX - minX) / usFracX;
+        const fullH = (maxY - minY) / usFracY;
+        const leftFrac = (US_LNG_W + 180) / 360; // ≈ 0.153
+        const topFrac = (90 - US_LAT_N) / 180; // ≈ 0.222
+        const x = minX - leftFrac * fullW;
+        const y = minY - topFrac * fullH;
+        setReliefBox({ x, y, width: fullW, height: fullH });
       } catch (err) {
         console.error("Memora: USA map topology load failed", err);
       }
@@ -248,39 +239,43 @@ export function UsaMemoryMap({ pins }: { pins: UsaMapPin[] }) {
             </linearGradient>
           </defs>
 
-          {usPath && reliefBox ? (
+          {/* The silhouette is rendered as soon as the topology
+              loads. The relief texture layers on top of it once its
+              bbox is computed — so even if the texture or projection
+              math hits a snag, we always see the land. */}
+          {usPath ? (
             <>
-              {/* 1. Drop shadow base — a copy of the silhouette filled
-                  with a warm color, so feDropShadow has substance to
-                  cast from. The actual landmass on top covers it. */}
+              {/* 1. Drop shadow base + warm fallback fill. */}
               <path
                 d={usPath}
-                fill="#ddc9a4"
+                fill="#e6d6b4"
                 filter="url(#usa-land-lift)"
               />
 
               {/* 2. Real terrain imagery clipped to the silhouette. */}
-              <g clipPath="url(#usa-clip)">
-                <image
-                  href={RELIEF_TEXTURE_URL}
-                  x={reliefBox.x}
-                  y={reliefBox.y}
-                  width={reliefBox.width}
-                  height={reliefBox.height}
-                  preserveAspectRatio="none"
-                />
-                {/* 3. Warm-tone overlay on the imagery so it reads as
-                    a Memora artifact rather than a NASA tile. */}
-                <rect
-                  x={0}
-                  y={0}
-                  width={MAP_WIDTH}
-                  height={MAP_HEIGHT}
-                  fill="url(#usa-warm-tint)"
-                />
-              </g>
+              {reliefBox ? (
+                <g clipPath="url(#usa-clip)">
+                  <image
+                    href={RELIEF_TEXTURE_URL}
+                    x={reliefBox.x}
+                    y={reliefBox.y}
+                    width={reliefBox.width}
+                    height={reliefBox.height}
+                    preserveAspectRatio="none"
+                  />
+                  {/* Warm-tone overlay so the imagery reads as a
+                      Memora artifact rather than a NASA tile. */}
+                  <rect
+                    x={0}
+                    y={0}
+                    width={MAP_WIDTH}
+                    height={MAP_HEIGHT}
+                    fill="url(#usa-warm-tint)"
+                  />
+                </g>
+              ) : null}
 
-              {/* 4. Inner shadow — gentle warm rim on the inside of
+              {/* 3. Inner shadow — gentle warm rim on the inside of
                   the coastline. */}
               <path
                 d={usPath}
@@ -288,7 +283,7 @@ export function UsaMemoryMap({ pins }: { pins: UsaMapPin[] }) {
                 filter="url(#usa-inner-shadow)"
               />
 
-              {/* 5. Fine ink coastline. */}
+              {/* 4. Fine ink coastline. */}
               <path
                 d={usPath}
                 fill="none"
