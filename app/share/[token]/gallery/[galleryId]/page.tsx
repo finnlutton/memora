@@ -117,10 +117,13 @@ export default async function PublicSharedGalleryPage({
     .order("display_order", { ascending: true })
     .returns<SubgalleryRow[]>();
 
-  const coverPaths = [
-    gallery.cover_image_path ?? "",
-    ...(subgalleries ?? []).map((subgallery) => subgallery.cover_image_path ?? ""),
-  ].filter((path) => path && isLikelyStoragePath(path));
+  // The gallery cover used to render as a hero banner here, but
+  // recipients found it redundant with the cover that already shows
+  // on the share landing page tile. We now only sign the subgallery
+  // covers that are actually rendered on this page.
+  const coverPaths = (subgalleries ?? [])
+    .map((subgallery) => subgallery.cover_image_path ?? "")
+    .filter((path) => path && isLikelyStoragePath(path));
 
   const signedUrlByPath = new Map<string, string>();
   if (coverPaths.length) {
@@ -130,10 +133,6 @@ export default async function PublicSharedGalleryPage({
       if (entry.signedUrl) signedUrlByPath.set(uniquePaths[index], entry.signedUrl);
     });
   }
-
-  const galleryCover = isLikelyStoragePath(gallery.cover_image_path ?? "")
-    ? signedUrlByPath.get(gallery.cover_image_path ?? "") ?? ""
-    : (gallery.cover_image_path ?? "");
 
   return (
     <main className="min-h-screen bg-[color:var(--background)] px-4 py-6 text-[color:var(--ink)] md:px-8 md:py-8">
@@ -157,13 +156,6 @@ export default async function PublicSharedGalleryPage({
             <p className="mt-3 max-w-3xl text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:text-[15px] md:leading-7">{gallery.description}</p>
           ) : null}
         </div>
-
-        {galleryCover ? (
-          <div className="mb-6 overflow-hidden border border-[rgba(30,46,72,0.12)] md:mb-8">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={galleryCover} alt={gallery.title} className="h-80 w-full object-cover md:h-[24rem]" />
-          </div>
-        ) : null}
 
         {(subgalleries ?? []).length ? (
           <section className="grid gap-3 sm:grid-cols-2 md:grid-cols-2 md:gap-4 xl:grid-cols-3">
