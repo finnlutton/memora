@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import {
-  formatDateRange,
+  formatDateRangeCompact,
   formatLocationForCard,
   nextImageUnoptimizedForSrc,
 } from "@/lib/utils";
@@ -40,7 +40,11 @@ export function GalleryCard({
   const coverImage = gallery.coverImage || gallery.subgalleries[0]?.coverImage;
 
   const primaryLocation = formatLocationForCard(gallery.locations[0]);
-  const dateRange = formatDateRange(gallery.startDate, gallery.endDate);
+  // Compact range: drop the year from the start date when both dates
+  // share a year so 'Apr 22, 2026 - Apr 26, 2026' reads as
+  // 'Apr 22 - Apr 26, 2026'. Cross-year ranges and single dates fall
+  // back to the standard format.
+  const dateRange = formatDateRangeCompact(gallery.startDate, gallery.endDate);
   const metaParts = [primaryLocation, dateRange].filter(Boolean);
 
   const body = (

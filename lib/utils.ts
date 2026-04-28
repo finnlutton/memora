@@ -47,6 +47,41 @@ export function formatDateRange(startDate?: string, endDate?: string) {
     : `${formattedStart} - ${formattedEnd}`;
 }
 
+/**
+ * Compact variant of formatDateRange. When start and end fall in the
+ * same year, the year is dropped from the start so the range reads
+ * "Apr 22 - Apr 26, 2026" instead of "Apr 22, 2026 - Apr 26, 2026".
+ * Single-date inputs and cross-year ranges fall back to the standard
+ * formatDateRange output.
+ */
+export function formatDateRangeCompact(startDate?: string, endDate?: string) {
+  if (!startDate || !endDate) {
+    return formatDateRange(startDate, endDate);
+  }
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return formatDateRange(startDate, endDate);
+  }
+  if (start.getFullYear() !== end.getFullYear()) {
+    return formatDateRange(startDate, endDate);
+  }
+  const startLabel = start.toLocaleDateString("en", {
+    month: "short",
+    day: "numeric",
+  });
+  const endLabel = end.toLocaleDateString("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  // Same-day range collapses to one date with year (matches formatDateRange).
+  if (startLabel === endLabel.replace(/,\s*\d{4}$/, "")) {
+    return endLabel;
+  }
+  return `${startLabel} - ${endLabel}`;
+}
+
 export function formatUpdatedLabel(value: string) {
   const date = new Date(value);
   return date.toLocaleDateString("en", {
