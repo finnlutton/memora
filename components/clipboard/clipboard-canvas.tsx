@@ -169,6 +169,29 @@ export function ClipboardCanvas({
     onAddAtPosition(x, y);
   };
 
+  // Determine which cards should preload eagerly. The canvas is taller
+  // than the viewport, so most cards sit below the fold — but the
+  // browser doesn't know which positioned-absolutely cards are visible
+  // without scrolling first. We pick the four cards with the lowest Y
+  // coordinate (resolved to fallback for unset coords) and mark those
+  // priority. Empirically these are the cards the user paints first;
+  // priority preloads them via <link rel="preload"> so they're already
+  // streaming by the time the canvas hydrates.
+  const PRIORITY_COUNT = 4;
+  const priorityIds = (() => {
+    if (items.length === 0) return new Set<string>();
+    const sorted = items
+      .map((item) => {
+        const fallback = fallbackPosition(item, canvasWidth);
+        const y =
+          typeof item.yPosition === "number" ? item.yPosition : fallback.y;
+        return { id: item.id, y };
+      })
+      .sort((a, b) => a.y - b.y)
+      .slice(0, PRIORITY_COUNT);
+    return new Set(sorted.map((entry) => entry.id));
+  })();
+
   return (
     <div
       ref={canvasRef}
@@ -226,6 +249,7 @@ export function ClipboardCanvas({
               onUpdateContent={onUpdateContent}
               onRemove={onRemove}
               draggable
+              priority={priorityIds.has(item.id)}
             />
           </div>
         );

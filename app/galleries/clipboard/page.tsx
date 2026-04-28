@@ -146,12 +146,17 @@ export default function ClipboardPage() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-4 px-3 pb-24 pt-44">
-                  {items.map((item) => (
+                  {items.map((item, index) => (
                     <ClipboardCard
                       key={item.id}
                       item={item}
                       onUpdateContent={updateContent}
                       onRemove={removeItem}
+                      // First few cards in the mobile stack are
+                      // above-the-fold or just below; preload them
+                      // eagerly so the first paint isn't a stack of
+                      // empty paper tiles.
+                      priority={index < 3}
                     />
                   ))}
                 </div>

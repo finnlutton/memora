@@ -37,11 +37,19 @@ export function ClipboardCard({
   onUpdateContent,
   onRemove,
   draggable = false,
+  priority = false,
 }: {
   item: ClipboardItem;
   onUpdateContent: (id: string, content: string) => Promise<void>;
   onRemove: (id: string) => Promise<void>;
   draggable?: boolean;
+  /**
+   * When true, the cover image is preloaded eagerly with high
+   * fetchPriority. The canvas marks the first few cards in the list
+   * as priority so the browser stops queueing them behind the rest of
+   * the page's resources.
+   */
+  priority?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(item.content ?? "");
@@ -100,8 +108,16 @@ export function ClipboardCard({
               src={item.photoUrl}
               alt={item.content ?? "Clipboard memory"}
               fill
-              sizes="(max-width: 640px) 90vw, 320px"
-              quality={82}
+              // Card is hard-bounded to max-w-[20rem] (320px) on every
+              // breakpoint, so a tighter sizes hint stops the optimizer
+              // from fetching a 90vw-sized variant on phones for an
+              // image we'll only ever paint at 320 CSS pixels.
+              sizes="320px"
+              // 75 is Next.js 16's default-allowed quality bucket and
+              // produces ~30% smaller AVIF/WebP than 82 with no
+              // perceptible difference at thumbnail size.
+              quality={75}
+              priority={priority}
               draggable={false}
               className="object-cover"
             />
