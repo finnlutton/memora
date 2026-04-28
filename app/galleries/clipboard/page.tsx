@@ -84,7 +84,7 @@ export default function ClipboardPage() {
         */}
         <header className="pointer-events-none absolute left-5 right-5 top-6 z-20 max-w-2xl md:left-12 md:top-12">
           <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-[color:var(--ink-soft)]">
-            Your clipboard
+            Your scraps are worth keeping
           </p>
           {/*
             Title IS the rotating prompt. Today's prompt is picked
