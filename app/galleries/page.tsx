@@ -107,6 +107,7 @@ export default function GalleriesPage() {
         eyebrow="Workspace"
         title="My Galleries"
         subtitle="Curate, preserve, and share your experiences here."
+        hideTitleOnMobile
         actions={
           <>
             <Button

@@ -8,12 +8,19 @@ export function WorkspaceTopbar({
   subtitle,
   actions,
   className,
+  hideTitleOnMobile = false,
 }: {
   eyebrow?: string;
   title: string;
   subtitle?: string;
   actions?: React.ReactNode;
   className?: string;
+  /**
+   * Hide the page title on mobile only. Useful when the active nav strip
+   * already names the page (e.g. galleries dashboard) and the giant serif
+   * title becomes redundant clutter at small widths.
+   */
+  hideTitleOnMobile?: boolean;
 }) {
   return (
     <header
@@ -31,7 +38,12 @@ export function WorkspaceTopbar({
             {eyebrow}
           </p>
         ) : null}
-        <h1 className="mt-2 font-serif text-[40px] leading-[0.94] text-[color:var(--ink)] md:mt-3 md:text-[64px]">
+        <h1
+          className={cn(
+            "mt-2 font-serif text-[40px] leading-[0.94] text-[color:var(--ink)] md:mt-3 md:text-[64px]",
+            hideTitleOnMobile && "hidden md:block",
+          )}
+        >
           {title}
         </h1>
         {subtitle ? (
