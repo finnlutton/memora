@@ -63,12 +63,26 @@ export default function GalleriesPage() {
       ? `${sortedGalleries.length} of ${selectedPlan.galleryCount} active galleries`
       : `${sortedGalleries.length} active galleries`
     : `${sortedGalleries.length} galleries in archive`;
+  // Mobile-only compact form: 'Archive usage' label already conveys what
+  // the value is, so 'X of Y active galleries' is redundant on small
+  // screens. Keep just the count(s).
+  const usageLabelCompact = selectedPlan
+    ? Number.isFinite(selectedPlan.galleryCount)
+      ? `${sortedGalleries.length} of ${selectedPlan.galleryCount}`
+      : `${sortedGalleries.length}`
+    : `${sortedGalleries.length}`;
   const shareUsageLabel =
     shareUsage && Number.isFinite(shareUsage.limit)
       ? `${shareUsage.current} / ${shareUsage.limit} active share links`
       : shareUsage
         ? `${shareUsage.current} active share links`
         : "Share usage unavailable";
+  const shareUsageLabelCompact =
+    shareUsage && Number.isFinite(shareUsage.limit)
+      ? `${shareUsage.current} / ${shareUsage.limit}`
+      : shareUsage
+        ? `${shareUsage.current}`
+        : "—";
   const shareLimitReached =
     shareUsage != null && Number.isFinite(shareUsage.limit) && shareUsage.current >= (shareUsage.limit ?? 0);
   const selectedCount = selectedGalleryIds.length;
@@ -173,8 +187,16 @@ export default function GalleriesPage() {
             {selectedPlan?.name ?? "No plan selected"}
           </p>
         </Link>
-        <QuickStat label="Archive usage" value={usageLabel} />
-        <QuickStat label="Sharing usage" value={shareUsageLabel} />
+        <QuickStat
+          label="Archive usage"
+          value={usageLabel}
+          mobileValue={usageLabelCompact}
+        />
+        <QuickStat
+          label="Sharing usage"
+          value={shareUsageLabel}
+          mobileValue={shareUsageLabelCompact}
+        />
       </section>
       {shareLimitReached ? (
         <p className="mb-3 rounded-sm border border-[rgba(34,52,79,0.12)] bg-white/70 px-3 py-2 text-sm text-[color:var(--ink-soft)]">
@@ -341,7 +363,20 @@ export default function GalleriesPage() {
   );
 }
 
-function QuickStat({ label, value }: { label: string; value: string }) {
+function QuickStat({
+  label,
+  value,
+  mobileValue,
+}: {
+  label: string;
+  value: string;
+  /**
+   * Optional shorter value used on mobile only. Useful when the desktop
+   * value is descriptive prose ('4 of 10 active galleries') but mobile
+   * cells are too narrow for the full string.
+   */
+  mobileValue?: string;
+}) {
   // Editorial caption treatment — not a dashboard metric.
   // - No vertical divider rule (was Harbor-blue hardcoded, read too grid-y).
   // - On desktop, value drops to regular weight in --ink-soft so it reads
@@ -355,7 +390,14 @@ function QuickStat({ label, value }: { label: string; value: string }) {
         {label}
       </p>
       <p className="mt-1 text-[12.5px] font-medium leading-[1.35] text-[color:var(--ink)] md:mt-2 md:text-[15px] md:font-normal md:leading-6">
-        {value}
+        {mobileValue ? (
+          <>
+            <span className="md:hidden">{mobileValue}</span>
+            <span className="hidden md:inline">{value}</span>
+          </>
+        ) : (
+          value
+        )}
       </p>
     </div>
   );
