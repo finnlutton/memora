@@ -183,7 +183,7 @@ export default function GalleriesPage() {
           <p className="text-[9px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)] md:text-[10px] md:tracking-[0.22em]">
             Membership
           </p>
-          <p className="mt-1 text-[12.5px] font-medium leading-[1.35] text-[color:var(--ink)] underline decoration-transparent underline-offset-[5px] transition group-hover:decoration-[color:var(--ink-faint)] md:mt-2 md:text-[15px] md:font-normal md:leading-6">
+          <p className="mt-1 text-[12.5px] leading-[1.35] text-[color:var(--ink)] underline decoration-transparent underline-offset-[5px] transition group-hover:decoration-[color:var(--ink-faint)] md:mt-2 md:text-[15px] md:leading-6">
             {selectedPlan?.name ?? "No plan selected"}
           </p>
         </Link>
@@ -389,7 +389,7 @@ function QuickStat({
       <p className="text-[9px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)] md:text-[10px] md:tracking-[0.22em]">
         {label}
       </p>
-      <p className="mt-1 text-[12.5px] font-medium leading-[1.35] text-[color:var(--ink)] md:mt-2 md:text-[15px] md:font-normal md:leading-6">
+      <p className="mt-1 text-[12.5px] leading-[1.35] text-[color:var(--ink)] md:mt-2 md:text-[15px] md:leading-6">
         {mobileValue ? (
           <>
             <span className="md:hidden">{mobileValue}</span>
