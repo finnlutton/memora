@@ -240,7 +240,14 @@ type MemoraStore = {
   ) => Promise<void>;
   getGallery: (galleryId: string) => Gallery | undefined;
   getSubgallery: (galleryId: string, subgalleryId: string) => Subgallery | undefined;
-  resetDemo: () => void;
+  /**
+   * Clear all client-side persistence (USER_STORAGE_KEY,
+   * DEMO_STORAGE_KEY, LEGACY_STORAGE_KEY) and re-seed the demo
+   * galleries. Intended as the recovery action surfaced after a
+   * storage-quota warning. Does not touch Supabase Storage or any
+   * authenticated user's row data; only the local cache.
+   */
+  clearLocalCache: () => void;
   signOut: () => void;
   syncOnboardingFromUser: (
     user: AuthUserLike,
@@ -2364,7 +2371,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         const gallery = galleries.find((entry) => entry.id === galleryId);
         return gallery?.subgalleries.find((subgallery) => subgallery.id === subgalleryId);
       },
-      resetDemo() {
+      clearLocalCache() {
         // Free local cache aggressively before re-seeding the demo so a
         // quota-stuck snapshot from a prior session can't survive into
         // the fresh state. Only client-side persistence is touched —
