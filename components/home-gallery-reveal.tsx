@@ -181,7 +181,7 @@ function GalleryCard({
           {title}
         </h3>
         <Meta location={location} dates={dates} className="mt-1.5 md:mt-2.5" />
-        <p className="mt-2 line-clamp-3 max-w-xl text-[12.5px] leading-[1.55] text-[color:var(--ink-soft)] md:mt-3 md:line-clamp-none md:text-[14.5px] md:leading-7">
+        <p className="mt-2 max-w-xl text-[12.5px] leading-[1.55] text-[color:var(--ink-soft)] md:mt-3 md:text-[14.5px] md:leading-7">
           {description}
         </p>
         <div className="mt-3 inline-flex items-center gap-2 text-[10.5px] font-medium uppercase tracking-[0.22em] text-[color:var(--ink-soft)] md:mt-5">
