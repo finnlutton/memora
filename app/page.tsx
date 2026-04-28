@@ -80,7 +80,7 @@ export default function HomePage() {
         className="mx-auto flex max-w-5xl flex-col items-end px-4 py-24 md:py-32"
       >
         <div className="max-w-[38rem] text-right">
-          <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
+          <p className="text-[11px] font-medium text-[color:var(--ink)] uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
             The intent
           </p>
           <p className="mt-5 font-serif text-[28px] leading-[1.18] text-[color:var(--ink)] md:text-[34px] md:leading-[1.14]">
@@ -158,7 +158,7 @@ export default function HomePage() {
       >
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-10 md:grid-cols-[0.85fr_1.6fr] md:gap-16">
           <div className="md:pr-2">
-            <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
+            <p className="text-[11px] font-medium text-[color:var(--ink)] uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
               Creator&apos;s note
             </p>
             <h2 className="mt-5 font-serif text-[32px] leading-[1.04] text-[color:var(--ink)] md:text-[46px]">
@@ -177,7 +177,7 @@ export default function HomePage() {
               While many look to social media for this outlet, I&apos;ve found it insufficient. Ads, algorithms, likes, and comments have drawn the authenticity from your experiences and have crumbled its original intent.
             </p>
             <p>
-              Memora provides much-needed solutions to these problems. It does this by providing a quiet space for you to organize your photos, add layers of written reflection, and share them with anyone in less than a minute. By encouraging thoughtfulness, we hope to fundamentally change how one organizes, shares, and remembers their experiences.
+              Memora provides much-needed solutions to these problems. It does this by providing a <span className="font-medium text-[color:var(--ink)]">quiet</span> space for you to organize your photos, add layers of written reflection, and share them with anyone <span className="font-medium text-[color:var(--ink)]">in less than a minute</span>. By encouraging thoughtfulness, we hope to fundamentally change how one organizes, shares, and remembers their experiences.
             </p>
 
             <p className="!mt-8 border-t border-[color:var(--border)] pt-6 font-serif text-[17px] italic leading-[1.5] text-[color:var(--ink)] md:text-[18px]">
