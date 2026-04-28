@@ -166,10 +166,10 @@ export default function GalleriesPage() {
           className="group block py-0.5"
           aria-label="Manage membership"
         >
-          <p className="text-[9px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)] md:text-[10px] md:tracking-[0.22em] md:text-[color:var(--ink-faint)]">
+          <p className="text-[9px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)] md:text-[10px] md:tracking-[0.22em]">
             Membership
           </p>
-          <p className="mt-1 text-[12.5px] font-medium leading-[1.35] text-[color:var(--ink)] underline decoration-transparent underline-offset-[5px] transition group-hover:decoration-[color:var(--ink-faint)] md:mt-2 md:text-[15px] md:font-normal md:leading-6 md:text-[color:var(--ink-soft)]">
+          <p className="mt-1 text-[12.5px] font-medium leading-[1.35] text-[color:var(--ink)] underline decoration-transparent underline-offset-[5px] transition group-hover:decoration-[color:var(--ink-faint)] md:mt-2 md:text-[15px] md:font-normal md:leading-6">
             {selectedPlan?.name ?? "No plan selected"}
           </p>
         </Link>
@@ -351,10 +351,10 @@ function QuickStat({ label, value }: { label: string; value: string }) {
   //   so the dashboard stats actually read at a glance.
   return (
     <div className="py-0.5">
-      <p className="text-[9px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)] md:text-[10px] md:tracking-[0.22em] md:text-[color:var(--ink-faint)]">
+      <p className="text-[9px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)] md:text-[10px] md:tracking-[0.22em]">
         {label}
       </p>
-      <p className="mt-1 text-[12.5px] font-medium leading-[1.35] text-[color:var(--ink)] md:mt-2 md:text-[15px] md:font-normal md:leading-6 md:text-[color:var(--ink-soft)]">
+      <p className="mt-1 text-[12.5px] font-medium leading-[1.35] text-[color:var(--ink)] md:mt-2 md:text-[15px] md:font-normal md:leading-6">
         {value}
       </p>
     </div>
