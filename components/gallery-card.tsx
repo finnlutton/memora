@@ -92,7 +92,7 @@ export function GalleryCard({
           {gallery.title}
         </h3>
         {metaParts.length ? (
-          <p className="mt-1 text-[8.5px] uppercase leading-[1.45] tracking-[0.06em] text-[color:var(--ink-soft)] md:mt-2 md:text-[12.5px] md:leading-normal md:tracking-[0.16em]">
+          <p className="mt-1 text-[9.5px] leading-[1.5] text-[color:var(--ink-soft)] md:mt-2 md:text-[13px] md:leading-relaxed">
             {metaParts.join(" · ")}
           </p>
         ) : null}
