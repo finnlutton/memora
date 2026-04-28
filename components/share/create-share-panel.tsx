@@ -18,7 +18,12 @@ type CreateSharePanelProps = {
   onToggleGroup: (groupId: string) => void;
   onCustomMessageChange: (value: string) => void;
   onGroupsChange: (groups: RecipientGroup[]) => void;
-  onCreateShare: (input: { galleryIds: string[]; message: string }) => Promise<{ shareUrl: string }>;
+  onCreateShare: (input: {
+    galleryIds: string[];
+    message: string;
+    recipientGroupName: string | null;
+    recipientMemberLabels: string[];
+  }) => Promise<{ shareUrl: string }>;
 };
 
 export function CreateSharePanel({
@@ -310,9 +315,30 @@ export function CreateSharePanel({
               setBusy(true);
               setError(null);
               try {
+                // Resolve the selected groups into the two
+                // recipient-facing values stored on the share row:
+                //   - groupName  : 'Family' or 'Family & Friends'
+                //   - memberLabels : ['Mom', 'Dad', 'Gigi', ...]
+                // Empty selections fall through as null / [].
+                const selectedGroups = groups.filter((group) =>
+                  selectedGroupIds.includes(group.id),
+                );
+                const recipientGroupName = selectedGroups.length
+                  ? selectedGroups
+                      .map((group) => group.name.trim())
+                      .filter(Boolean)
+                      .join(" & ") || null
+                  : null;
+                const recipientMemberLabels = selectedGroups.flatMap((group) =>
+                  group.members
+                    .map((member) => member.label.trim())
+                    .filter(Boolean),
+                );
                 const result = await onCreateShare({
                   galleryIds: selectedGalleryIds,
                   message: customMessage,
+                  recipientGroupName,
+                  recipientMemberLabels,
                 });
                 setShareUrl(result.shareUrl);
               } catch (createError) {

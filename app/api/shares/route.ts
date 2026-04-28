@@ -6,7 +6,42 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 type CreateSharePayload = {
   galleryIds?: string[];
   message?: string | null;
+  /**
+   * Display name of the recipient group(s) chosen at create time
+   * (e.g. 'Family' or 'Family & Friends'). Rendered on the public
+   * share landing page; not used for any access control.
+   */
+  recipientGroupName?: string | null;
+  /**
+   * Flat list of individual recipient names (e.g. ['Mom', 'Dad',
+   * 'Gigi']). Rendered as the eyebrow above the share landing
+   * title; same access-control caveat as above.
+   */
+  recipientMemberLabels?: string[];
 };
+
+const RECIPIENT_GROUP_NAME_MAX = 120;
+const RECIPIENT_MEMBER_LABEL_MAX = 60;
+const RECIPIENT_MEMBER_LABELS_MAX = 50;
+
+function sanitizeRecipientGroupName(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed.slice(0, RECIPIENT_GROUP_NAME_MAX);
+}
+
+function sanitizeRecipientMemberLabels(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((entry) =>
+      typeof entry === "string"
+        ? entry.trim().slice(0, RECIPIENT_MEMBER_LABEL_MAX)
+        : "",
+    )
+    .filter(Boolean)
+    .slice(0, RECIPIENT_MEMBER_LABELS_MAX);
+}
 
 function uniqueNonEmptyIds(values: string[]) {
   return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
@@ -31,6 +66,12 @@ export async function POST(request: NextRequest) {
     const payload = (await request.json()) as CreateSharePayload;
     const galleryIds = uniqueNonEmptyIds(payload.galleryIds ?? []);
     const message = payload.message?.trim() || null;
+    const recipientGroupName = sanitizeRecipientGroupName(
+      payload.recipientGroupName,
+    );
+    const recipientMemberLabels = sanitizeRecipientMemberLabels(
+      payload.recipientMemberLabels,
+    );
 
     if (galleryIds.length === 0) {
       return NextResponse.json({ error: "Select at least one gallery to share." }, { status: 400 });
@@ -94,6 +135,8 @@ export async function POST(request: NextRequest) {
           owner_user_id: user.id,
           token,
           message,
+          recipient_group_name: recipientGroupName,
+          recipient_member_labels: recipientMemberLabels,
         })
         .select("id, token")
         .single();

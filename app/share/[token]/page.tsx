@@ -7,6 +7,8 @@ type ShareRow = {
   id: string;
   message: string | null;
   revoked_at: string | null;
+  recipient_group_name: string | null;
+  recipient_member_labels: string[] | null;
 };
 
 type ShareGalleryRow = {
@@ -53,7 +55,9 @@ export default async function PublicSharePage({
 
   const { data: share, error: shareError } = await admin
     .from("shares")
-    .select("id, message, revoked_at")
+    .select(
+      "id, message, revoked_at, recipient_group_name, recipient_member_labels",
+    )
     .eq("token", token)
     .maybeSingle<ShareRow>();
 
@@ -118,14 +122,44 @@ export default async function PublicSharePage({
 
   return (
     <main className="min-h-screen bg-[color:var(--background)] px-4 py-6 text-[color:var(--ink)] md:px-8 md:py-8">
+      {/*
+        Header eyebrow + title personalize the share when the sender
+        chose a recipient group at create time. With group data:
+          • eyebrow = the member names joined by ' · '
+          • title   = 'Shared with <group name>'
+        Without group data we fall back to the original
+        'Memora' / 'Shared with you' wording so older share links
+        keep rendering exactly as they did before.
+      */}
       <div className="mx-auto max-w-6xl">
-        <div className="mb-6 border-b border-[rgba(30,46,72,0.1)] pb-4 md:mb-8 md:pb-5">
-          <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
-          <h1 className="mt-2 font-serif text-3xl leading-tight md:mt-3 md:text-5xl">Shared with you</h1>
-          {share.message ? (
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:text-[15px] md:leading-7">{share.message}</p>
-          ) : null}
-        </div>
+        {(() => {
+          const memberLabels = (share.recipient_member_labels ?? []).filter(
+            (label): label is string =>
+              typeof label === "string" && label.trim().length > 0,
+          );
+          const eyebrowText = memberLabels.length
+            ? memberLabels.join(" · ")
+            : "Memora";
+          const groupName = share.recipient_group_name?.trim() || null;
+          const titleText = groupName
+            ? `Shared with ${groupName}`
+            : "Shared with you";
+          return (
+            <div className="mb-6 border-b border-[rgba(30,46,72,0.1)] pb-4 md:mb-8 md:pb-5">
+              <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
+                {eyebrowText}
+              </p>
+              <h1 className="mt-2 font-serif text-3xl leading-tight md:mt-3 md:text-5xl">
+                {titleText}
+              </h1>
+              {share.message ? (
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:text-[15px] md:leading-7">
+                  {share.message}
+                </p>
+              ) : null}
+            </div>
+          );
+        })()}
 
         {galleryRows?.length ? (
           <section className="grid gap-5 md:grid-cols-2">
