@@ -56,6 +56,43 @@ export function formatUpdatedLabel(value: string) {
   });
 }
 
+/**
+ * Trim a location string into something compact enough for a gallery card.
+ *
+ *   "Del Mar, CA 92014, USA"            -> "Del Mar, CA"
+ *   "Munich, Germany"                   -> "Munich, Germany"
+ *   "Livigno, Province of Sondrio, IT"  -> "Livigno, IT"
+ *   "Stavanger"                         -> "Stavanger"
+ *
+ * Strategy: drop ZIP/postal codes (any 4+ digit run), then show
+ *   - city + state (drop trailing "USA" / "United States") for US locations,
+ *   - city + country otherwise. Single-part inputs pass through.
+ *
+ * Postal codes mixed into a part (e.g. "CA 92014") are stripped in place,
+ * so "CA 92014" becomes "CA". Empty parts after stripping are dropped.
+ */
+export function formatLocationForCard(location?: string | null) {
+  if (!location) return "";
+  const parts = location
+    .split(",")
+    .map((part) =>
+      part.replace(/\b\d{4,}(-\d{4})?\b/g, "").replace(/\s+/g, " ").trim(),
+    )
+    .filter(Boolean);
+  if (parts.length === 0) return "";
+  if (parts.length === 1) return parts[0];
+  const last = parts[parts.length - 1];
+  const isUS = /^(usa|u\.?s\.?a?\.?|united states(?: of america)?)$/i.test(
+    last,
+  );
+  if (isUS && parts.length >= 3) {
+    // city, state — drop "USA" suffix for the more useful state pair.
+    return `${parts[0]}, ${parts[parts.length - 2]}`;
+  }
+  // city, country (skip any middle administrative regions).
+  return `${parts[0]}, ${last}`;
+}
+
 export function splitCommaSeparated(value: string) {
   return value
     .split(",")

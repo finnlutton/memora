@@ -113,7 +113,7 @@ export default function GalleriesPage() {
             <Button
               type="button"
               variant="ghost"
-              className="whitespace-nowrap px-2 text-[10px] tracking-[0.08em] text-[color:var(--ink)] md:px-3 md:text-xs md:tracking-[0.14em]"
+              className="h-8 gap-1 whitespace-nowrap px-2 py-1 text-[9px] tracking-[0.06em] text-[color:var(--ink)] md:h-auto md:gap-1.5 md:px-3 md:py-2 md:text-xs md:tracking-[0.14em]"
               disabled={shareLimitReached}
               onClick={() => {
                 setShareMode(true);
@@ -123,25 +123,30 @@ export default function GalleriesPage() {
                 setCustomMessage("");
               }}
             >
-              <Share2 className="h-3.5 w-3.5" />
-              Share Galleries
+              <Share2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
+              <span className="md:hidden">Share</span>
+              <span className="hidden md:inline">Share Galleries</span>
             </Button>
             {hasReachedGalleryLimit ? (
               <Button
                 asChild
                 variant="secondary"
-                className="whitespace-nowrap px-2 text-[10px] tracking-[0.08em] md:px-3 md:text-xs md:tracking-[0.14em]"
+                className="h-8 gap-1 whitespace-nowrap px-2 py-1 text-[9px] tracking-[0.06em] md:h-auto md:gap-1.5 md:px-3 md:py-2 md:text-xs md:tracking-[0.14em]"
               >
-                <Link href="/galleries/settings/membership?source=gallery-limit">Upgrade plan</Link>
+                <Link href="/galleries/settings/membership?source=gallery-limit">
+                  <span className="md:hidden">Upgrade</span>
+                  <span className="hidden md:inline">Upgrade plan</span>
+                </Link>
               </Button>
             ) : (
               <Button
                 asChild
-                className="whitespace-nowrap px-2 text-[10px] tracking-[0.08em] md:px-3 md:text-xs md:tracking-[0.14em]"
+                className="h-8 gap-1 whitespace-nowrap px-2 py-1 text-[9px] tracking-[0.06em] md:h-auto md:gap-1.5 md:px-3 md:py-2 md:text-xs md:tracking-[0.14em]"
               >
                 <Link href="/galleries/new">
-                  <Plus className="h-3 w-3" />
-                  Create gallery
+                  <Plus className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                  <span className="md:hidden">Create</span>
+                  <span className="hidden md:inline">Create gallery</span>
                 </Link>
               </Button>
             )}
@@ -201,7 +206,7 @@ export default function GalleriesPage() {
             cadence (archive, not catalog). No xl:grid-cols-3 — a single
             decisive layout is the curated choice.
           */}
-          <div className="grid grid-cols-1 gap-x-8 gap-y-14 lg:grid-cols-2 lg:gap-x-10 lg:gap-y-16">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-7 md:gap-x-8 md:gap-y-14 lg:grid-cols-2 lg:gap-x-10 lg:gap-y-16">
           {sortedGalleries.map((gallery) => (
             <GalleryCard
               key={gallery.id}

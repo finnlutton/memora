@@ -1,7 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Check } from "lucide-react";
-import { formatDateRange, nextImageUnoptimizedForSrc } from "@/lib/utils";
+import {
+  formatDateRange,
+  formatLocationForCard,
+  nextImageUnoptimizedForSrc,
+} from "@/lib/utils";
 import type { Gallery } from "@/types/memora";
 
 /**
@@ -35,7 +39,7 @@ export function GalleryCard({
   // Prefer the persisted gallery cover; fall back to first subgallery if absent.
   const coverImage = gallery.coverImage || gallery.subgalleries[0]?.coverImage;
 
-  const primaryLocation = gallery.locations[0];
+  const primaryLocation = formatLocationForCard(gallery.locations[0]);
   const dateRange = formatDateRange(gallery.startDate, gallery.endDate);
   const metaParts = [primaryLocation, dateRange].filter(Boolean);
 
@@ -53,7 +57,7 @@ export function GalleryCard({
           alt={gallery.title}
           fill
           className="object-cover transition duration-[700ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.015]"
-          sizes="(max-width: 1024px) 100vw, 720px"
+          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 100vw, 720px"
           unoptimized={nextImageUnoptimizedForSrc(coverImage)}
         />
         {shareSelectable ? (
@@ -65,13 +69,13 @@ export function GalleryCard({
               onToggleSelected?.(gallery.id);
             }}
             aria-label={`Select ${gallery.title}`}
-            className={`absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border backdrop-blur transition md:right-4 md:top-4 ${
+            className={`absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border backdrop-blur transition md:right-4 md:top-4 md:h-7 md:w-7 ${
               selected
                 ? "border-[color:var(--ink)] bg-[color:var(--ink)] text-white"
                 : "border-white/70 bg-[rgba(255,255,255,0.28)] text-transparent hover:bg-[rgba(255,255,255,0.5)]"
             }`}
           >
-            <Check className="h-3.5 w-3.5" strokeWidth={2.4} />
+            <Check className="h-2.5 w-2.5 md:h-3.5 md:w-3.5" strokeWidth={2.4} />
           </button>
         ) : null}
       </div>
@@ -83,12 +87,12 @@ export function GalleryCard({
         updated-ago. If a gallery has neither location nor dates, the meta
         line just doesn't render — no empty placeholder slab.
       */}
-      <div className="mt-5 md:mt-6">
-        <h3 className="font-serif text-[22px] leading-[1.12] text-[color:var(--ink)] md:text-[26px]">
+      <div className="mt-2 md:mt-6">
+        <h3 className="font-serif text-[14px] leading-[1.18] text-[color:var(--ink)] md:text-[26px] md:leading-[1.12]">
           {gallery.title}
         </h3>
         {metaParts.length ? (
-          <p className="mt-2 text-[12px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)] md:text-[12.5px]">
+          <p className="mt-1 text-[8.5px] uppercase leading-[1.45] tracking-[0.06em] text-[color:var(--ink-soft)] md:mt-2 md:text-[12.5px] md:leading-normal md:tracking-[0.16em]">
             {metaParts.join(" · ")}
           </p>
         ) : null}

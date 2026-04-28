@@ -28,7 +28,11 @@ export function WorkspaceTopbar({
         // No border-b divider: the title is part of the page, not a headband over it.
         // md:items-start keeps actions anchored to the top-right while the serif
         // title is free to grow downward (matches the Memory Map masthead rhythm).
-        "mb-8 flex flex-col gap-4 md:mb-12 md:flex-row md:items-start md:justify-between md:gap-6",
+        // When the title is hidden on mobile we collapse to a single row so the
+        // eyebrow sits top-left and the actions sit top-right, side by side.
+        hideTitleOnMobile
+          ? "mb-8 flex flex-row items-center justify-between gap-3 md:mb-12 md:items-start md:gap-6"
+          : "mb-8 flex flex-col gap-4 md:mb-12 md:flex-row md:items-start md:justify-between md:gap-6",
         className,
       )}
     >
@@ -53,7 +57,7 @@ export function WorkspaceTopbar({
         ) : null}
       </div>
       {actions ? (
-        <div className="grid grid-cols-2 gap-2 [&>*]:w-full md:flex md:flex-wrap md:items-center md:pt-2 md:[&>*]:w-auto">
+        <div className="flex flex-wrap items-center justify-end gap-1.5 md:gap-2 md:pt-2">
           {actions}
         </div>
       ) : null}
