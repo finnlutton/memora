@@ -310,20 +310,20 @@ export function HomeShareDemo() {
             >
               <WorkspaceChrome />
               <div className="relative h-full pt-10">
-                <div className="h-full overflow-hidden px-5 pb-5 pt-5 md:px-8 md:pt-6">
-                  <div className="flex items-baseline justify-between gap-4">
+                <div className="h-full overflow-hidden px-3 pb-3 pt-3 md:px-8 md:pb-5 md:pt-6">
+                  <div className="flex items-baseline justify-between gap-3 md:gap-4">
                     <div>
-                      <p className="text-[10px] uppercase tracking-[0.26em] text-[color:var(--ink-faint)]">
+                      <p className="text-[8.5px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)] md:text-[10px] md:tracking-[0.26em]">
                         My galleries
                       </p>
-                      <p className="mt-1 font-serif text-[18px] leading-tight text-[color:var(--ink)] md:text-[22px]">
+                      <p className="mt-0.5 font-serif text-[13px] leading-tight text-[color:var(--ink)] md:mt-1 md:text-[22px]">
                         Choose what to share
                       </p>
                     </div>
                     <motion.p
                       animate={{ opacity: selectedCount > 0 ? 1 : 0.55 }}
                       transition={{ duration: 0.25 }}
-                      className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-soft)]"
+                      className="text-[9px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)] md:text-[11px] md:tracking-[0.2em]"
                     >
                       {selectedCount > 0
                         ? `${selectedCount} selected`
@@ -331,7 +331,7 @@ export function HomeShareDemo() {
                     </motion.p>
                   </div>
 
-                  <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5">
+                  <div className="mt-3 grid grid-cols-2 gap-2 md:mt-5 md:gap-5">
                     {CARDS.map((card) => (
                       <GalleryCard
                         key={card.id}
@@ -350,15 +350,15 @@ export function HomeShareDemo() {
                       animate={{ x: 0, opacity: 1 }}
                       exit={{ x: "100%", opacity: 0 }}
                       transition={{ duration: 0.5, ease: EASE }}
-                      className="absolute bottom-0 right-0 top-10 flex w-[90%] flex-col overflow-y-auto border-l border-[color:var(--border)] bg-[color:var(--chrome-strong)] p-5 shadow-[-12px_0_40px_-16px_rgba(14,22,34,0.18)] md:w-[380px] md:p-6"
+                      className="absolute bottom-0 right-0 top-10 flex w-[88%] flex-col overflow-y-auto border-l border-[color:var(--border)] bg-[color:var(--chrome-strong)] p-3 shadow-[-12px_0_40px_-16px_rgba(14,22,34,0.18)] md:w-[380px] md:p-6"
                     >
-                      <p className="text-[10px] uppercase tracking-[0.26em] text-[color:var(--ink-faint)]">
+                      <p className="text-[8.5px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)] md:text-[10px] md:tracking-[0.26em]">
                         Share privately with
                       </p>
-                      <p className="mt-1.5 font-serif text-[20px] leading-tight text-[color:var(--ink)]">
+                      <p className="mt-1 font-serif text-[14px] leading-tight text-[color:var(--ink)] md:mt-1.5 md:text-[20px]">
                         Pick a group
                       </p>
-                      <div className="mt-5 space-y-2">
+                      <div className="mt-2.5 space-y-1.5 md:mt-5 md:space-y-2">
                         {GROUPS.map((g) => (
                           <GroupRow
                             key={g.id}
@@ -387,21 +387,21 @@ export function HomeShareDemo() {
                           scale: buttonPressed ? 0.97 : 1,
                         }}
                         transition={{ duration: 0.22, ease: EASE }}
-                        className="mt-6"
+                        className="mt-3 md:mt-6"
                       >
                         <div
-                          className="inline-flex w-full items-center justify-center gap-2 bg-[color:var(--accent-strong)] px-4 py-3 text-[11px] uppercase tracking-[0.24em] text-white"
+                          className="inline-flex w-full items-center justify-center gap-1.5 bg-[color:var(--accent-strong)] px-3 py-2 text-[9.5px] uppercase tracking-[0.2em] text-white md:gap-2 md:px-4 md:py-3 md:text-[11px] md:tracking-[0.24em]"
                           style={{
                             backgroundColor: buttonPressed
                               ? "var(--accent-strong-hover)"
                               : "var(--accent-strong)",
                           }}
                         >
-                          <Link2 className="h-3.5 w-3.5" />
+                          <Link2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
                           Create link
                         </div>
                       </motion.div>
-                      <p className="mt-3 text-[10.5px] leading-5 text-[color:var(--ink-faint)]">
+                      <p className="mt-2 text-[9px] leading-[1.4] text-[color:var(--ink-faint)] md:mt-3 md:text-[10.5px] md:leading-5">
                         Only people in this group can open the link. Nothing
                         posted anywhere else.
                       </p>
@@ -418,10 +418,10 @@ export function HomeShareDemo() {
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: 16, opacity: 0 }}
                     transition={{ duration: 0.32, ease: EASE }}
-                    className="absolute bottom-6 left-1/2 z-20 -translate-x-1/2 border border-white/10 bg-[color:var(--ink)] px-4 py-2.5 text-white shadow-[0_12px_30px_rgba(14,22,34,0.26)]"
+                    className="absolute bottom-3 left-1/2 z-20 -translate-x-1/2 border border-white/10 bg-[color:var(--ink)] px-2.5 py-1.5 text-white shadow-[0_12px_30px_rgba(14,22,34,0.26)] md:bottom-6 md:px-4 md:py-2.5"
                   >
-                    <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em]">
-                      <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+                    <span className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.16em] md:gap-2 md:text-[11px] md:tracking-[0.2em]">
+                      <Check className="h-2.5 w-2.5 md:h-3.5 md:w-3.5" strokeWidth={2.5} />
                       Link copied · {shared.url}
                     </span>
                   </motion.div>
@@ -457,13 +457,13 @@ function MessageComposer({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 4 }}
       transition={{ duration: 0.34, ease: EASE }}
-      className="mt-6"
+      className="mt-3 md:mt-6"
     >
-      <p className="text-[10px] uppercase tracking-[0.26em] text-[color:var(--ink-faint)]">
+      <p className="text-[8.5px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)] md:text-[10px] md:tracking-[0.26em]">
         Write a custom message to {recipient}
       </p>
-      <div className="mt-2 min-h-[96px] rounded-sm border border-[color:var(--border)] bg-white px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
-        <p className="whitespace-pre-wrap text-[12px] leading-[1.55] text-[color:var(--ink)]">
+      <div className="mt-1.5 min-h-[60px] rounded-sm border border-[color:var(--border)] bg-white px-2.5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] md:mt-2 md:min-h-[96px] md:px-3 md:py-2.5">
+        <p className="whitespace-pre-wrap text-[10.5px] leading-[1.45] text-[color:var(--ink)] md:text-[12px] md:leading-[1.55]">
           {typed}
           <motion.span
             aria-hidden
@@ -519,11 +519,11 @@ function GalleryCard({
       className="relative overflow-hidden rounded-lg border bg-white"
     >
       <CoverPlaceholder pattern={card.pattern} tone={card.tone} />
-      <div className="px-4 py-3 md:px-5 md:py-3.5">
-        <p className="truncate font-serif text-[14px] leading-tight text-[color:var(--ink)] md:text-[16px]">
+      <div className="px-2 py-1.5 md:px-5 md:py-3.5">
+        <p className="truncate font-serif text-[11px] leading-tight text-[color:var(--ink)] md:text-[16px]">
           {card.title}
         </p>
-        <p className="mt-1 truncate text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">
+        <p className="mt-0.5 truncate text-[8.5px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)] md:mt-1 md:text-[10px] md:tracking-[0.18em]">
           {card.meta}
         </p>
       </div>
@@ -535,10 +535,10 @@ function GalleryCard({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.5, opacity: 0 }}
             transition={{ duration: 0.26, ease: EASE }}
-            className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-[color:var(--accent-strong)] text-white shadow-[0_4px_12px_rgba(14,22,34,0.22)]"
+            className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[color:var(--accent-strong)] text-white shadow-[0_4px_12px_rgba(14,22,34,0.22)] md:right-2 md:top-2 md:h-6 md:w-6"
             aria-hidden
           >
-            <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+            <Check className="h-2.5 w-2.5 md:h-3.5 md:w-3.5" strokeWidth={2.5} />
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -564,7 +564,9 @@ function CoverPlaceholder({
   tone: 0 | 1 | 2 | 3;
   large?: boolean;
 }) {
-  const heightClass = large ? "h-32 md:h-44" : "h-32 md:h-36";
+  const heightClass = large
+    ? "h-20 md:h-44"
+    : "h-16 md:h-36";
   const shape = "bg-white/55 ring-1 ring-inset ring-white/40";
   return (
     <div
@@ -572,7 +574,7 @@ function CoverPlaceholder({
       style={{ backgroundImage: COVER_BASES[tone] }}
       aria-hidden
     >
-      <div className="absolute inset-0 p-3 md:p-4">
+      <div className="absolute inset-0 p-1.5 md:p-4">
         {pattern === "hero-thumbs" ? (
           <div className="grid h-full grid-cols-[1.6fr_1fr] gap-2">
             <div className={`rounded ${shape}`} />
@@ -625,13 +627,13 @@ function GroupRow({ group, chosen }: { group: Group; chosen: boolean }) {
           : "rgba(255,255,255,0)",
       }}
       transition={{ duration: 0.24, ease: EASE }}
-      className="flex items-center justify-between border px-3.5 py-2.5"
+      className="flex items-center justify-between border px-2.5 py-1.5 md:px-3.5 md:py-2.5"
     >
       <div className="min-w-0">
-        <p className="truncate text-[12.5px] text-[color:var(--ink)]">
+        <p className="truncate text-[11px] text-[color:var(--ink)] md:text-[12.5px]">
           {group.label}
         </p>
-        <p className="mt-0.5 truncate text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">
+        <p className="mt-0.5 truncate text-[8.5px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)] md:text-[10px] md:tracking-[0.18em]">
           {group.meta}
         </p>
       </div>
@@ -642,9 +644,9 @@ function GroupRow({ group, chosen }: { group: Group; chosen: boolean }) {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.5, opacity: 0 }}
             transition={{ duration: 0.22, ease: EASE }}
-            className="flex h-5 w-5 items-center justify-center rounded-full bg-[color:var(--accent-strong)] text-white"
+            className="flex h-4 w-4 items-center justify-center rounded-full bg-[color:var(--accent-strong)] text-white md:h-5 md:w-5"
           >
-            <Check className="h-3 w-3" strokeWidth={2.5} />
+            <Check className="h-2.5 w-2.5 md:h-3 md:w-3" strokeWidth={2.5} />
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -662,12 +664,18 @@ function SharedGalleryTile({
   return (
     <div className="overflow-hidden rounded-lg border border-[color:var(--border)] bg-white">
       <CoverPlaceholder pattern={card.pattern} tone={card.tone} large={large} />
-      <div className={large ? "px-4 py-3 md:px-5 md:py-3.5" : "px-3 py-2.5"}>
+      <div
+        className={
+          large
+            ? "px-2 py-1.5 md:px-5 md:py-3.5"
+            : "px-1.5 py-1 md:px-3 md:py-2.5"
+        }
+      >
         <p
           className={
             large
-              ? "truncate font-serif text-[15px] leading-tight text-[color:var(--ink)] md:text-[17px]"
-              : "truncate font-serif text-[13px] leading-tight text-[color:var(--ink)]"
+              ? "truncate font-serif text-[11px] leading-tight text-[color:var(--ink)] md:text-[17px]"
+              : "truncate font-serif text-[9.5px] leading-tight text-[color:var(--ink)] md:text-[13px]"
           }
         >
           {card.title}
@@ -675,8 +683,8 @@ function SharedGalleryTile({
         <p
           className={
             large
-              ? "mt-1 truncate text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]"
-              : "mt-0.5 truncate text-[9.5px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]"
+              ? "mt-0.5 truncate text-[8.5px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)] md:mt-1 md:text-[10px] md:tracking-[0.18em]"
+              : "mt-0.5 truncate text-[7.5px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)] md:text-[9.5px] md:tracking-[0.18em]"
           }
         >
           {card.meta}
@@ -767,22 +775,22 @@ function SharedPagePreview({
         initial={{ opacity: 0 }}
         animate={{ opacity: showContent ? 1 : 0 }}
         transition={{ duration: 0.4, ease: EASE, delay: showContent ? 0.05 : 0 }}
-        className="relative flex-1 overflow-hidden px-6 py-7 md:px-12 md:py-10"
+        className="relative flex-1 overflow-hidden px-3.5 py-4 md:px-12 md:py-10"
       >
-        <p className="text-[10px] uppercase tracking-[0.3em] text-[color:var(--ink-faint)]">
+        <p className="text-[8.5px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)] md:text-[10px] md:tracking-[0.3em]">
           Shared privately · {audience}
         </p>
-        <h3 className="mt-2.5 max-w-[22rem] font-serif text-[26px] leading-[1.08] text-[color:var(--ink)] md:text-[34px] md:leading-[1.04]">
+        <h3 className="mt-1.5 max-w-[22rem] font-serif text-[18px] leading-[1.08] text-[color:var(--ink)] md:mt-2.5 md:text-[34px] md:leading-[1.04]">
           {title}
         </h3>
-        <p className="mt-4 max-w-[22rem] text-[13px] leading-6 text-[color:var(--ink-soft)] md:text-[14.5px] md:leading-7">
+        <p className="mt-2 max-w-[22rem] text-[10.5px] leading-[1.45] text-[color:var(--ink-soft)] md:mt-4 md:text-[14.5px] md:leading-7">
           “{message}”
         </p>
 
         {cover ? (
-          <div className="mt-6 grid grid-cols-1 gap-4 md:mt-8 md:grid-cols-[1.4fr_1fr] md:gap-5">
+          <div className="mt-3 grid grid-cols-[1.4fr_1fr] gap-2 md:mt-8 md:gap-5">
             <SharedGalleryTile card={cover} large />
-            <div className="grid grid-cols-2 gap-4 md:gap-5">
+            <div className="grid grid-cols-1 grid-rows-2 gap-2 md:grid-cols-2 md:grid-rows-1 md:gap-5">
               {thumbs.slice(0, 2).map((t) => (
                 <SharedGalleryTile key={t.id} card={t} />
               ))}
