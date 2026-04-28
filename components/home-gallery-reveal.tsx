@@ -106,6 +106,20 @@ export function HomeGalleryReveal() {
                           )}
                           total={gallery.subgalleries.length}
                         />
+                        {/*
+                          Mobile-only descriptor — the subgallery's full
+                          description rides above the 2×2 scene grid as
+                          another item flowing from the open subgallery,
+                          and animates in/out with the scenes when the
+                          user switches between subgalleries.
+                        */}
+                        <div className="mb-3 rounded-lg border border-[color:var(--border)] bg-white px-3.5 py-3 shadow-[0_8px_22px_-14px_rgba(18,31,48,0.18)] md:hidden">
+                          <p className="text-[12px] leading-[1.55] text-[color:var(--ink-soft)]">
+                            {gallery.subgalleries.find(
+                              (s) => s.id === openSubId,
+                            )?.description}
+                          </p>
+                        </div>
                         <div className="mt-2 grid grid-cols-2 gap-2 sm:gap-5">
                           {(gallery.subgalleries.find((s) => s.id === openSubId)
                             ?.scenes ?? []).map((scene, i) => (
@@ -159,18 +173,18 @@ function GalleryCard({
         aspectClass="aspect-[1.55/1]"
         sizes="(max-width: 768px) 100vw, 672px"
       />
-      <div className="px-6 py-5 md:px-8 md:py-6">
-        <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-[color:var(--ink-faint)]">
+      <div className="px-5 py-4 md:px-8 md:py-6">
+        <p className="text-[9.5px] font-medium uppercase tracking-[0.3em] text-[color:var(--ink-faint)] md:text-[10px]">
           Gallery
         </p>
-        <h3 className="mt-2 font-serif text-[24px] leading-[1.08] text-[color:var(--ink)] md:text-[30px]">
+        <h3 className="mt-1.5 font-serif text-[20px] leading-[1.08] text-[color:var(--ink)] md:mt-2 md:text-[30px]">
           {title}
         </h3>
-        <Meta location={location} dates={dates} className="mt-2.5" />
-        <p className="mt-3 line-clamp-3 max-w-xl text-[13.5px] leading-7 text-[color:var(--ink-soft)] md:line-clamp-none md:text-[14.5px]">
+        <Meta location={location} dates={dates} className="mt-1.5 md:mt-2.5" />
+        <p className="mt-2 line-clamp-3 max-w-xl text-[12.5px] leading-[1.55] text-[color:var(--ink-soft)] md:mt-3 md:line-clamp-none md:text-[14.5px] md:leading-7">
           {description}
         </p>
-        <div className="mt-5 inline-flex items-center gap-2 text-[10.5px] font-medium uppercase tracking-[0.22em] text-[color:var(--ink-soft)]">
+        <div className="mt-3 inline-flex items-center gap-2 text-[10.5px] font-medium uppercase tracking-[0.22em] text-[color:var(--ink-soft)] md:mt-5">
           <motion.span
             animate={{ rotate: open ? 180 : 0 }}
             transition={{ duration: 0.32, ease: EASE }}
@@ -218,7 +232,7 @@ function SubgalleryCard({
         <p className="hidden text-[9.5px] font-medium uppercase tracking-[0.28em] text-[color:var(--ink-faint)] md:block">
           Subgallery
         </p>
-        <h4 className="line-clamp-2 font-serif text-[12px] leading-tight text-[color:var(--ink)] md:mt-1.5 md:line-clamp-none md:text-[19px]">
+        <h4 className="line-clamp-3 font-serif text-[10.5px] leading-[1.18] text-[color:var(--ink)] md:mt-1.5 md:line-clamp-none md:text-[19px] md:leading-tight">
           {sub.title}
         </h4>
         <div className="hidden md:block">
