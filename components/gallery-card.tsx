@@ -88,7 +88,7 @@ export function GalleryCard({
         line just doesn't render — no empty placeholder slab.
       */}
       <div className="mt-1.5 md:mt-6">
-        <h3 className="font-serif text-[11px] leading-[1.2] text-[color:var(--ink)] md:text-[22px] md:leading-[1.2]">
+        <h3 className="font-serif text-[9.5px] leading-[1.2] text-[color:var(--ink)] md:text-[22px] md:leading-[1.2]">
           {gallery.title}
         </h3>
         {metaParts.length ? (
