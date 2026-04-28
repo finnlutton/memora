@@ -215,7 +215,7 @@ export function HomeMemoryGlobe() {
                       900,
                     );
                   }}
-                  className={`group flex w-full items-center gap-3 text-left transition ${
+                  className={`group flex w-full items-start gap-3 text-left transition ${
                     isActive
                       ? "text-[color:var(--ink)]"
                       : "text-[color:var(--ink-soft)] hover:text-[color:var(--ink)]"
@@ -223,7 +223,7 @@ export function HomeMemoryGlobe() {
                 >
                   <span
                     aria-hidden
-                    className={`inline-block h-[7px] w-[7px] rounded-full transition ${
+                    className={`mt-[9px] inline-block h-[7px] w-[7px] shrink-0 rounded-full transition ${
                       isActive
                         ? "bg-[color:var(--accent-strong)] shadow-[0_0_10px_rgba(44,72,116,0.45)]"
                         : "bg-[color:var(--border-strong)] group-hover:bg-[color:var(--ink-soft)]"
