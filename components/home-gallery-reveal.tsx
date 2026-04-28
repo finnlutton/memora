@@ -75,7 +75,7 @@ export function HomeGalleryReveal() {
                 {/* Branching stem from gallery down to three subgalleries */}
                 <BranchConnector count={gallery.subgalleries.length} />
 
-                <div className="mt-0 grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-5">
+                <div className="mt-0 grid grid-cols-3 gap-2.5 md:gap-5">
                   {gallery.subgalleries.map((sub) => (
                     <SubgalleryCard
                       key={sub.id}
@@ -106,7 +106,7 @@ export function HomeGalleryReveal() {
                           )}
                           total={gallery.subgalleries.length}
                         />
-                        <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
+                        <div className="mt-2 grid grid-cols-2 gap-2 sm:gap-5">
                           {(gallery.subgalleries.find((s) => s.id === openSubId)
                             ?.scenes ?? []).map((scene, i) => (
                             <SceneCard key={scene.id} scene={scene} index={i} />
@@ -167,7 +167,7 @@ function GalleryCard({
           {title}
         </h3>
         <Meta location={location} dates={dates} className="mt-2.5" />
-        <p className="mt-3 max-w-xl text-[13.5px] leading-7 text-[color:var(--ink-soft)] md:text-[14.5px]">
+        <p className="mt-3 line-clamp-3 max-w-xl text-[13.5px] leading-7 text-[color:var(--ink-soft)] md:line-clamp-none md:text-[14.5px]">
           {description}
         </p>
         <div className="mt-5 inline-flex items-center gap-2 text-[10.5px] font-medium uppercase tracking-[0.22em] text-[color:var(--ink-soft)]">
@@ -212,33 +212,38 @@ function SubgalleryCard({
         src={sub.coverImage}
         alt={sub.title}
         aspectClass="aspect-[5/4]"
-        sizes="(max-width: 768px) 100vw, 340px"
+        sizes="(max-width: 768px) 33vw, 340px"
       />
-      <div className="flex-1 px-4 py-4 md:px-5 md:py-5">
-        <p className="text-[9.5px] font-medium uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
+      <div className="flex-1 px-2 py-2 md:px-5 md:py-5">
+        <p className="hidden text-[9.5px] font-medium uppercase tracking-[0.28em] text-[color:var(--ink-faint)] md:block">
           Subgallery
         </p>
-        <h4 className="mt-1.5 font-serif text-[17px] leading-tight text-[color:var(--ink)] md:text-[19px]">
+        <h4 className="line-clamp-2 font-serif text-[12px] leading-tight text-[color:var(--ink)] md:mt-1.5 md:line-clamp-none md:text-[19px]">
           {sub.title}
         </h4>
-        <Meta
-          location={sub.location}
-          dates={sub.dates}
-          className="mt-2"
-          size="xs"
-        />
-        <p className="mt-2.5 text-[12.5px] leading-6 text-[color:var(--ink-soft)]">
-          {sub.description}
-        </p>
-        <div className="mt-3 inline-flex items-center gap-1.5 text-[9.5px] font-medium uppercase tracking-[0.22em] text-[color:var(--ink-soft)]">
+        <div className="hidden md:block">
+          <Meta
+            location={sub.location}
+            dates={sub.dates}
+            className="mt-2"
+            size="xs"
+          />
+          <p className="mt-2.5 text-[12.5px] leading-6 text-[color:var(--ink-soft)]">
+            {sub.description}
+          </p>
+        </div>
+        <div className="mt-1.5 inline-flex items-center gap-1 text-[8px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)] md:mt-3 md:gap-1.5 md:text-[9.5px] md:tracking-[0.22em]">
           <motion.span
             animate={{ rotate: open ? 180 : 0 }}
             transition={{ duration: 0.28, ease: EASE }}
             className="inline-flex"
           >
-            <ChevronDown className="h-3 w-3" strokeWidth={2} />
+            <ChevronDown className="h-2.5 w-2.5 md:h-3 md:w-3" strokeWidth={2} />
           </motion.span>
-          {open ? "Hide scenes" : "Open scenes"}
+          <span className="md:hidden">{open ? "Hide" : "Open"}</span>
+          <span className="hidden md:inline">
+            {open ? "Hide scenes" : "Open scenes"}
+          </span>
         </div>
       </div>
     </motion.button>
@@ -264,7 +269,7 @@ function SceneCard({ scene, index }: { scene: DemoScene; index: number }) {
         />
       </div>
       {scene.caption ? (
-        <p className="mt-2 line-clamp-2 px-0.5 text-[10.5px] leading-[1.45] text-[color:var(--ink-soft)] md:text-[11px]">
+        <p className="mt-2 hidden line-clamp-2 px-0.5 text-[10.5px] leading-[1.45] text-[color:var(--ink-soft)] md:block md:text-[11px]">
           {scene.caption}
         </p>
       ) : null}
