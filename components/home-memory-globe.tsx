@@ -21,7 +21,7 @@ const DEMO_PINS: DemoPin[] = [
   { id: "baja", title: "Baja Surf Trip", location: "Baja California, MX", season: "Mar 2024", lat: 26.0444, lng: -111.3456 },
   { id: "sicily", title: "Road Trip From Sicily", location: "Taormina, Italy", season: "Jun 2023", lat: 37.8516, lng: 15.2853 },
   { id: "cotswolds", title: "Cotswolds Day Trip", location: "Gloucestershire, UK", season: "May 2023", lat: 51.8355, lng: -1.8433 },
-  { id: "granada", title: "Granada Semester", location: "Andalucía, Spain", season: "Sep 2022", lat: 37.1773, lng: -3.5986 },
+  { id: "granada", title: "Granada Semester", location: "Andalucía, Spain", season: "Jan 2026", lat: 37.1773, lng: -3.5986 },
 ];
 
 /**
@@ -193,7 +193,7 @@ export function HomeMemoryGlobe() {
           Open a pin to go straight to the gallery you saved there.
         </p>
 
-        <ul className="mt-9 grid grid-cols-1 gap-x-8 gap-y-3 text-[13px] leading-6 text-[color:var(--ink-soft)] sm:grid-cols-2">
+        <ul className="mt-9 grid grid-cols-2 gap-x-5 gap-y-3 text-[13px] leading-6 text-[color:var(--ink-soft)] sm:gap-x-8">
           {DEMO_PINS.map((pin) => {
             const isActive = pin.id === activeId;
             return (
