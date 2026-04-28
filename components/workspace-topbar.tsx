@@ -35,13 +35,15 @@ export function WorkspaceTopbar({
           {title}
         </h1>
         {subtitle ? (
-          <p className="mt-5 max-w-4xl border-l-2 border-[color:var(--border-strong)] pl-4 text-[14px] leading-[1.65] text-[color:var(--ink)] md:mt-6 md:pl-5 md:text-[15.5px] md:leading-[1.7]">
+          <p className="hidden max-w-4xl border-l-2 border-[color:var(--border-strong)] pl-4 text-[14px] leading-[1.65] text-[color:var(--ink)] md:mt-6 md:block md:pl-5 md:text-[15.5px] md:leading-[1.7]">
             {subtitle}
           </p>
         ) : null}
       </div>
       {actions ? (
-        <div className="flex flex-wrap items-center gap-2 md:pt-2">{actions}</div>
+        <div className="grid grid-cols-2 gap-2 [&>*]:w-full md:flex md:flex-wrap md:items-center md:pt-2 md:[&>*]:w-auto">
+          {actions}
+        </div>
       ) : null}
     </header>
   );

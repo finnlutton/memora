@@ -112,7 +112,7 @@ export default function GalleriesPage() {
             <Button
               type="button"
               variant="ghost"
-              className="text-[color:var(--ink)]"
+              className="whitespace-nowrap px-2 text-[10px] tracking-[0.08em] text-[color:var(--ink)] md:px-3 md:text-xs md:tracking-[0.14em]"
               disabled={shareLimitReached}
               onClick={() => {
                 setShareMode(true);
@@ -126,11 +126,18 @@ export default function GalleriesPage() {
               Share Galleries
             </Button>
             {hasReachedGalleryLimit ? (
-              <Button asChild variant="secondary">
+              <Button
+                asChild
+                variant="secondary"
+                className="whitespace-nowrap px-2 text-[10px] tracking-[0.08em] md:px-3 md:text-xs md:tracking-[0.14em]"
+              >
                 <Link href="/galleries/settings/membership?source=gallery-limit">Upgrade plan</Link>
               </Button>
             ) : (
-              <Button asChild>
+              <Button
+                asChild
+                className="whitespace-nowrap px-2 text-[10px] tracking-[0.08em] md:px-3 md:text-xs md:tracking-[0.14em]"
+              >
                 <Link href="/galleries/new">
                   <Plus className="h-3 w-3" />
                   Create gallery
@@ -141,7 +148,7 @@ export default function GalleriesPage() {
         }
       />
 
-      <section className="mb-3 grid gap-3 md:mb-4 md:grid-cols-3 md:gap-6">
+      <section className="mb-3 grid grid-cols-3 gap-2 md:mb-4 md:gap-6">
         {/*
           Membership stat doubles as the dashboard's plan affordance — a
           single small link to Settings → Membership. Keeps the dashboard
@@ -153,10 +160,10 @@ export default function GalleriesPage() {
           className="group block py-0.5"
           aria-label="Manage membership"
         >
-          <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+          <p className="text-[9px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)] md:text-[10px] md:tracking-[0.22em]">
             Membership
           </p>
-          <p className="mt-2 text-[14px] leading-6 text-[color:var(--ink-soft)] underline decoration-transparent underline-offset-[5px] transition group-hover:decoration-[color:var(--ink-faint)] md:text-[15px]">
+          <p className="mt-1 text-[12px] leading-[1.4] text-[color:var(--ink-soft)] underline decoration-transparent underline-offset-[5px] transition group-hover:decoration-[color:var(--ink-faint)] md:mt-2 md:text-[15px] md:leading-6">
             {selectedPlan?.name ?? "No plan selected"}
           </p>
         </Link>
@@ -335,10 +342,10 @@ function QuickStat({ label, value }: { label: string; value: string }) {
   //   not a number you stare at.
   return (
     <div className="py-0.5">
-      <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+      <p className="text-[9px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)] md:text-[10px] md:tracking-[0.22em]">
         {label}
       </p>
-      <p className="mt-2 text-[14px] leading-6 text-[color:var(--ink-soft)] md:text-[15px]">
+      <p className="mt-1 text-[12px] leading-[1.4] text-[color:var(--ink-soft)] md:mt-2 md:text-[15px] md:leading-6">
         {value}
       </p>
     </div>

@@ -254,7 +254,10 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
         >
           {/* Primary destinations + utility links (Help, Settings)
               appended at the end so they tag along with the strip
-              without claiming primary slots. */}
+              without claiming primary slots. Sign out lives at the
+              tail so it's reachable without leaving the page — the
+              desktop sidebar's bottom-block button has no analog on
+              mobile otherwise. */}
           {[...navItems, ...utilityItems].map((item) => {
             const active = isItemActive(item.href);
             const Icon = item.icon;
@@ -275,6 +278,14 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
               </Link>
             );
           })}
+          <button
+            type="button"
+            onClick={onSignOut}
+            className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--ink-soft)] transition-colors hover:bg-[rgba(200,130,130,0.1)] hover:text-[color:var(--error-text)]"
+          >
+            <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="whitespace-nowrap">Sign out</span>
+          </button>
         </div>
         <main className="mx-auto w-full max-w-[1520px] px-4 py-6 md:px-10 md:py-10">{children}</main>
       </div>
