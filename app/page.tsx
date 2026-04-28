@@ -168,16 +168,16 @@ export default function HomePage() {
 
           <div className="space-y-5 text-[15px] leading-7 text-[color:var(--ink-soft)]">
             <p className="first-letter:float-left first-letter:mr-2 first-letter:mt-1 first-letter:font-serif first-letter:text-[58px] first-letter:leading-[0.85] first-letter:text-[color:var(--ink)]">
-              Like many who have studied abroad, it&apos;s allowed me to travel far more than any prior period. Expecting this, I invested in a camera before leaving the U.S., hoping to separate photo taking from the distractions of my phone (highly recommended).
+              Like many who have studied abroad, it&apos;s allowed me to travel far more than ever before. Expecting this, I invested in a camera before leaving the U.S., hoping to separate photo taking from the distractions of my phone (highly recommended).
             </p>
             <p>
-              However, I soon found it impossible to update each of my circles of friends — as well as my immediate family, grandparents, and extended family, by sifting through my camera roll and sd card just to send separate messages, with different photos, and lacking the personal detail I&apos;d like.
+              However, I soon found it impossible to properly update the people I care about. For each trip, I&apos;d sift through my camera roll, sd card, and send separate messages via different apps, always lacking the personal detail I&apos;d like. Oftentimes, I wouldn&apos;t take the time to send anything at all.
             </p>
             <p>
-              While many look to social media for this outlet, I&apos;ve found it incredibly insufficient. Ads, algorithms, likes, and comments have drawn the authenticity from your experiences and have crumbled its original intent.
+              While many look to social media for this outlet, I&apos;ve found it insufficient. Ads, algorithms, likes, and comments have drawn the authenticity from your experiences and have crumbled its original intent.
             </p>
             <p>
-              In this era of fast-paced content, Memora offers a private, quiet platform to store and organize your experiences, add layers of written content, and share it with the people you care about. Through this, we hope to bring authenticity and reflection to the moments that deserve them.
+              Memora provides much-needed solutions to these problems. It does this by providing a quiet space for you to organize your photos, add layers of written reflection, and share them with anyone in less than a minute. By encouraging thoughtfulness, we hope to fundamentally change how one organizes, shares, and remembers their experiences.
             </p>
 
             <p className="!mt-8 border-t border-[color:var(--border)] pt-6 font-serif text-[17px] italic leading-[1.5] text-[color:var(--ink)] md:text-[18px]">
