@@ -146,8 +146,15 @@ export default async function PublicSharedGalleryPage({
             <span>{gallery.title}</span>
           </div>
           <h1 className="mt-2 font-serif text-3xl leading-tight md:text-5xl">{gallery.title}</h1>
-          {share.message ? (
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:text-[15px] md:leading-7">{share.message}</p>
+          {/*
+            Show the gallery's own description here. The share-link's
+            custom message is already rendered on the landing page
+            (`/share/[token]`); duplicating it here was hiding the
+            gallery description, which is what the recipient expects
+            once they've clicked into a specific gallery.
+          */}
+          {gallery.description ? (
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:text-[15px] md:leading-7">{gallery.description}</p>
           ) : null}
         </div>
 
