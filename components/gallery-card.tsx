@@ -87,12 +87,12 @@ export function GalleryCard({
         updated-ago. If a gallery has neither location nor dates, the meta
         line just doesn't render — no empty placeholder slab.
       */}
-      <div className="mt-2 md:mt-6">
-        <h3 className="font-serif text-[12px] leading-[1.3] text-[color:var(--ink)] md:text-[22px] md:leading-[1.2]">
+      <div className="mt-1.5 md:mt-6">
+        <h3 className="font-serif text-[11px] leading-[1.2] text-[color:var(--ink)] md:text-[22px] md:leading-[1.2]">
           {gallery.title}
         </h3>
         {metaParts.length ? (
-          <p className="mt-1 text-[9.5px] leading-[1.5] text-[color:var(--ink-soft)] md:mt-2 md:text-[13px] md:leading-relaxed">
+          <p className="mt-0.5 text-[8.5px] leading-[1.4] text-[color:var(--ink-soft)] md:mt-2 md:text-[13px] md:leading-relaxed">
             {metaParts.join(" · ")}
           </p>
         ) : null}
