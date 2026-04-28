@@ -9,6 +9,8 @@ import { LocationAutocompleteInput } from "@/components/location-autocomplete-in
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-field";
+import { useFormDraft } from "@/hooks/use-form-draft";
+import { useMemoraStore } from "@/hooks/use-memora-store";
 import { readFileAsDataUrl } from "@/lib/file";
 import { nextImageUnoptimizedForSrc, splitCommaSeparated } from "@/lib/utils";
 import type { Gallery, GalleryInput } from "@/types/memora";
@@ -48,13 +50,29 @@ export function GalleryForm({
   defaultCoverImage?: string;
 }) {
   const router = useRouter();
+  const { onboarding } = useMemoraStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [coverImage, setCoverImage] = useState(
     initialValue?.coverImage ?? defaultCoverImage ?? "",
   );
-  const [title, setTitle] = useState(initialValue?.title ?? "");
-  const [description, setDescription] = useState(initialValue?.description ?? "");
+  // Draft scope: `<userId or anon>:gallery:<galleryId or new>`. Drafts
+  // are sessionStorage-only and text-only — see `useFormDraft`. They
+  // persist across tab-returns and remounts but are wiped on
+  // successful submit and on tab close.
+  const draftScope = `${onboarding.user?.id ?? "anon"}:gallery:${
+    initialValue?.id ?? "new"
+  }`;
+  const [title, setTitle, clearTitleDraft] = useFormDraft({
+    scope: draftScope,
+    field: "title",
+    initialValue: initialValue?.title ?? "",
+  });
+  const [description, setDescription, clearDescriptionDraft] = useFormDraft({
+    scope: draftScope,
+    field: "description",
+    initialValue: initialValue?.description ?? "",
+  });
   const [startDate, setStartDate] = useState(initialValue?.startDate ?? "");
   const [endDate, setEndDate] = useState(initialValue?.endDate ?? "");
   const [location, setLocation] = useState(initialValue?.locations[0] ?? "");
@@ -85,6 +103,10 @@ export function GalleryForm({
         moodTags: splitCommaSeparated(moodTags),
         privacy,
       });
+      // Successful save — drop the saved draft so a future visit to
+      // this form starts clean instead of pre-filling stale text.
+      clearTitleDraft();
+      clearDescriptionDraft();
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Unable to save gallery.");
     } finally {

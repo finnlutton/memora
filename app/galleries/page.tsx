@@ -11,6 +11,7 @@ import { GalleryCardSkeletonGrid } from "@/components/gallery-card-skeleton";
 import { CreateSharePanel } from "@/components/share/create-share-panel";
 import { WorkspaceTopbar } from "@/components/workspace-topbar";
 import { Button } from "@/components/ui/button";
+import { useFormDraft } from "@/hooks/use-form-draft";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 import { createId } from "@/lib/utils";
 import { getMembershipPlan } from "@/lib/plans";
@@ -22,7 +23,15 @@ export default function GalleriesPage() {
   const [sharePanelOpen, setSharePanelOpen] = useState(false);
   const [selectedGalleryIds, setSelectedGalleryIds] = useState<string[]>([]);
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
-  const [customMessage, setCustomMessage] = useState("");
+  // Custom share message is drafted so a user typing a long note who
+  // tabs away mid-sentence still has their text on return. Scoped per
+  // user; cleared after a successful share-link creation.
+  const [customMessage, setCustomMessage, clearCustomMessageDraft] =
+    useFormDraft({
+      scope: `${onboarding.user?.id ?? "anon"}:share`,
+      field: "customMessage",
+      initialValue: "",
+    });
   const [recipientGroups, setRecipientGroups] = useState<RecipientGroup[]>([
     {
       id: createId("group"),
@@ -135,6 +144,7 @@ export default function GalleriesPage() {
                 setSelectedGalleryIds([]);
                 setSelectedGroupIds([]);
                 setCustomMessage("");
+                clearCustomMessageDraft();
               }}
             >
               <Share2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
@@ -343,6 +353,7 @@ export default function GalleriesPage() {
                 setSelectedGalleryIds([]);
                 setSelectedGroupIds([]);
                 setCustomMessage("");
+                clearCustomMessageDraft();
               }}
             >
               Cancel

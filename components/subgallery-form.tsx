@@ -8,6 +8,8 @@ import { ArrowLeft, ArrowRight, Check, Save } from "lucide-react";
 import { LocationAutocompleteInput } from "@/components/location-autocomplete-input";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { Button } from "@/components/ui/button";
+import { useFormDraft } from "@/hooks/use-form-draft";
+import { useMemoraStore } from "@/hooks/use-memora-store";
 import { filesToPhotos, readFileAsDataUrl } from "@/lib/file";
 import { createId, nextImageUnoptimizedForSrc, reorderList } from "@/lib/utils";
 import type { MemoryPhoto, Subgallery, SubgalleryInput } from "@/types/memora";
@@ -36,15 +38,35 @@ export function SubgalleryForm({
   onSubmit: (value: SubgalleryInput) => Promise<void> | void;
 }) {
   const router = useRouter();
+  const { onboarding } = useMemoraStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [title, setTitle] = useState(initialValue?.title ?? "");
+  // Text-only drafts so a tab return / remount doesn't cost the user
+  // their typing. Cover image and the photo array are NOT drafted —
+  // those are exactly the kinds of large blobs we promised to keep
+  // out of any client-side persistence layer.
+  const draftScope = `${onboarding.user?.id ?? "anon"}:subgallery:${galleryId}:${
+    initialValue?.id ?? "new"
+  }`;
+  const [title, setTitle, clearTitleDraft] = useFormDraft({
+    scope: draftScope,
+    field: "title",
+    initialValue: initialValue?.title ?? "",
+  });
   const [coverImage, setCoverImage] = useState(initialValue?.coverImage ?? "/demo/mountain-window.svg");
   const [location, setLocation] = useState(initialValue?.location ?? "");
   const [locationLat, setLocationLat] = useState<number | null>(initialValue?.locationLat ?? null);
   const [locationLng, setLocationLng] = useState<number | null>(initialValue?.locationLng ?? null);
-  const [dateLabel, setDateLabel] = useState(initialValue?.dateLabel ?? "");
-  const [description, setDescription] = useState(initialValue?.description ?? "");
+  const [dateLabel, setDateLabel, clearDateLabelDraft] = useFormDraft({
+    scope: draftScope,
+    field: "dateLabel",
+    initialValue: initialValue?.dateLabel ?? "",
+  });
+  const [description, setDescription, clearDescriptionDraft] = useFormDraft({
+    scope: draftScope,
+    field: "description",
+    initialValue: initialValue?.description ?? "",
+  });
   const [photos, setPhotos] = useState<MemoryPhoto[]>(initialValue?.photos ?? []);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
@@ -69,6 +91,9 @@ export function SubgalleryForm({
         description,
         photos,
       });
+      clearTitleDraft();
+      clearDateLabelDraft();
+      clearDescriptionDraft();
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Unable to save subgallery.");
     } finally {
@@ -94,7 +119,7 @@ export function SubgalleryForm({
             <header>
               <Label>Journal entry</Label>
               <p className="mt-2 max-w-lg text-[14px] leading-6 text-[color:var(--ink-soft)]">
-                One stop, one scene — the piece of the trip you'll want to reread.
+                One stop, one scene — the piece of the trip you&apos;ll want to reread.
               </p>
             </header>
 

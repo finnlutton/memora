@@ -92,6 +92,42 @@ function sanitizeCollectionForPersist(collection: Gallery[]): Gallery[] {
   return collection.map(sanitizeGalleryForPersist);
 }
 
+/**
+ * Race a promise against a timeout. Tab-backgrounding can leave
+ * Supabase round-trips waiting indefinitely on a throttled tab; if
+ * the network call doesn't resolve in `ms` we throw a TimeoutError so
+ * the caller can recover (typically: log, show "reconnecting", and
+ * fall back to whatever cached state it already has).
+ */
+class StoreTimeoutError extends Error {
+  constructor(label: string, ms: number) {
+    super(`Memora: ${label} timed out after ${ms}ms`);
+    this.name = "StoreTimeoutError";
+  }
+}
+
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  label: string,
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const id = window.setTimeout(() => {
+      reject(new StoreTimeoutError(label, ms));
+    }, ms);
+    promise.then(
+      (value) => {
+        window.clearTimeout(id);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(id);
+        reject(error);
+      },
+    );
+  });
+}
+
 function isQuotaExceededError(error: unknown): boolean {
   const domErr = error instanceof DOMException ? error : null;
   return (
@@ -157,6 +193,20 @@ type MemoraStore = {
    */
   storageQuotaInfo: StorageQuotaInfo | null;
   dismissStorageQuotaWarning: () => void;
+  /**
+   * True while the store is recovering from a tab-return — soft session
+   * verification or a bounded gallery refresh is in flight. Renders a
+   * subtle 'Reconnecting…' banner; never blocks the UI or unmounts
+   * forms.
+   */
+  reconnecting: boolean;
+  /**
+   * Manually trigger a soft recovery pass. Verifies the Supabase
+   * session is still live and re-runs gallery hydration with a
+   * timeout. Safe to call from the visibility/focus hook on tab
+   * return; no-op if no user is signed in.
+   */
+  recoverFromBackground: () => Promise<void>;
   onboarding: OnboardingState;
   createGallery: (input: GalleryInput) => Promise<string>;
   updateGallery: (galleryId: string, input: GalleryInput) => Promise<void>;
@@ -878,6 +928,19 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
   const [storageQuotaExceeded, setStorageQuotaExceeded] = useState(false);
   const [storageQuotaInfo, setStorageQuotaInfo] =
     useState<StorageQuotaInfo | null>(null);
+  const [reconnecting, setReconnecting] = useState(false);
+  // Tracks the user id we already loaded galleries for. Prevents the
+  // auth listener from running the full hydration chain again when
+  // Supabase fires SIGNED_IN for the same user (which can happen on
+  // tab-resume after a long background, after a token refresh, etc.).
+  const lastLoadedUserIdRef = useRef<string | null>(null);
+  // Coalesces concurrent recovery attempts so a fast double-fire of
+  // visibilitychange + focus doesn't kick off two parallel hydrations.
+  const recoveryInflightRef = useRef<Promise<void> | null>(null);
+  // Soft-bound on every Supabase round-trip the store makes during a
+  // visibility-driven recovery. Long enough for a normal cold network
+  // resume, short enough that a stalled tab doesn't appear frozen.
+  const RECOVERY_TIMEOUT_MS = 12_000;
   const supabaseRef = useRef<ReturnType<typeof createSupabaseBrowserClient> | null>(null);
   const hasBootstrappedAuthRef = useRef(false);
 
@@ -934,9 +997,23 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             )
           : { hasSeenWelcome: false, selectedPlanId: null };
         const persistedUserGalleries = nextUser
-          ? await loadUserGalleriesFromSupabase(supabase, nextUser.id)
+          ? await withTimeout(
+              loadUserGalleriesFromSupabase(supabase, nextUser.id),
+              RECOVERY_TIMEOUT_MS,
+              "loadUserGalleriesFromSupabase:initial",
+            ).catch((error) => {
+              console.error(
+                "Memora: initial gallery load failed",
+                error,
+              );
+              return nextCollections.user;
+            })
           : nextCollections.user;
 
+        // Mark the user we just loaded so the auth state listener
+        // can skip a redundant reload when SIGNED_IN fires for the
+        // same id later (e.g. on tab return).
+        lastLoadedUserIdRef.current = nextUser?.id ?? null;
         queueMicrotask(() => {
           setDemoGalleryCollection(nextCollections.demo);
           setUserGalleryCollection(persistedUserGalleries);
@@ -1019,33 +1096,61 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
       }
 
       const user = session?.user ?? null;
+
+      // SIGNED_IN can fire when the tab returns from background and
+      // Supabase re-validates the session. If the user id hasn't
+      // changed we already have their galleries loaded — skip the
+      // heavy reload (which previously could appear to "freeze" the
+      // tab on resume) and just keep the local state.
+      if (
+        event === "SIGNED_IN" &&
+        user &&
+        lastLoadedUserIdRef.current === user.id
+      ) {
+        return;
+      }
+
       if (user) {
-        await ensureProfileRow(
-          supabase,
-          {
-            id: user.id,
-            email: user.email ?? null,
-          },
-          "store:auth-state-change:ensure-profile",
-        );
+        try {
+          await withTimeout(
+            ensureProfileRow(
+              supabase,
+              { id: user.id, email: user.email ?? null },
+              "store:auth-state-change:ensure-profile",
+            ),
+            RECOVERY_TIMEOUT_MS,
+            "ensureProfileRow",
+          );
+        } catch (error) {
+          console.error("Memora: ensureProfileRow failed", error);
+        }
       }
       const profileState = user
-        ? await loadProfileState(
-            supabase,
-            {
-              id: user.id,
-              email: user.email ?? null,
-            },
-            "store:auth-state-change",
-          )
+        ? await withTimeout(
+            loadProfileState(
+              supabase,
+              { id: user.id, email: user.email ?? null },
+              "store:auth-state-change",
+            ),
+            RECOVERY_TIMEOUT_MS,
+            "loadProfileState",
+          ).catch((error) => {
+            console.error("Memora: loadProfileState failed", error);
+            return { hasSeenWelcome: false, selectedPlanId: null };
+          })
         : { hasSeenWelcome: false, selectedPlanId: null };
       const nextUserGalleries = user
-        ? await loadUserGalleriesFromSupabase(supabase, user.id).catch((error) => {
+        ? await withTimeout(
+            loadUserGalleriesFromSupabase(supabase, user.id),
+            RECOVERY_TIMEOUT_MS,
+            "loadUserGalleriesFromSupabase",
+          ).catch((error) => {
             console.error("Memora: failed to load persisted galleries", error);
             return [] as Gallery[];
           })
         : [];
 
+      lastLoadedUserIdRef.current = user?.id ?? null;
       queueMicrotask(() => {
         setOnboarding(buildOnboardingStateFromUser(user, profileState));
         setUserGalleryCollection(nextUserGalleries);
@@ -1064,6 +1169,63 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
       ? setUserGalleryCollection
       : setDemoGalleryCollection;
 
+    const recoverFromBackground = async (): Promise<void> => {
+      if (recoveryInflightRef.current) {
+        return recoveryInflightRef.current;
+      }
+      const run = async () => {
+        const supabase = getSupabase();
+        setReconnecting(true);
+        try {
+          // Soft session check first — quick, just confirms the
+          // refresh token is still good. Supabase's own background
+          // refresh has usually already done this; we're being
+          // defensive about long-throttled tabs.
+          const result = await withTimeout<
+            Awaited<ReturnType<typeof supabase.auth.getSession>>
+          >(
+            supabase.auth.getSession(),
+            RECOVERY_TIMEOUT_MS,
+            "auth.getSession",
+          );
+          const data = result.data;
+          const error = result.error;
+          if (error) {
+            console.error("Memora: session recovery getSession failed", error);
+          }
+          const user = data?.session?.user ?? null;
+          // If the user id hasn't changed, no data refetch needed —
+          // any new server-side changes will surface on the next
+          // explicit user action. Avoiding the full reload here is
+          // exactly what keeps tab-return from feeling like a freeze.
+          if (!user || user.id === lastLoadedUserIdRef.current) {
+            return;
+          }
+          const refreshedGalleries = await withTimeout(
+            loadUserGalleriesFromSupabase(supabase, user.id),
+            RECOVERY_TIMEOUT_MS,
+            "loadUserGalleriesFromSupabase:recovery",
+          ).catch((err) => {
+            console.error("Memora: recovery gallery load failed", err);
+            return null;
+          });
+          if (refreshedGalleries) {
+            lastLoadedUserIdRef.current = user.id;
+            setUserGalleryCollection(refreshedGalleries);
+          }
+        } catch (err) {
+          console.error("Memora: recoverFromBackground failed", err);
+        } finally {
+          setReconnecting(false);
+        }
+      };
+      const promise = run().finally(() => {
+        recoveryInflightRef.current = null;
+      });
+      recoveryInflightRef.current = promise;
+      return promise;
+    };
+
     return {
       galleries,
       hydrated,
@@ -1073,6 +1235,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         setStorageQuotaExceeded(false);
         setStorageQuotaInfo(null);
       },
+      reconnecting,
+      recoverFromBackground,
       onboarding,
       async createGallery(input) {
         const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);
@@ -2430,6 +2594,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
     demoGalleryCollection,
     hydrated,
     onboarding,
+    reconnecting,
     storageQuotaExceeded,
     storageQuotaInfo,
     userGalleryCollection,
