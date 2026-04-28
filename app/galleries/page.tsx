@@ -154,7 +154,7 @@ export default function GalleriesPage() {
         }
       />
 
-      <section className="mb-3 grid grid-cols-3 gap-2 md:mb-4 md:gap-6">
+      <section className="mb-3 grid grid-cols-3 gap-2 md:mb-4 md:gap-6 md:[&>*]:text-center">
         {/*
           Membership stat doubles as the dashboard's plan affordance — a
           single small link to Settings → Membership. Keeps the dashboard
