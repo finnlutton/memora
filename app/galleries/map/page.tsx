@@ -157,13 +157,13 @@ export default function MemoryMapPage() {
 
         {/* Editorial header — top-left. The active filter summary
             replaces the default "every pin" copy when set. */}
-        <header className="pointer-events-none absolute left-5 top-6 max-w-[22rem] md:left-10 md:top-10 md:max-w-md">
-          <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-[color:var(--ink-soft)]">
+        <header className="pointer-events-none absolute left-5 top-6 max-w-[10.5rem] md:left-10 md:top-10 md:max-w-md">
+          <p className="hidden text-[10px] font-medium uppercase tracking-[0.24em] text-[color:var(--ink-soft)] md:block">
             Memory map
           </p>
           <h1
             id="memory-map-title"
-            className="mt-2 font-serif text-[40px] leading-[0.94] text-[color:var(--ink)] md:mt-3 md:text-[64px]"
+            className="font-serif text-[26px] leading-[0.94] text-[color:var(--ink)] md:mt-3 md:text-[64px]"
           >
             Memory Map
           </h1>
@@ -217,11 +217,11 @@ export default function MemoryMapPage() {
             when the active filter excludes every pin. */}
         <div className="pointer-events-none absolute bottom-4 left-5 z-20 md:bottom-6 md:left-10">
           {pinCount > 0 ? (
-            <div className="flex items-baseline gap-2.5 border border-[color:var(--border-strong)] bg-[rgba(250,252,255,0.94)] px-3.5 py-2 shadow-[0_6px_18px_rgba(14,22,34,0.08)] backdrop-blur-sm">
-              <span className="font-serif text-[24px] leading-none text-[color:var(--ink)] md:text-[28px]">
+            <div className="flex items-baseline gap-1.5 border border-[color:var(--border-strong)] bg-[rgba(250,252,255,0.94)] px-2.5 py-1 shadow-[0_6px_18px_rgba(14,22,34,0.08)] backdrop-blur-sm md:gap-2.5 md:px-3.5 md:py-2">
+              <span className="font-serif text-[15px] leading-none text-[color:var(--ink)] md:text-[28px]">
                 {pinCount}
               </span>
-              <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-[color:var(--ink-soft)]">
+              <span className="text-[8.5px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)] md:text-[10px] md:tracking-[0.2em]">
                 {pinLabel}
               </span>
             </div>
