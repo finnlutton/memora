@@ -38,6 +38,103 @@ const DEMO_STORAGE_KEY = "memora::demo-galleries:v1";
 const USER_STORAGE_KEY = "memora::user-galleries:v1";
 const STORAGE_BUCKET = "gallery-images";
 
+/**
+ * Soft byte threshold for the persisted gallery snapshot. The hard cap
+ * varies by browser (~5–10 MB) but a single key approaching this size
+ * is already a sign that we're persisting something we shouldn't (e.g.
+ * an in-flight `data:` image src). Used by `safeWriteJson` to surface
+ * an early console warning before the QuotaExceededError fires.
+ */
+const STORAGE_QUOTA_WARN_BYTES = 2_000_000;
+
+type StorageQuotaInfo = { key: string; bytes: number };
+
+/**
+ * Replace any `data:` URL with the empty string. Storage URLs and other
+ * forms (http/https/blob/relative paths) pass through untouched. This is
+ * the single rule that lets us cheaply persist galleries without ever
+ * shipping inlined image data into localStorage.
+ */
+function stripDataUrlSrc(src: string | null | undefined): string {
+  if (!src) return "";
+  return typeof src === "string" && src.startsWith("data:") ? "" : src;
+}
+
+/**
+ * Walk a gallery → subgalleries/scenes → photos and return a deep-ish
+ * copy where every `data:` src/coverImage has been replaced with "".
+ * Every other field (ids, captions, dates, ordering, locations, remote
+ * storage URLs) is preserved by reference.
+ *
+ * The original in-memory gallery is never mutated — this is invoked only
+ * when preparing a snapshot for `localStorage.setItem`.
+ */
+function sanitizeGalleryForPersist(gallery: Gallery): Gallery {
+  return {
+    ...gallery,
+    coverImage: stripDataUrlSrc(gallery.coverImage),
+    subgalleries: gallery.subgalleries.map((sub) => ({
+      ...sub,
+      coverImage: stripDataUrlSrc(sub.coverImage),
+      photos: sub.photos.map((photo) => ({
+        ...photo,
+        src: stripDataUrlSrc(photo.src),
+      })),
+    })),
+    directPhotos: gallery.directPhotos.map((photo) => ({
+      ...photo,
+      src: stripDataUrlSrc(photo.src),
+    })),
+  };
+}
+
+function sanitizeCollectionForPersist(collection: Gallery[]): Gallery[] {
+  return collection.map(sanitizeGalleryForPersist);
+}
+
+function isQuotaExceededError(error: unknown): boolean {
+  const domErr = error instanceof DOMException ? error : null;
+  return (
+    domErr?.name === "QuotaExceededError" ||
+    domErr?.code === 22 ||
+    domErr?.code === 1014
+  );
+}
+
+/**
+ * Wrap `localStorage.setItem` with size logging and quota detection.
+ * Re-throws on QuotaExceededError so the caller can flag the quota
+ * state in the store; non-quota errors also re-throw so they surface
+ * normally. The optional `onQuotaExceeded` callback receives the key
+ * and byte size for surfacing in the UI without changing log behavior.
+ */
+function safeWriteJson(
+  key: string,
+  json: string,
+  onQuotaExceeded?: (info: StorageQuotaInfo) => void,
+): number {
+  const bytes = new Blob([json]).size;
+  if (bytes > STORAGE_QUOTA_WARN_BYTES) {
+    console.warn(`[memora:storage] ${key} approaching quota`, {
+      bytes,
+      kb: Math.round(bytes / 1024),
+    });
+  }
+  try {
+    window.localStorage.setItem(key, json);
+    return bytes;
+  } catch (error) {
+    if (isQuotaExceededError(error)) {
+      console.error(`[memora:storage] quota exceeded writing ${key}`, {
+        bytes,
+        kb: Math.round(bytes / 1024),
+      });
+      onQuotaExceeded?.({ key, bytes });
+    }
+    throw error;
+  }
+}
+
 type OnboardingState = {
   isAuthenticated: boolean;
   selectedPlanId: MembershipPlanId | null;
@@ -53,6 +150,12 @@ type MemoraStore = {
   galleries: Gallery[];
   hydrated: boolean;
   storageQuotaExceeded: boolean;
+  /**
+   * Diagnostic for the most recent QuotaExceededError. Surfaces the
+   * offending storage key and approximate byte size so it can appear
+   * in logs / dev panels without expanding the user-facing banner.
+   */
+  storageQuotaInfo: StorageQuotaInfo | null;
   dismissStorageQuotaWarning: () => void;
   onboarding: OnboardingState;
   createGallery: (input: GalleryInput) => Promise<string>;
@@ -622,38 +725,65 @@ function loadStoredGalleryCollections() {
     };
   }
 
+  let demo: Gallery[] = demoGalleries;
+  let user: Gallery[] = [];
+
   const demoValue = window.localStorage.getItem(DEMO_STORAGE_KEY);
   const userValue = window.localStorage.getItem(USER_STORAGE_KEY);
   if (demoValue || userValue) {
     try {
-      return {
-        demo: demoValue ? (JSON.parse(demoValue) as Gallery[]) : demoGalleries,
-        user: userValue ? (JSON.parse(userValue) as Gallery[]) : [],
-      };
+      demo = demoValue ? (JSON.parse(demoValue) as Gallery[]) : demoGalleries;
+      user = userValue ? (JSON.parse(userValue) as Gallery[]) : [];
     } catch {
-      return {
-        demo: demoGalleries,
-        user: [],
-      };
+      demo = demoGalleries;
+      user = [];
+    }
+  } else {
+    const storedValue = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (storedValue) {
+      try {
+        const split = splitLegacyGalleries(
+          JSON.parse(storedValue) as Gallery[],
+        );
+        demo = split.demo;
+        user = split.user;
+      } catch {
+        demo = demoGalleries;
+        user = [];
+      }
     }
   }
 
-  const storedValue = window.localStorage.getItem(LEGACY_STORAGE_KEY);
-  if (!storedValue) {
-    return {
-      demo: demoGalleries,
-      user: [],
-    };
+  // One-time cleanup: rewrite localStorage with sanitized data so older
+  // versions of Memora that wrote raw `data:` srcs don't keep eating
+  // quota every render. The in-memory copies returned to React still
+  // contain whatever `data:` URLs the snapshot held, so any in-flight
+  // photo previews continue to render until their Supabase upload
+  // completes and replaces the src with a remote URL. Defensive — never
+  // throws; a write failure here is benign because the persist effect
+  // will retry on the next state change.
+  try {
+    const sanitizedDemoJson = JSON.stringify(
+      sanitizeCollectionForPersist(demo),
+    );
+    const sanitizedUserJson = JSON.stringify(
+      sanitizeCollectionForPersist(user),
+    );
+    if (demoValue !== null && sanitizedDemoJson !== demoValue) {
+      window.localStorage.setItem(DEMO_STORAGE_KEY, sanitizedDemoJson);
+    }
+    if (userValue !== null && sanitizedUserJson !== userValue) {
+      window.localStorage.setItem(USER_STORAGE_KEY, sanitizedUserJson);
+    }
+    // Drop any lingering legacy snapshot now that we've migrated.
+    if (window.localStorage.getItem(LEGACY_STORAGE_KEY) !== null) {
+      window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+    }
+  } catch {
+    // best effort — never block hydration on a cleanup failure
   }
 
-  try {
-    return splitLegacyGalleries(JSON.parse(storedValue) as Gallery[]);
-  } catch {
-    return {
-      demo: demoGalleries,
-      user: [],
-    };
-  }
+  return { demo, user };
 }
 
 function buildOnboardingStateFromUser(
@@ -746,6 +876,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
   const [onboarding, setOnboarding] = useState<OnboardingState>(defaultOnboardingState);
   const [hydrated, setHydrated] = useState(false);
   const [storageQuotaExceeded, setStorageQuotaExceeded] = useState(false);
+  const [storageQuotaInfo, setStorageQuotaInfo] =
+    useState<StorageQuotaInfo | null>(null);
   const supabaseRef = useRef<ReturnType<typeof createSupabaseBrowserClient> | null>(null);
   const hasBootstrappedAuthRef = useRef(false);
 
@@ -838,19 +970,33 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
     if (!hydrated) {
       return;
     }
+    // Sanitize before persisting so we never ship a `data:` blob into
+    // localStorage. The in-memory React state is untouched — only the
+    // snapshot we serialize here has data URLs replaced with "".
+    let lastQuotaHit: StorageQuotaInfo | null = null;
+    const recordQuotaHit = (info: StorageQuotaInfo) => {
+      lastQuotaHit = info;
+    };
     try {
-      window.localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(demoGalleryCollection));
-      window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userGalleryCollection));
+      const demoJson = JSON.stringify(
+        sanitizeCollectionForPersist(demoGalleryCollection),
+      );
+      const userJson = JSON.stringify(
+        sanitizeCollectionForPersist(userGalleryCollection),
+      );
+      safeWriteJson(DEMO_STORAGE_KEY, demoJson, recordQuotaHit);
+      safeWriteJson(USER_STORAGE_KEY, userJson, recordQuotaHit);
       window.localStorage.removeItem(LEGACY_STORAGE_KEY);
-      queueMicrotask(() => setStorageQuotaExceeded(false));
+      queueMicrotask(() => {
+        setStorageQuotaExceeded(false);
+        setStorageQuotaInfo(null);
+      });
     } catch (error) {
-      const domErr = error instanceof DOMException ? error : null;
-      const isQuota =
-        domErr?.name === "QuotaExceededError" ||
-        domErr?.code === 22 ||
-        domErr?.code === 1014;
-      if (isQuota) {
-        queueMicrotask(() => setStorageQuotaExceeded(true));
+      if (isQuotaExceededError(error)) {
+        queueMicrotask(() => {
+          setStorageQuotaExceeded(true);
+          if (lastQuotaHit) setStorageQuotaInfo(lastQuotaHit);
+        });
       } else {
         console.error("Memora: failed to save galleries", error);
       }
@@ -922,7 +1068,11 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
       galleries,
       hydrated,
       storageQuotaExceeded,
-      dismissStorageQuotaWarning: () => setStorageQuotaExceeded(false),
+      storageQuotaInfo,
+      dismissStorageQuotaWarning: () => {
+        setStorageQuotaExceeded(false);
+        setStorageQuotaInfo(null);
+      },
       onboarding,
       async createGallery(input) {
         const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);
@@ -2051,7 +2201,21 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         return gallery?.subgalleries.find((subgallery) => subgallery.id === subgalleryId);
       },
       resetDemo() {
+        // Free local cache aggressively before re-seeding the demo so a
+        // quota-stuck snapshot from a prior session can't survive into
+        // the fresh state. Only client-side persistence is touched —
+        // Supabase storage and DB rows are untouched.
+        if (typeof window !== "undefined") {
+          try {
+            window.localStorage.removeItem(USER_STORAGE_KEY);
+            window.localStorage.removeItem(DEMO_STORAGE_KEY);
+            window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+          } catch {
+            // best effort — never throw from a user-initiated reset
+          }
+        }
         setStorageQuotaExceeded(false);
+        setStorageQuotaInfo(null);
         setDemoGalleryCollection(demoGalleries);
       },
       signOut() {
@@ -2267,6 +2431,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
     hydrated,
     onboarding,
     storageQuotaExceeded,
+    storageQuotaInfo,
     userGalleryCollection,
   ]);
 

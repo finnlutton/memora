@@ -10,16 +10,18 @@ import type { Gallery } from "@/types/memora";
 export function GalleryHero({ gallery }: { gallery: Gallery }) {
   return (
     <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-      <div className="relative min-h-[14rem] overflow-hidden rounded-[1.5rem] border border-white/60 shadow-[0_20px_60px_rgba(27,42,60,0.16)]">
-        <Image
-          src={gallery.coverImage}
-          alt={gallery.title}
-          fill
-          className="object-cover"
-          sizes="(max-width: 1024px) 100vw, 55vw"
-          priority
-          unoptimized={nextImageUnoptimizedForSrc(gallery.coverImage)}
-        />
+      <div className="relative min-h-[14rem] overflow-hidden rounded-[1.5rem] border border-white/60 bg-[color:var(--paper)] shadow-[0_20px_60px_rgba(27,42,60,0.16)]">
+        {gallery.coverImage ? (
+          <Image
+            src={gallery.coverImage}
+            alt={gallery.title}
+            fill
+            className="object-cover"
+            sizes="(max-width: 1024px) 100vw, 55vw"
+            priority
+            unoptimized={nextImageUnoptimizedForSrc(gallery.coverImage)}
+          />
+        ) : null}
         <div className="absolute inset-0 bg-gradient-to-t from-[rgba(13,22,34,0.8)] via-[rgba(13,22,34,0.2)] to-transparent" />
       </div>
       <div className="flex flex-col justify-between rounded-[1.5rem] border border-white/60 bg-white/72 p-5 shadow-[0_16px_50px_rgba(34,49,71,0.1)] backdrop-blur">

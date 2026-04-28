@@ -318,13 +318,15 @@ function PhotoCard({
 
   return (
     <div className="group relative aspect-[4/5] overflow-hidden border border-[color:var(--border)] bg-[rgba(255,255,255,0.82)] shadow-[0_8px_20px_rgba(34,49,71,0.05)]">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={photo.src}
-        alt={photo.caption || "Gallery photo"}
-        className="absolute inset-0 h-full w-full object-cover"
-        loading="lazy"
-      />
+      {photo.src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={photo.src}
+          alt={photo.caption || "Gallery photo"}
+          className="absolute inset-0 h-full w-full object-cover"
+          loading="lazy"
+        />
+      ) : null}
 
       {/* Caption + location overlay (only when set) */}
       {!editing && (photo.caption || photo.location) ? (

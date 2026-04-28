@@ -56,14 +56,22 @@ export function GalleryCard({
         reads as a printed photograph's edge, not a UI card.
       */}
       <div className="relative aspect-[4/3] w-full overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper)] md:aspect-[16/9]">
-        <Image
-          src={coverImage}
-          alt={gallery.title}
-          fill
-          className="object-cover transition duration-[700ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.015]"
-          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 100vw, 720px"
-          unoptimized={nextImageUnoptimizedForSrc(coverImage)}
-        />
+        {/*
+          Empty `coverImage` happens when the photo's `data:` src has been
+          stripped from the persisted snapshot but Supabase hasn't yet
+          re-hydrated the remote URL. The wrapping div's bg-paper acts as
+          the placeholder until the URL arrives.
+        */}
+        {coverImage ? (
+          <Image
+            src={coverImage}
+            alt={gallery.title}
+            fill
+            className="object-cover transition duration-[700ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.015]"
+            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 100vw, 720px"
+            unoptimized={nextImageUnoptimizedForSrc(coverImage)}
+          />
+        ) : null}
         {shareSelectable ? (
           <button
             type="button"

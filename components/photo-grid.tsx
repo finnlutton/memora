@@ -18,14 +18,16 @@ export function PhotoGrid({ photos }: { photos: MemoryPhoto[] }) {
             onClick={() => setOpenIndex(index)}
             className="group relative aspect-[4/5] overflow-hidden border border-[color:var(--border)] bg-[rgba(255,255,255,0.82)] text-left shadow-[0_12px_28px_rgba(34,49,71,0.06)] transition duration-300 hover:shadow-[0_18px_36px_rgba(34,49,71,0.1)]"
           >
-            <Image
-              src={photo.src}
-              alt={photo.caption || "Memory photo"}
-              fill
-              className="object-cover transition duration-700 group-hover:scale-[1.03]"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              unoptimized={nextImageUnoptimizedForSrc(photo.src)}
-            />
+            {photo.src ? (
+              <Image
+                src={photo.src}
+                alt={photo.caption || "Memory photo"}
+                fill
+                className="object-cover transition duration-700 group-hover:scale-[1.03]"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                unoptimized={nextImageUnoptimizedForSrc(photo.src)}
+              />
+            ) : null}
             {photo.caption ? (
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[rgba(10,18,30,0.68)] to-transparent px-3 pb-2.5 pt-8 text-left text-xs text-white sm:px-4 sm:pb-4 sm:pt-10 sm:text-sm">
                 {photo.caption}
