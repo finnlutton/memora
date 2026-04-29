@@ -59,6 +59,8 @@
     system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --font-headline:
     "Iowan Old Style", "Didot", "Bodoni 72", "Georgia", "Times New Roman", serif;
+  --font-mono:
+    "JetBrains Mono", "SF Mono", ui-monospace, "Menlo", "Consolas", monospace;
 }
 
 /* Grove — soft sage. Cloistered garden, gardener's journal. */

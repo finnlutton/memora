@@ -150,7 +150,7 @@ export default async function PublicSharePage({
             ? `Shared with ${groupName}`
             : "Shared with you";
           return (
-            <div className="mb-6 border-b border-[rgba(30,46,72,0.1)] pb-4 md:mb-8 md:pb-5">
+            <div className="mb-6 border-b border-[color:var(--border)] pb-4 md:mb-8 md:pb-5">
               <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
                 {eyebrowText}
               </p>
@@ -178,18 +178,20 @@ export default async function PublicSharePage({
                 <Link
                   key={gallery.id}
                   href={`/share/${token}/gallery/${gallery.id}`}
-                  className="group overflow-hidden border border-[rgba(30,46,72,0.12)] bg-white/72 transition hover:shadow-[0_16px_38px_rgba(16,24,38,0.12)]"
+                  className="group block"
                 >
-                  <div className="relative aspect-[16/10] bg-[rgba(18,32,48,0.08)]">
-                    {coverImage ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={coverImage} alt={gallery.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]" />
-                    ) : null}
+                  <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-2.5">
+                    <div className="relative aspect-[16/10] overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)]">
+                      {coverImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={coverImage} alt={gallery.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.015]" />
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="space-y-2 px-4 py-3.5">
-                    <h2 className="font-serif text-xl leading-tight">{gallery.title}</h2>
+                  <div className="mt-3 space-y-2">
+                    <h2 className="font-serif text-2xl leading-[1.15] text-[color:var(--ink)]">{gallery.title}</h2>
                     {formatDateRange(gallery.start_date, gallery.end_date) ? (
-                      <p className="text-xs text-[color:var(--ink-soft)]">
+                      <p className="font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)]">
                         {formatDateRange(gallery.start_date, gallery.end_date)}
                       </p>
                     ) : null}
@@ -202,14 +204,14 @@ export default async function PublicSharePage({
             })}
           </section>
         ) : (
-          <section className="border border-[rgba(30,46,72,0.12)] bg-white/72 px-6 py-10 text-center">
+          <section className="border-y border-[color:var(--border)] px-6 py-10 text-center">
             <p className="font-serif text-2xl leading-tight">Nothing to see just yet.</p>
             <p className="mt-2 text-sm leading-6 text-[color:var(--ink-soft)]">
               The sender hasn&apos;t added any galleries to this share yet. Check back soon — anything they add will show up here automatically.
             </p>
           </section>
         )}
-        <footer className="mt-10 border-t border-[rgba(30,46,72,0.08)] pt-6 text-center md:mt-14 md:pt-8">
+        <footer className="mt-10 border-t border-[color:var(--border)] pt-6 text-center md:mt-14 md:pt-8">
           <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
           <p className="mt-2 text-sm text-[color:var(--ink-soft)]">
             Want to preserve your own memories?{" "}

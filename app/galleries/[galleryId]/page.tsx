@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowLeft, MoreHorizontal } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { CollapsibleEntry } from "@/components/collapsible-entry";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { GalleryDirectPhotos } from "@/components/gallery-direct-photos";
 import { SubgalleryCarousel } from "@/components/subgallery-carousel";
@@ -24,7 +25,7 @@ export default function GalleryDetailPage() {
     return (
       <AppShell accent="immersive">
         {hydrated ? (
-          <div className="rounded-[1.25rem] border border-white/60 bg-white/70 px-4 py-8 text-center text-sm text-[color:var(--ink-soft)]">
+          <div className="border-y border-[color:var(--border)] bg-[color:var(--paper)] px-4 py-8 text-center text-sm text-[color:var(--ink-soft)]">
             Gallery not found.
           </div>
         ) : (
@@ -57,7 +58,6 @@ export default function GalleryDetailPage() {
       <WorkspaceTopbar
         eyebrow="Gallery workspace"
         title={gallery.title}
-        subtitle={gallery.description}
         actions={
           <>
             <Button asChild variant="ghost">
@@ -75,7 +75,7 @@ export default function GalleryDetailPage() {
                 More
               </Button>
               {actionsOpen ? (
-                <div className="absolute right-0 top-[calc(100%+0.45rem)] z-20 w-[min(16rem,calc(100vw-2rem))] rounded-xl border border-[rgba(28,46,72,0.12)] bg-white/95 p-2 shadow-[0_14px_34px_rgba(16,24,38,0.12)] md:w-48">
+                <div className="absolute right-0 top-[calc(100%+0.45rem)] z-20 w-[min(16rem,calc(100vw-2rem))] rounded-xl border border-[color:var(--border-strong)] bg-[color:var(--chrome-strong)] p-2 shadow-[0_14px_34px_rgba(0,0,0,0.18)] md:w-48">
                   {gallery.subgalleries.length > 0 ? (
                     <Link
                       href={`/galleries/${gallery.id}/subgalleries/${gallery.subgalleries[activeSubgalleryIndex].id}/edit`}
@@ -108,6 +108,9 @@ export default function GalleryDetailPage() {
           </>
         }
       />
+      {gallery.description ? (
+        <CollapsibleEntry text={gallery.description} className="mb-6 md:mb-8" />
+      ) : null}
       {gallery.subgalleries.length ? (
         <section>
           <SubgalleryCarousel

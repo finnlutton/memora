@@ -142,7 +142,7 @@ export default function MemoryMapPage() {
         }}
         className="fixed bottom-0 right-0 z-0 overflow-hidden"
       >
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div data-tour-id="globe" className="absolute inset-0 flex items-center justify-center">
           {view === "globe" ? (
             <WorldGlobe pins={mapPins} allowWheelZoom />
           ) : (
@@ -180,11 +180,13 @@ export default function MemoryMapPage() {
           on narrow viewports.
         */}
         <div className="pointer-events-auto absolute right-5 top-6 z-20 flex flex-col items-end gap-2 md:right-10 md:top-10">
-          <MemoryMapDateFilter
-            filter={dateFilter}
-            onChange={setDateFilter}
-            availableYears={availableYears}
-          />
+          <div data-tour-id="map-date-filter">
+            <MemoryMapDateFilter
+              filter={dateFilter}
+              onChange={setDateFilter}
+              availableYears={availableYears}
+            />
+          </div>
           <div
             role="tablist"
             aria-label="Map view"

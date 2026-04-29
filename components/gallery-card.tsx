@@ -47,6 +47,28 @@ export function GalleryCard({
   const dateRange = formatDateRangeCompact(gallery.startDate, gallery.endDate);
   const metaParts = [primaryLocation, dateRange].filter(Boolean);
 
+  // Editorial badges. Year reads as a print-archive plate; trip duration
+  // (in days) is derived from the date range and rounded up so a same-day
+  // outing reads as "1d" rather than "0d".
+  const yearBadge = (() => {
+    const source = gallery.startDate || gallery.endDate;
+    if (!source) return null;
+    const date = new Date(source);
+    if (Number.isNaN(date.getTime())) return null;
+    return String(date.getFullYear());
+  })();
+  const durationBadge = (() => {
+    if (!gallery.startDate || !gallery.endDate) return null;
+    const start = new Date(gallery.startDate);
+    const end = new Date(gallery.endDate);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+    const days = Math.max(
+      1,
+      Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1,
+    );
+    return `${days}d`;
+  })();
+
   const body = (
     <>
       {/*
@@ -55,7 +77,8 @@ export function GalleryCard({
         narrow screens. Hairline border is the only chrome — intentional,
         reads as a printed photograph's edge, not a UI card.
       */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper)] md:aspect-[16/9]">
+      <div className="relative w-full border border-[color:var(--border)] bg-[color:var(--paper)] p-1.5 md:p-[14px]">
+      <div className="relative aspect-[4/3] w-full overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)] md:aspect-[16/9]">
         {/*
           Empty `coverImage` happens when the photo's `data:` src has been
           stripped from the persisted snapshot but Supabase hasn't yet
@@ -91,6 +114,23 @@ export function GalleryCard({
           </button>
         ) : null}
       </div>
+      {yearBadge ? (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute left-3 top-3 inline-flex items-center px-1 py-px font-[family-name:var(--font-mono)] text-[6.5px] tracking-[0.12em] text-[color:var(--ink)] bg-[color:var(--chrome)] md:left-5 md:top-5 md:px-1.5 md:py-0.5 md:text-[10px] md:tracking-[0.16em]"
+        >
+          {yearBadge}
+        </span>
+      ) : null}
+      {durationBadge ? (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute right-3 top-3 inline-flex items-center px-1 py-px font-[family-name:var(--font-mono)] text-[6.5px] tracking-[0.12em] text-[color:var(--ink)] bg-[color:var(--chrome)] md:right-5 md:top-5 md:px-1.5 md:py-0.5 md:text-[10px] md:tracking-[0.16em]"
+        >
+          {durationBadge}
+        </span>
+      ) : null}
+      </div>
 
       {/*
         Caption block. Directly on the page canvas — no bg, no border, no
@@ -100,11 +140,11 @@ export function GalleryCard({
         line just doesn't render — no empty placeholder slab.
       */}
       <div className="mt-1.5 md:mt-6">
-        <h3 className="font-serif text-[9.5px] leading-[1.2] text-[color:var(--ink)] md:text-[22px] md:leading-[1.2]">
+        <h3 className="font-serif text-[10.5px] leading-[1.2] text-[color:var(--ink)] md:text-[24px] md:leading-[1.15]">
           {gallery.title}
         </h3>
         {metaParts.length ? (
-          <p className="mt-0.5 text-[8.5px] leading-[1.4] text-[color:var(--ink-soft)] md:mt-2 md:text-[13px] md:leading-relaxed">
+          <p className="mt-0.5 font-[family-name:var(--font-mono)] text-[8px] uppercase leading-[1.4] tracking-[0.16em] text-[color:var(--ink-faint)] md:mt-2 md:text-[11px]">
             {metaParts.join(" · ")}
           </p>
         ) : null}

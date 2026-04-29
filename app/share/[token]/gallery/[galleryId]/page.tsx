@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CollapsibleEntry } from "@/components/collapsible-entry";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { formatLocationForCard } from "@/lib/utils";
 
@@ -160,15 +161,9 @@ export default async function PublicSharedGalleryPage({
   return (
     <main className="min-h-screen bg-[color:var(--background)] px-4 py-6 text-[color:var(--ink)] md:px-8 md:py-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-6 border-b border-[rgba(30,46,72,0.1)] pb-4 md:mb-8 md:pb-5">
-          <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
-          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[color:var(--ink-soft)]">
-            {/*
-              On mobile we collapse the parent crumb to a leading "←"
-              so a long gallery title doesn't push the breadcrumb to
-              wrap. The full word ladder returns on md+ where there's
-              room for it.
-            */}
+        <div className="mb-6 border-b border-[color:var(--border)] pb-4 md:mb-8 md:pb-5">
+          <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
+          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
             <Link
               href={`/share/${token}`}
               className="inline-flex items-center gap-1 underline underline-offset-4"
@@ -181,51 +176,50 @@ export default async function PublicSharedGalleryPage({
             <span className="min-w-0 truncate">{gallery.title}</span>
           </div>
           <h1 className="mt-2 font-serif text-3xl leading-tight md:text-5xl">{gallery.title}</h1>
-          {/*
-            Show the gallery's own description here. The share-link's
-            custom message is already rendered on the landing page
-            (`/share/[token]`); duplicating it here was hiding the
-            gallery description, which is what the recipient expects
-            once they've clicked into a specific gallery.
-          */}
           {gallery.description ? (
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:text-[15px] md:leading-7">{gallery.description}</p>
+            <CollapsibleEntry text={gallery.description} className="mt-4 md:mt-5" />
           ) : null}
         </div>
 
         {(subgalleries ?? []).length ? (
-          <section className="grid gap-3 sm:grid-cols-2 md:grid-cols-2 md:gap-4 xl:grid-cols-3">
+          <section className="grid gap-x-3 gap-y-7 sm:grid-cols-2 md:gap-x-8 md:gap-y-12 xl:grid-cols-3">
             {(subgalleries ?? []).map((subgallery) => {
               const cover = isLikelyStoragePath(subgallery.cover_image_path ?? "")
                 ? signedUrlByPath.get(subgallery.cover_image_path ?? "") ?? ""
                 : (subgallery.cover_image_path ?? "");
+              const formattedLocation = formatLocationForCard(subgallery.location);
+              const dateText = dateLabelForSubgallery(subgallery);
+              const metaParts = [formattedLocation, dateText].filter(Boolean) as string[];
+              const excerpt = subgallery.description?.trim().slice(0, 120) ?? "";
 
               return (
                 <Link
                   key={subgallery.id}
                   href={`/share/${token}/gallery/${gallery.id}/subgallery/${subgallery.id}`}
-                  className="group overflow-hidden border border-[rgba(30,46,72,0.12)] bg-white/72 transition hover:shadow-[0_16px_38px_rgba(16,24,38,0.12)]"
+                  className="group block"
                 >
-                  <div className="relative aspect-[5/3] bg-[rgba(18,32,48,0.08)]">
-                    {cover ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={cover} alt={subgallery.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]" />
-                    ) : null}
+                  <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-2 md:p-[14px]">
+                    <div className="relative aspect-[5/3] overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)]">
+                      {cover ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={cover} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.015]" />
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="space-y-2 px-4 py-3.5">
-                    <h2 className="font-serif text-xl leading-tight">{subgallery.title}</h2>
-                    {(() => {
-                      const formattedLocation = formatLocationForCard(subgallery.location);
-                      const dateText = dateLabelForSubgallery(subgallery);
-                      if (!formattedLocation && !dateText) return null;
-                      return (
-                        <p className="text-xs text-[color:var(--ink-soft)]">
-                          {[formattedLocation, dateText].filter(Boolean).join(" • ")}
-                        </p>
-                      );
-                    })()}
-                    {subgallery.description ? (
-                      <p className="line-clamp-3 text-sm leading-6 text-[color:var(--ink-soft)]">{subgallery.description}</p>
+                  <div className="mt-3 space-y-2">
+                    <h2 className="font-serif text-[22px] leading-[1.15] text-[color:var(--ink)] md:text-[28px]">
+                      {subgallery.title}
+                    </h2>
+                    {metaParts.length ? (
+                      <p className="font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)]">
+                        {metaParts.join(" · ")}
+                      </p>
+                    ) : null}
+                    {excerpt ? (
+                      <p className="font-serif text-[15px] italic leading-snug text-[color:var(--ink-soft)] md:text-[16px]">
+                        {excerpt}
+                        {(subgallery.description?.length ?? 0) > 120 ? "…" : ""}
+                      </p>
                     ) : null}
                   </div>
                 </Link>
@@ -233,7 +227,7 @@ export default async function PublicSharedGalleryPage({
             })}
           </section>
         ) : (
-          <section className="border border-[rgba(30,46,72,0.12)] bg-white/72 px-6 py-10 text-center">
+          <section className="border-y border-[color:var(--border)] px-6 py-10 text-center">
             <p className="font-serif text-2xl leading-tight">More to come.</p>
             <p className="mt-2 text-sm leading-6 text-[color:var(--ink-soft)]">
               The sender hasn&apos;t added any scenes inside this gallery yet. New scenes will appear here as soon as they do.

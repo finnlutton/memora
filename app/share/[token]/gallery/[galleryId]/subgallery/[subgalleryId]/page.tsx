@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CollapsibleEntry } from "@/components/collapsible-entry";
 import { PhotoGrid } from "@/components/photo-grid";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { formatLocationForCard } from "@/lib/utils";
@@ -175,9 +176,9 @@ export default async function PublicSharedSubgalleryPage({
   return (
     <main className="min-h-screen bg-[color:var(--background)] px-4 py-6 text-[color:var(--ink)] md:px-8 md:py-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-6 border-b border-[rgba(30,46,72,0.1)] pb-4 md:mb-8 md:pb-5">
-          <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
-          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[color:var(--ink-soft)]">
+        <div className="mb-6 border-b border-[color:var(--border)] pb-4 md:mb-8 md:pb-5">
+          <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
+          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
             {/*
               Mobile breadcrumb: collapse middle segments to a single
               "← Gallery title" so a long subgallery title doesn't push
@@ -213,22 +214,22 @@ export default async function PublicSharedSubgalleryPage({
             const dateText = subgallery.date_label || formatDateRange(subgallery.start_date, subgallery.end_date);
             if (!formattedLocation && !dateText) return null;
             return (
-              <p className="mt-2.5 text-sm text-[color:var(--ink-soft)] md:mt-3">
-                {[formattedLocation, dateText].filter(Boolean).join(" • ")}
+              <p className="mt-2.5 font-[family-name:var(--font-mono)] text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)] md:mt-3">
+                {[formattedLocation, dateText].filter(Boolean).join(" · ")}
               </p>
             );
           })()}
           {subgallery.description ? (
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:text-[15px] md:leading-7">{subgallery.description}</p>
+            <CollapsibleEntry text={subgallery.description} className="mt-4 md:mt-5" />
           ) : null}
         </div>
 
         <section>
-          <p className="mb-3 text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-faint)]">Photos</p>
+          <p className="mb-3 font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">Photos</p>
           {photos.length ? (
             <PhotoGrid photos={photos} />
           ) : (
-            <div className="border border-[rgba(30,46,72,0.12)] bg-white/72 px-6 py-10 text-center">
+            <div className="border-y border-[color:var(--border)] px-6 py-10 text-center">
               <p className="font-serif text-2xl leading-tight">Photos still on the way.</p>
               <p className="mt-2 text-sm leading-6 text-[color:var(--ink-soft)]">
                 The sender hasn&apos;t added photos to this scene yet. They&apos;ll appear here as soon as they do.

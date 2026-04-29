@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LogOut, PanelLeft } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { MemoraTour } from "@/components/memora-tour";
 import { ClipboardIcon } from "@/components/icons/ClipboardIcon";
 import { GlobeIcon } from "@/components/icons/GlobeIcon";
 import { HelpIcon } from "@/components/icons/HelpIcon";
@@ -92,7 +93,7 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
       <aside
         style={transitionStyle}
         className={cn(
-          "sticky top-0 hidden h-screen shrink-0 border-r border-[color:var(--border)] bg-[color:var(--chrome)] py-3 backdrop-blur-xl md:flex md:flex-col",
+          "sticky top-0 hidden h-screen shrink-0 border-r border-[color:var(--border)] bg-[color:var(--chrome)] pt-7 pb-3 backdrop-blur-xl md:flex md:flex-col",
         )}
         data-collapsed={collapsed ? "true" : "false"}
         aria-expanded={!collapsed}
@@ -152,7 +153,7 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
                   className={cn(
                     "group relative flex h-10 items-center gap-3 rounded-md pr-2 text-[13px] transition-colors",
                     active
-                      ? "bg-[color:var(--active-tint)] text-[color:var(--ink)]"
+                      ? "text-[color:var(--ink)]"
                       : "text-[color:var(--ink-soft)] hover:bg-[color:var(--hover-tint)] hover:text-[color:var(--ink)]",
                   )}
                 >
@@ -160,7 +161,7 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
                   {active ? (
                     <span
                       aria-hidden="true"
-                      className="absolute left-0 top-1.5 bottom-1.5 w-[2px] rounded-full bg-[color:var(--ink)]"
+                      className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-[color:var(--ink)]"
                     />
                   ) : null}
                   {/* Consistent icon slot — same geometry at both states */}
@@ -198,14 +199,14 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
                   className={cn(
                     "group relative mb-1 flex h-10 items-center gap-3 rounded-md pr-2 text-[13px] transition-colors",
                     active
-                      ? "bg-[color:var(--active-tint)] text-[color:var(--ink)]"
+                      ? "text-[color:var(--ink)]"
                       : "text-[color:var(--ink-soft)] hover:bg-[color:var(--hover-tint)] hover:text-[color:var(--ink)]",
                   )}
                 >
                   {active ? (
                     <span
                       aria-hidden="true"
-                      className="absolute left-0 top-1.5 bottom-1.5 w-[2px] rounded-full bg-[color:var(--ink)]"
+                      className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-[color:var(--ink)]"
                     />
                   ) : null}
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center">
@@ -289,6 +290,7 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
         </div>
         <main className="mx-auto w-full max-w-[1520px] px-4 py-6 md:px-10 md:py-10">{children}</main>
       </div>
+      <MemoraTour />
     </div>
   );
 }

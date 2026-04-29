@@ -45,11 +45,15 @@ export function SubgalleryCarousel({
         return nextIndex;
       }
 
-      card.scrollIntoView({
-        behavior,
-        inline: "start",
-        block: "nearest",
-      });
+      const container = containerRef.current;
+      if (container) {
+        // Scroll the carousel's horizontal container only, never the page
+        // viewport — using card.scrollIntoView triggers a vertical scroll
+        // up to the carousel on mount, which makes the gallery detail page
+        // jump down on first load.
+        const left = card.offsetLeft - container.offsetLeft;
+        container.scrollTo({ left, behavior });
+      }
       return nextIndex;
     },
     [subgalleries.length],

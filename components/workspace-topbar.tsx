@@ -59,7 +59,7 @@ export function WorkspaceTopbar({
           {title}
         </h1>
         {subtitle ? (
-          <p className="hidden max-w-4xl border-l-2 border-[color:var(--border-strong)] pl-4 text-[14px] leading-[1.65] text-[color:var(--ink)] md:mt-6 md:block md:pl-5 md:text-[15.5px] md:leading-[1.7]">
+          <p className="hidden max-w-[520px] border-l border-[color:var(--border-strong)] pl-3.5 font-serif text-[15px] italic leading-[1.7] text-[color:var(--ink-soft)] md:mt-6 md:block md:text-[17px]">
             {subtitle}
           </p>
         ) : null}

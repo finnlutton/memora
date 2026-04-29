@@ -34,13 +34,13 @@ export function SubgalleryCard({
         <div className="absolute inset-0 bg-gradient-to-t from-[rgba(6,12,22,0.92)] via-[rgba(6,12,22,0.22)] to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-4 md:p-8">
           <div className="max-w-2xl">
-            <p className="text-[11px] uppercase tracking-[0.26em] text-white/65">
+            <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.22em] text-white/65">
               Scene
             </p>
-            <h3 className="mt-2 font-serif text-2xl leading-tight text-white md:mt-3 md:text-5xl">
+            <h3 className="mt-2 font-serif text-[22px] leading-[1.1] text-white md:mt-3 md:text-[44px]">
               {subgallery.title}
             </h3>
-            <div className="mt-2.5 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.18em] text-white/70 md:mt-3 md:gap-3 md:text-xs">
+            <div className="mt-2.5 flex flex-wrap gap-2 font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.18em] text-white/70 md:mt-3 md:gap-3 md:text-[11px]">
               <span className="inline-flex items-center gap-1.5">
                 <MapPin className="h-3.5 w-3.5" />
                 {formatLocationForCard(subgallery.location)}
@@ -50,9 +50,12 @@ export function SubgalleryCard({
                 {subgallery.dateLabel}
               </span>
             </div>
-            <p className="mt-3 max-w-xl text-xs leading-6 text-white/82 md:mt-4 md:text-base md:leading-8">
-              {subgallery.description}
-            </p>
+            {subgallery.description ? (
+              <p className="mt-3 max-w-xl truncate font-serif text-sm italic leading-snug text-white/85 md:mt-4 md:text-[17px]">
+                {subgallery.description.slice(0, 120)}
+                {subgallery.description.length > 120 ? "…" : ""}
+              </p>
+            ) : null}
           </div>
         </div>
       </div>

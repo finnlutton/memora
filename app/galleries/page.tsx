@@ -185,7 +185,7 @@ export default function GalleriesPage() {
         }
       />
 
-      <section className="mb-3 grid grid-cols-3 gap-2 md:mb-4 md:gap-6">
+      <section className="mb-3 grid grid-cols-3 gap-2 border-t border-b border-[color:var(--border)] py-3 md:mb-8 md:my-8 md:gap-6 md:py-5">
         {/*
           Membership stat doubles as the dashboard's plan affordance — a
           single small link to Settings → Membership. Keeps the dashboard
@@ -216,7 +216,7 @@ export default function GalleriesPage() {
         />
       </section>
       {shareLimitReached ? (
-        <p className="mb-3 rounded-sm border border-[rgba(34,52,79,0.12)] bg-white/70 px-3 py-2 text-sm text-[color:var(--ink-soft)]">
+        <p className="mb-3 rounded-sm border border-[color:var(--border)] bg-[color:var(--paper)] px-3 py-2 text-sm text-[color:var(--ink-soft)]">
           You&apos;ve reached the share-link limit on the {selectedPlan?.name ?? "current"} plan.{" "}
           <Link href="/galleries/settings/membership" className="text-[color:var(--ink)] underline underline-offset-2">
             Upgrade to create more share links.
@@ -235,7 +235,7 @@ export default function GalleriesPage() {
       ) : sortedGalleries.length ? (
         <section className="mt-5 space-y-3 md:mt-7 md:space-y-4">
           {shareMode ? (
-            <div className="flex items-center justify-between rounded-xl bg-[rgba(255,255,255,0.64)] px-2.5 py-1.5 text-xs text-[color:var(--ink-soft)] md:px-3 md:py-2 md:text-sm">
+            <div className="flex items-center justify-between rounded-xl border border-[color:var(--border)] bg-[color:var(--chrome)] px-2.5 py-1.5 text-xs text-[color:var(--ink-soft)] md:px-3 md:py-2 md:text-sm">
               <span>
                 Share mode active. Select one or more galleries.
               </span>
@@ -277,7 +277,7 @@ export default function GalleriesPage() {
           </p>
           <Link
             href="/galleries/new"
-            className="mt-6 inline-block border border-[color:var(--border-strong)] bg-[color:var(--paper)] px-5 py-2.5 text-sm text-[color:var(--ink)] hover:bg-[rgba(0,0,0,0.03)]"
+            className="mt-6 inline-block border border-[color:var(--border-strong)] bg-[color:var(--paper)] px-5 py-2.5 text-sm text-[color:var(--ink)] hover:bg-[color:var(--hover-tint)]"
           >
             Create your first gallery
           </Link>
@@ -354,7 +354,7 @@ export default function GalleriesPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8, transition: { duration: 0.15 } }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-[8px] border border-[rgba(34,52,79,0.12)] bg-[rgba(251,253,255,0.97)] p-2 shadow-[0_16px_40px_rgba(16,24,38,0.18)] md:bottom-7 md:right-7"
+            className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full border border-[color:var(--border-strong)] bg-[color:var(--chrome-strong)] p-2 shadow-[0_16px_40px_rgba(0,0,0,0.18)] md:bottom-7 md:right-7"
           >
             <Button
               type="button"
@@ -460,7 +460,7 @@ function DraftsStrip({
       <div className="mt-2 flex items-stretch gap-2 overflow-x-auto pb-1 md:gap-3">
         <Link
           href="/galleries/new"
-          className="group flex min-w-[16rem] flex-1 items-center justify-between gap-3 border border-[color:var(--border)] bg-white/80 px-3.5 py-2.5 transition hover:border-[color:var(--border-strong)] hover:bg-white md:min-w-[20rem]"
+          className="group flex min-w-[16rem] flex-1 items-center justify-between gap-3 border border-[color:var(--border)] bg-[color:var(--chrome)] px-3.5 py-2.5 transition hover:border-[color:var(--border-strong)] hover:bg-[color:var(--paper)] md:min-w-[20rem]"
         >
           <div className="min-w-0 flex-1">
             <p className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
@@ -490,7 +490,7 @@ function DraftsStrip({
             <button
               type="button"
               aria-label="Discard draft"
-              className="inline-flex shrink-0 items-center justify-center border border-[color:var(--border)] bg-white/80 px-2.5 text-[color:var(--ink-soft)] transition hover:border-[color:var(--border-strong)] hover:bg-white hover:text-[color:var(--ink)]"
+              className="inline-flex shrink-0 items-center justify-center border border-[color:var(--border)] bg-[color:var(--chrome)] px-2.5 text-[color:var(--ink-soft)] transition hover:border-[color:var(--border-strong)] hover:bg-[color:var(--paper)] hover:text-[color:var(--ink)]"
             >
               <X className="h-4 w-4" />
             </button>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, PenLine } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { CollapsibleEntry } from "@/components/collapsible-entry";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { PhotoGrid } from "@/components/photo-grid";
 import { Button } from "@/components/ui/button";
@@ -21,11 +22,11 @@ export default function SubgalleryDetailPage() {
     return (
       <AppShell>
         {hydrated ? (
-          <div className="rounded-[2rem] border border-white/60 bg-white/70 px-6 py-12 text-center text-[color:var(--ink-soft)]">
+          <div className="border-y border-[color:var(--border)] bg-[color:var(--paper)] px-6 py-12 text-center text-[color:var(--ink-soft)]">
             Subgallery not found.
           </div>
         ) : (
-          <div className="rounded-[2rem] border border-white/60 bg-white/70 px-6 py-12 text-center text-[color:var(--ink-soft)]">
+          <div className="border-y border-[color:var(--border)] bg-[color:var(--paper)] px-6 py-12 text-center text-[color:var(--ink-soft)]">
             Loading subgallery...
           </div>
         )}
@@ -62,26 +63,24 @@ export default function SubgalleryDetailPage() {
         </div>
       </div>
 
-      <section>
-        <div className="rounded-[1.75rem] border border-white/60 bg-white/74 p-4 shadow-[0_22px_70px_rgba(34,49,71,0.1)] backdrop-blur md:rounded-[2.5rem] md:p-7">
-          <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
-            Inside {gallery.title}
-          </p>
-          <h1 className="mt-2 font-serif text-3xl text-[color:var(--ink)] md:mt-3 md:text-5xl">{subgallery.title}</h1>
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-[color:var(--ink-soft)] md:mt-4 md:gap-x-4 md:gap-y-2">
-            {(() => {
-              const formatted = formatLocationForCard(subgallery.location);
-              return formatted ? <span>{formatted}</span> : null;
-            })()}
-            {subgallery.location && subgallery.dateLabel ? (
-              <span className="text-[color:var(--ink-faint)]">/</span>
-            ) : null}
-            {subgallery.dateLabel ? <span>{subgallery.dateLabel}</span> : null}
-          </div>
-          <p className="mt-4 text-sm leading-6 text-[color:var(--ink-soft)] md:mt-6 md:text-base md:leading-8">
-            {subgallery.description}
-          </p>
+      <section className="border-t border-b border-[color:var(--border)] py-7 md:py-10">
+        <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+          Inside {gallery.title}
+        </p>
+        <h1 className="mt-2 font-serif text-3xl text-[color:var(--ink)] md:mt-3 md:text-5xl">{subgallery.title}</h1>
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-[family-name:var(--font-mono)] text-[11px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)] md:mt-4 md:gap-x-4">
+          {(() => {
+            const formatted = formatLocationForCard(subgallery.location);
+            return formatted ? <span>{formatted}</span> : null;
+          })()}
+          {subgallery.location && subgallery.dateLabel ? (
+            <span className="text-[color:var(--ink-faint)]">/</span>
+          ) : null}
+          {subgallery.dateLabel ? <span>{subgallery.dateLabel}</span> : null}
         </div>
+        {subgallery.description ? (
+          <CollapsibleEntry text={subgallery.description} className="mt-5 md:mt-7" />
+        ) : null}
       </section>
 
       <section className="mt-6 space-y-4 md:mt-8 md:space-y-5">
