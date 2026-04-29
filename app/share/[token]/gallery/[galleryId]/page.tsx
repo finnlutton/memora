@@ -177,7 +177,7 @@ export default async function PublicSharedGalleryPage({
           </div>
           <h1 className="mt-2 font-serif text-3xl leading-tight md:text-5xl">{gallery.title}</h1>
           {gallery.description ? (
-            <CollapsibleEntry text={gallery.description} className="mt-4 md:mt-5" />
+            <CollapsibleEntry text={gallery.description} className="mt-4 md:mt-5" defaultOpen />
           ) : null}
         </div>
 

@@ -220,7 +220,7 @@ export default async function PublicSharedSubgalleryPage({
             );
           })()}
           {subgallery.description ? (
-            <CollapsibleEntry text={subgallery.description} className="mt-4 md:mt-5" />
+            <CollapsibleEntry text={subgallery.description} className="mt-4 md:mt-5" defaultOpen />
           ) : null}
         </div>
 

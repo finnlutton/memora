@@ -14,12 +14,14 @@ export function CollapsibleEntry({
   text,
   className,
   label = "Read entry",
+  defaultOpen = false,
 }: {
   text: string;
   className?: string;
   label?: string;
+  defaultOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const trimmed = text?.trim() ?? "";
   if (!trimmed) return null;
 
