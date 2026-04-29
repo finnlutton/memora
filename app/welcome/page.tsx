@@ -51,13 +51,7 @@ export default function WelcomePage() {
   }, [hydrated, stage]);
 
   if (!hydrated) {
-    return (
-      <main className="flex min-h-screen items-center justify-center px-4">
-        <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
-          Memora
-        </p>
-      </main>
-    );
+    return <main className="flex min-h-screen items-center justify-center px-4" />;
   }
 
   if (!onboarding.isAuthenticated) {
@@ -91,28 +85,15 @@ export default function WelcomePage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <section className="w-full max-w-xl text-center">
-        <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-[color:var(--ink-soft)]">
-          Memora
-        </p>
-
         {stage === "naming" ? (
-          <form onSubmit={submitName} className="mt-4 space-y-6">
-            <div>
-              <h1 className="font-serif text-3xl leading-tight text-[color:var(--ink)] md:text-5xl">
-                What should we call you?
-              </h1>
-              <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[color:var(--ink-soft)] md:mt-4 md:text-[15px] md:leading-8">
-                Just the version of your name you&apos;d like to see across your
-                archive — first name or nickname is plenty.
-              </p>
-            </div>
+          <form onSubmit={submitName} className="space-y-8">
+            <h1 className="font-serif text-3xl leading-tight text-[color:var(--ink)] md:text-5xl">
+              What should we call you?
+            </h1>
 
-            <div className="mx-auto max-w-sm space-y-2 text-left">
-              <label
-                htmlFor="welcome-name"
-                className="block text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink-soft)]"
-              >
-                Your name
+            <div className="mx-auto max-w-sm">
+              <label htmlFor="welcome-name" className="sr-only">
+                First name or nickname
               </label>
               <input
                 ref={inputRef}
