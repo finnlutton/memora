@@ -1,7 +1,6 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { CalendarDays, ChevronDown, MapPin } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import {
@@ -14,11 +13,11 @@ import {
  * Home gallery reveal — progressive-disclosure demo of Memora's hierarchy.
  *
  *   Gallery  (always visible as the anchor)
- *     └── 3 Subgalleries  (revealed when the gallery is opened)
- *           └── 3 Scenes each  (revealed when a subgallery is opened)
+ *     └── 3 Subgalleries  (revealed when the gallery is clicked)
+ *           └── scenes each  (revealed when a subgallery is clicked)
  *
- * Copy and image paths are defined in `lib/home-gallery-demo-data.ts`.
- * Drop image files into `public/demo/home-gallery/` — see the README there.
+ * The cover image itself is the click target at every level — no separate
+ * "Open" toggle. Editorial chrome mirrors the live gallery + share screens.
  */
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -43,12 +42,12 @@ export function HomeGalleryReveal() {
           A time period, broken into its adventures.
         </h2>
         <p className="mx-auto mt-5 max-w-xl text-[14px] leading-7 text-[color:var(--ink-soft)] md:text-[15px]">
-          Open my gallery to see what I mean. If you prefer
+          Click my gallery to see what I mean. If you prefer
           organization, you won&apos;t look back.
         </p>
       </div>
 
-      <div className="mx-auto mt-12 flex w-full max-w-5xl flex-col items-center">
+      <div className="mx-auto mt-12 flex w-full max-w-7xl flex-col items-center">
         {/* ── Level 1: Gallery ─────────────────────────────────────────── */}
         <GalleryCard
           title={gallery.title}
@@ -57,7 +56,7 @@ export function HomeGalleryReveal() {
           description={gallery.description}
           image={gallery.coverImage}
           open={galleryOpen}
-          onClick={toggleGallery}
+          onToggle={toggleGallery}
         />
 
         {/* ── Level 2: Subgalleries ────────────────────────────────────── */}
@@ -72,23 +71,22 @@ export function HomeGalleryReveal() {
               className="w-full overflow-hidden"
             >
               <div className="pt-2">
-                {/* Branching stem from gallery down to three subgalleries */}
                 <BranchConnector count={gallery.subgalleries.length} />
 
-                <div className="mt-0 grid grid-cols-3 gap-2.5 md:gap-5">
+                <div className="mt-0 grid gap-x-6 gap-y-12 sm:grid-cols-2 md:grid-cols-3 md:gap-x-8 md:gap-y-16">
                   {gallery.subgalleries.map((sub) => (
                     <SubgalleryCard
                       key={sub.id}
                       sub={sub}
                       open={openSubId === sub.id}
-                      onClick={() =>
+                      onToggle={() =>
                         setOpenSubId((prev) => (prev === sub.id ? null : sub.id))
                       }
                     />
                   ))}
                 </div>
 
-                {/* ── Level 3: Scenes — pushed below the subgalleries row ─── */}
+                {/* ── Level 3: Scenes ─────────────────────────────────── */}
                 <AnimatePresence initial={false}>
                   {openSubId ? (
                     <motion.div
@@ -99,28 +97,11 @@ export function HomeGalleryReveal() {
                       transition={{ duration: 0.44, ease: EASE }}
                       className="overflow-hidden"
                     >
-                      <div className="pt-4">
-                        <SceneStemConnector
-                          openIndex={gallery.subgalleries.findIndex(
-                            (s) => s.id === openSubId,
-                          )}
-                          total={gallery.subgalleries.length}
-                        />
-                        {/*
-                          Mobile-only descriptor — the subgallery's full
-                          description rides above the 2×2 scene grid as
-                          another item flowing from the open subgallery,
-                          and animates in/out with the scenes when the
-                          user switches between subgalleries.
-                        */}
-                        <div className="mb-3 rounded-lg border border-[color:var(--border)] bg-white px-3.5 py-3 shadow-[0_8px_22px_-14px_rgba(18,31,48,0.18)] md:hidden">
-                          <p className="text-[12px] leading-[1.55] text-[color:var(--ink-soft)]">
-                            {gallery.subgalleries.find(
-                              (s) => s.id === openSubId,
-                            )?.description}
-                          </p>
-                        </div>
-                        <div className="mt-2 grid grid-cols-2 gap-2 sm:gap-5">
+                      <div className="pt-10 md:pt-14">
+                        <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
+                          Scenes
+                        </p>
+                        <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-7 md:gap-x-6 md:gap-y-10">
                           {(gallery.subgalleries.find((s) => s.id === openSubId)
                             ?.scenes ?? []).map((scene, i) => (
                             <SceneCard key={scene.id} scene={scene} index={i} />
@@ -148,7 +129,7 @@ function GalleryCard({
   description,
   image,
   open,
-  onClick,
+  onToggle,
 }: {
   title: string;
   location: string;
@@ -156,46 +137,44 @@ function GalleryCard({
   description: string;
   image: string;
   open: boolean;
-  onClick: () => void;
+  onToggle: () => void;
 }) {
   return (
-    <motion.button
-      type="button"
-      onClick={onClick}
+    <motion.div
       whileHover={{ y: -2 }}
       transition={{ duration: 0.24, ease: EASE }}
-      className="group relative w-full max-w-[42rem] overflow-hidden rounded-xl border border-[color:var(--border)] bg-white text-left shadow-[0_18px_48px_-24px_rgba(18,31,48,0.22)]"
-      aria-expanded={open}
+      className="w-full max-w-[44rem]"
     >
-      <Cover
-        src={image}
-        alt={title}
-        aspectClass="aspect-[1.55/1]"
-        sizes="(max-width: 768px) 100vw, 672px"
-      />
-      <div className="px-5 py-4 md:px-8 md:py-6">
-        <p className="text-[9.5px] font-medium uppercase tracking-[0.3em] text-[color:var(--ink-faint)] md:text-[10px]">
-          Gallery
-        </p>
-        <h3 className="mt-1.5 font-serif text-[20px] leading-[1.08] text-[color:var(--ink)] md:mt-2 md:text-[30px]">
+      <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
+        Gallery
+      </p>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-label={open ? "Close gallery" : "Open gallery"}
+        className="group mt-3 block w-full text-left"
+      >
+        <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-2 md:p-[14px]">
+          <div className="relative aspect-[16/10] overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)]">
+            <Cover
+              src={image}
+              alt={title}
+              sizes="(max-width: 768px) 100vw, 704px"
+            />
+          </div>
+        </div>
+        <h3 className="mt-2 font-serif text-[26px] leading-[1.08] text-[color:var(--ink)] md:mt-3 md:text-[34px]">
           {title}
         </h3>
-        <Meta location={location} dates={dates} className="mt-1.5 md:mt-2.5" />
-        <p className="mt-2 max-w-xl text-[12.5px] leading-[1.55] text-[color:var(--ink-soft)] md:mt-3 md:text-[14.5px] md:leading-7">
-          {description}
-        </p>
-        <div className="mt-3 inline-flex items-center gap-2 text-[10.5px] font-medium uppercase tracking-[0.22em] text-[color:var(--ink-soft)] md:mt-5">
-          <motion.span
-            animate={{ rotate: open ? 180 : 0 }}
-            transition={{ duration: 0.32, ease: EASE }}
-            className="inline-flex"
-          >
-            <ChevronDown className="h-3.5 w-3.5" strokeWidth={2} />
-          </motion.span>
-          {open ? "Close gallery" : "Open gallery"}
-        </div>
-      </div>
-    </motion.button>
+      </button>
+      <p className="mt-2 font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)]">
+        {[location, dates].filter(Boolean).join(" · ")}
+      </p>
+      <p className="mt-3 text-[14px] leading-7 text-[color:var(--ink-soft)] md:mt-4 md:text-[15px]">
+        {description}
+      </p>
+    </motion.div>
   );
 }
 
@@ -204,63 +183,51 @@ function GalleryCard({
 function SubgalleryCard({
   sub,
   open,
-  onClick,
+  onToggle,
 }: {
   sub: DemoSubgallery;
   open: boolean;
-  onClick: () => void;
+  onToggle: () => void;
 }) {
+  const meta = [sub.location, sub.dates].filter(Boolean).join(" · ");
   return (
-    <motion.button
-      type="button"
-      onClick={onClick}
+    <motion.div
       whileHover={{ y: -2 }}
       transition={{ duration: 0.22, ease: EASE }}
-      animate={{
-        borderColor: open ? "var(--border-strong)" : "var(--border)",
-      }}
-      className="relative flex h-full flex-col overflow-hidden rounded-lg border bg-white text-left shadow-[0_10px_26px_-18px_rgba(18,31,48,0.22)]"
-      aria-expanded={open}
+      className="flex flex-col"
     >
-      <Cover
-        src={sub.coverImage}
-        alt={sub.title}
-        aspectClass="aspect-[5/4]"
-        sizes="(max-width: 768px) 33vw, 340px"
-      />
-      <div className="flex-1 px-2 py-2 md:px-5 md:py-5">
-        <p className="hidden text-[9.5px] font-medium uppercase tracking-[0.28em] text-[color:var(--ink-faint)] md:block">
-          Subgallery
-        </p>
-        <h4 className="line-clamp-3 font-serif text-[10.5px] leading-[1.18] text-[color:var(--ink)] md:mt-1.5 md:line-clamp-none md:text-[19px] md:leading-tight">
+      <p className="font-[family-name:var(--font-mono)] text-[9.5px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
+        Subgallery
+      </p>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-label={open ? `Hide scenes in ${sub.title}` : `Open scenes in ${sub.title}`}
+        className="group mt-3 block w-full text-left"
+      >
+        <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-2 md:p-[12px]">
+          <div className="relative aspect-[5/3] overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)]">
+            <Cover
+              src={sub.coverImage}
+              alt={sub.title}
+              sizes="(max-width: 640px) 100vw, 50vw"
+            />
+          </div>
+        </div>
+        <h4 className="mt-2 font-serif text-[22px] leading-[1.12] text-[color:var(--ink)] md:mt-3 md:text-[28px]">
           {sub.title}
         </h4>
-        <div className="hidden md:block">
-          <Meta
-            location={sub.location}
-            dates={sub.dates}
-            className="mt-2"
-            size="xs"
-          />
-          <p className="mt-2.5 text-[12.5px] leading-6 text-[color:var(--ink-soft)]">
-            {sub.description}
-          </p>
-        </div>
-        <div className="mt-1.5 inline-flex items-center gap-1 text-[8px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)] md:mt-3 md:gap-1.5 md:text-[9.5px] md:tracking-[0.22em]">
-          <motion.span
-            animate={{ rotate: open ? 180 : 0 }}
-            transition={{ duration: 0.28, ease: EASE }}
-            className="inline-flex"
-          >
-            <ChevronDown className="h-2.5 w-2.5 md:h-3 md:w-3" strokeWidth={2} />
-          </motion.span>
-          <span className="md:hidden">{open ? "Hide" : "Open"}</span>
-          <span className="hidden md:inline">
-            {open ? "Hide scenes" : "Open scenes"}
-          </span>
-        </div>
-      </div>
-    </motion.button>
+      </button>
+      {meta ? (
+        <p className="mt-2 font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)]">
+          {meta}
+        </p>
+      ) : null}
+      <p className="mt-3 text-[14px] leading-[1.65] text-[color:var(--ink-soft)] md:text-[15px]">
+        {sub.description}
+      </p>
+    </motion.div>
   );
 }
 
@@ -274,16 +241,17 @@ function SceneCard({ scene, index }: { scene: DemoScene; index: number }) {
       transition={{ duration: 0.32, ease: EASE, delay: 0.04 + index * 0.04 }}
       className="flex flex-col"
     >
-      <div className="overflow-hidden rounded-lg shadow-[0_10px_26px_-16px_rgba(18,31,48,0.24)]">
-        <Cover
-          src={scene.image}
-          alt={scene.title ?? "Scene"}
-          aspectClass="aspect-[4/3]"
-          sizes="(max-width: 768px) 50vw, 480px"
-        />
+      <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-1.5 md:p-2.5">
+        <div className="relative aspect-[4/3] overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)]">
+          <Cover
+            src={scene.image}
+            alt={scene.title ?? "Scene"}
+            sizes="(max-width: 768px) 50vw, 480px"
+          />
+        </div>
       </div>
       {scene.caption ? (
-        <p className="mt-2 hidden line-clamp-2 px-0.5 text-[10.5px] leading-[1.45] text-[color:var(--ink-soft)] md:block md:text-[11px]">
+        <p className="mt-2.5 font-serif text-[13px] italic leading-snug text-[color:var(--ink-soft)] md:text-[14px]">
           {scene.caption}
         </p>
       ) : null}
@@ -293,135 +261,29 @@ function SceneCard({ scene, index }: { scene: DemoScene; index: number }) {
 
 /* ── Shared primitives ───────────────────────────────────────────────── */
 
-function Meta({
-  location,
-  dates,
-  className = "",
-  size = "sm",
-}: {
-  location: string;
-  dates?: string;
-  className?: string;
-  size?: "xs" | "sm";
-}) {
-  const textCls =
-    size === "xs"
-      ? "text-[10px] tracking-[0.16em]"
-      : "text-[10.5px] tracking-[0.18em]";
-  const iconCls = size === "xs" ? "h-3 w-3" : "h-3.5 w-3.5";
-  return (
-    <div
-      className={`flex flex-wrap items-center gap-x-3 gap-y-1 ${textCls} font-medium uppercase text-[color:var(--ink-faint)] ${className}`}
-    >
-      <span className="inline-flex items-center gap-1.5">
-        <MapPin className={iconCls} strokeWidth={1.6} />
-        {location}
-      </span>
-      {dates ? (
-        <span className="inline-flex items-center gap-1.5">
-          <CalendarDays className={iconCls} strokeWidth={1.6} />
-          {dates}
-        </span>
-      ) : null}
-    </div>
-  );
-}
-
-/**
- * Scene stem connector: a vertical line dropping from the center of the
- * opened subgallery column down to the scenes grid below, then angling to
- * the horizontal center so the scenes clearly descend from their parent.
- * Hidden on narrow screens where everything stacks vertically.
- */
-function SceneStemConnector({
-  openIndex,
-  total,
-}: {
-  openIndex: number;
-  total: number;
-}) {
-  if (openIndex < 0 || total <= 0) return null;
-  // Center X of the opened subgallery card, within the shared full-width
-  // container that holds both the subgalleries grid and the scenes grid.
-  const parentPct = (100 / total) * openIndex + 100 / (2 * total);
-  // Scene centers in a 2-column full-width grid.
-  const leftChildPct = 25;
-  const rightChildPct = 75;
-  const stem = 16;
-  const drop = 14;
-  const ruleLeft = Math.min(parentPct, leftChildPct);
-  const ruleRight = Math.max(parentPct, rightChildPct);
-  return (
-    <div className="relative mx-auto hidden w-full md:block" aria-hidden>
-      {/* Parent stem: drops from the opened subgallery's center */}
-      <div className="relative" style={{ height: stem }}>
-        <div
-          className="absolute w-px bg-[color:var(--border-strong)] opacity-55"
-          style={{ left: `calc(${parentPct}% - 0.5px)`, top: 0, height: stem }}
-        />
-      </div>
-      {/* Horizontal rule joining the parent stem to both children */}
-      <div className="relative" style={{ height: 1 }}>
-        <div
-          className="absolute top-0 h-px bg-[color:var(--border-strong)] opacity-55"
-          style={{ left: `${ruleLeft}%`, right: `${100 - ruleRight}%` }}
-        />
-      </div>
-      {/* Two symmetric drops into each scene's center */}
-      <div className="relative" style={{ height: drop }}>
-        <div
-          className="absolute w-px bg-[color:var(--border-strong)] opacity-55"
-          style={{ left: `calc(${leftChildPct}% - 0.5px)`, top: 0, height: drop }}
-        />
-        <div
-          className="absolute w-px bg-[color:var(--border-strong)] opacity-55"
-          style={{ left: `calc(${rightChildPct}% - 0.5px)`, top: 0, height: drop }}
-        />
-      </div>
-    </div>
-  );
-}
-
 /**
  * Branching connector: a short vertical stem from the parent, a horizontal
  * rule spanning the children's centers, and a short vertical drop into
  * each child. Hidden on narrow screens where children stack vertically.
  */
-function BranchConnector({
-  count,
-  tight = false,
-}: {
-  count: number;
-  tight?: boolean;
-}) {
-  const stemHeight = tight ? 14 : 22;
-  const dropHeight = tight ? 10 : 16;
-  // Horizontal rule spans from the center of the first child to the center
-  // of the last child. In an N-column grid with equal widths, those
-  // centers sit at 1/(2N) and 1 - 1/(2N).
+function BranchConnector({ count }: { count: number }) {
+  const stemHeight = 22;
+  const dropHeight = 16;
   const leftPct = 100 / (2 * count);
   const rightPct = 100 - leftPct;
 
   return (
-    <div
-      className={`relative mx-auto w-full ${
-        tight ? "hidden md:block" : "hidden md:block"
-      }`}
-      aria-hidden
-    >
-      {/* Parent stem */}
+    <div className="relative mx-auto hidden w-full sm:block" aria-hidden>
       <div
         className="mx-auto w-px bg-[color:var(--border-strong)] opacity-55"
         style={{ height: stemHeight }}
       />
-      {/* Horizontal rule across child centers */}
       <div className="relative" style={{ height: 1 }}>
         <div
           className="absolute top-0 h-px bg-[color:var(--border-strong)] opacity-55"
           style={{ left: `${leftPct}%`, right: `${100 - rightPct}%` }}
         />
       </div>
-      {/* Drops into each child */}
       <div className="relative" style={{ height: dropHeight }}>
         {Array.from({ length: count }).map((_, i) => {
           const centerPct = (100 / count) * i + 100 / (2 * count);
@@ -439,33 +301,23 @@ function BranchConnector({
 }
 
 /**
- * Cover — wraps next/image with the same soft neutral fallback used
- * before. The home gallery section sits below the fold, so we lazy-load
- * everything by default. The container's CSS gradient acts as the
- * placeholder while the image streams in (no extra blur asset needed).
- *
- * `sizes` defaults to a hint that matches the typical render widths
- * across the gallery reveal — gallery cover, subgallery card, scene
- * tile. Callers can override for tighter precision.
+ * Cover — wraps next/image with a soft neutral fallback. The home gallery
+ * section sits below the fold, so we lazy-load everything by default.
  */
 function Cover({
   src,
   alt,
-  aspectClass,
   sizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
   priority = false,
 }: {
   src: string;
   alt: string;
-  aspectClass: string;
   sizes?: string;
   priority?: boolean;
 }) {
   const [errored, setErrored] = useState(false);
   return (
-    <div
-      className={`relative w-full overflow-hidden ${aspectClass} bg-[linear-gradient(145deg,#eef2f7_0%,#dde5ee_100%)]`}
-    >
+    <>
       {!errored ? (
         <Image
           src={src}
@@ -475,16 +327,16 @@ function Cover({
           quality={80}
           priority={priority}
           loading={priority ? "eager" : "lazy"}
-          className="object-cover"
+          className="object-cover transition duration-[700ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.015]"
           onError={() => setErrored(true)}
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-[9px] uppercase tracking-[0.3em] text-[color:var(--ink-faint)]">
+          <span className="font-[family-name:var(--font-mono)] text-[9px] uppercase tracking-[0.3em] text-[color:var(--ink-faint)]">
             Placeholder
           </span>
         </div>
       )}
-    </div>
+    </>
   );
 }

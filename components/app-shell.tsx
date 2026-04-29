@@ -98,6 +98,7 @@ export function AppShell({
         no overflow bleed. At retina the 1040×240 PNG oversamples ~6–7×
         so it stays crisp.
       */}
+      {!isHomePage && (
       <header className="sticky top-0 z-30 border-b border-[color:var(--border)] bg-[color:var(--chrome)] backdrop-blur-xl">
         <div className="flex h-14 w-full items-center justify-between gap-4 px-4 md:h-[72px] md:px-6">
           <Link
@@ -152,6 +153,7 @@ export function AppShell({
           </nav>
         </div>
       </header>
+      )}
       <main
         className={cn(
           "relative z-10 mx-auto w-full max-w-7xl px-4 md:px-6",

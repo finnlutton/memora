@@ -39,8 +39,8 @@ export function HomeHero({
       aria-labelledby="home-hero-title"
       className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden"
     >
-      {/* Stage height: full viewport minus the sticky header (72 md / 56 mobile). */}
-      <div className="relative h-[calc(100svh-56px)] min-h-[520px] w-full md:h-[calc(100svh-72px)] md:min-h-[640px]">
+      {/* Stage height: full viewport — header is hidden on the home page. */}
+      <div className="relative h-[100svh] min-h-[520px] w-full md:min-h-[640px]">
         {/*
           quality={95} to minimize compression softness. Pixel-count softness
           (upscale artifacts from a <1024px source to >2880px display) is a

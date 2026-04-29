@@ -98,17 +98,13 @@ export default function HomePage() {
 
       {/*
         Memory globe — stays on the site's normal paper. Section break is
-        done with a hairline rule and a faint, very soft radial glow behind
-        the globe — enough to say "new chapter" without changing palette.
+        a faint radial glow behind the globe; no hairline rule, since the
+        partial-width inset-x-4 line read as cropping the layout.
       */}
       <section
         aria-label="Memora Map"
         className="relative mx-auto w-full max-w-7xl px-4 py-24 md:px-6 md:py-32"
       >
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-4 top-0 h-px bg-[color:var(--border)] opacity-70 md:inset-x-6"
-        />
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_70%_50%,rgba(120,150,195,0.10)_0%,transparent_60%)]"
