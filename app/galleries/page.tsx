@@ -127,7 +127,11 @@ export default function GalleriesPage() {
     <AppShell>
       <WorkspaceTopbar
         eyebrow="Workspace"
-        title="My Galleries"
+        title={
+          onboarding.displayName
+            ? `${onboarding.displayName}${onboarding.displayName.endsWith("s") ? "'" : "'s"} galleries`
+            : "My Galleries"
+        }
         subtitle="Curate, preserve, and share your experiences here."
         hideTitleOnMobile
         // Desktop: stack actions vertically and center the stack

@@ -163,10 +163,11 @@ export function AuthCard() {
               },
               "auth-card:signup",
             )
-          : { hasSeenWelcome: false, selectedPlanId: null };
+          : { hasSeenWelcome: false, selectedPlanId: null, displayName: null };
         const nextRoute = getNextAuthenticatedRoute({
           ...createMembershipState(profileState.selectedPlanId),
           welcomeStepCompleted: profileState.hasSeenWelcome,
+          displayName: profileState.displayName ?? null,
         });
 
         setIsTransitioning(true);
@@ -206,12 +207,21 @@ export function AuthCard() {
               },
               "auth-card:signin",
             )
-          : { hasSeenWelcome: false, selectedPlanId: null };
+          : { hasSeenWelcome: false, selectedPlanId: null, displayName: null };
         const membershipState = createMembershipState(profileState.selectedPlanId);
-        const nextRoute = redirectTo ?? getNextAuthenticatedRoute({
+        // Note: redirectTo is honored only when it points at /galleries
+        // and the user is fully onboarded. If the user still needs to
+        // set a display name we always send them through /welcome
+        // first; the original redirect target is forgotten because the
+        // welcome flow ends on /galleries either way.
+        const computedRoute = getNextAuthenticatedRoute({
           ...membershipState,
           welcomeStepCompleted: profileState.hasSeenWelcome,
+          displayName: profileState.displayName ?? null,
         });
+        const nextRoute = computedRoute === "/galleries"
+          ? (redirectTo ?? computedRoute)
+          : computedRoute;
 
         setIsTransitioning(true);
         setInfo("Logging you in...");

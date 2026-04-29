@@ -7,6 +7,13 @@ export type MembershipState = {
 
 export type AuthenticatedRouteState = MembershipState & {
   welcomeStepCompleted: boolean;
+  /**
+   * Required: a user without a non-empty display name is held at the
+   * /welcome step. This applies to brand-new sign-ups AND to existing
+   * accounts that pre-date the display-name requirement, so anyone
+   * missing a name on their next login is asked to set one.
+   */
+  displayName: string | null;
 };
 
 export type AuthUserLike = {
@@ -23,7 +30,10 @@ export function createMembershipState(selectedPlanId: MembershipPlanId | null): 
 }
 
 export function getNextAuthenticatedRoute(state: AuthenticatedRouteState) {
-  if (!state.welcomeStepCompleted) {
+  // /welcome handles two gating concerns: the legacy "have they seen
+  // the welcome screen" flag AND the new "do they have a display
+  // name" requirement. Either missing piece routes the user back.
+  if (!state.welcomeStepCompleted || !state.displayName) {
     return "/welcome";
   }
   return "/galleries";

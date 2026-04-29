@@ -78,6 +78,7 @@ export async function middleware(request: NextRequest) {
       {
         ...createMembershipState(profileState.selectedPlanId),
         welcomeStepCompleted: profileState.hasSeenWelcome,
+        displayName: profileState.displayName,
       },
     );
     return NextResponse.redirect(url);
@@ -103,6 +104,7 @@ export async function middleware(request: NextRequest) {
     const nextRoute = getNextAuthenticatedRoute({
       ...membershipState,
       welcomeStepCompleted: profileState.hasSeenWelcome,
+      displayName: profileState.displayName,
     });
 
     if (pathname.startsWith("/galleries") && nextRoute !== "/galleries") {

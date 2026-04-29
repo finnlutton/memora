@@ -1,7 +1,18 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { sanitizeDisplayName } from "@/lib/profile-state";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export async function POST() {
+/**
+ * Marks the user as having completed the welcome step. Now also
+ * persists the display name they entered on /welcome — without one,
+ * the user is held at /welcome by the onboarding gate.
+ */
+
+type WelcomeCompletePayload = {
+  displayName?: string;
+};
+
+export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
     const {
@@ -13,10 +24,28 @@ export async function POST() {
       return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
     }
 
+    let payload: WelcomeCompletePayload = {};
+    try {
+      payload = (await request.json()) as WelcomeCompletePayload;
+    } catch {
+      // Body is optional only for tests / clients that defaulted to
+      // POST without a payload — the validation below still requires
+      // a name, so an empty body errors out.
+    }
+
+    const sanitizedName = sanitizeDisplayName(payload.displayName);
+    if (!sanitizedName) {
+      return NextResponse.json(
+        { error: "Please enter a name we can call you by." },
+        { status: 400 },
+      );
+    }
+
     const updateAttempt = await supabase
       .from("profiles")
       .update({
         has_seen_welcome: true,
+        display_name: sanitizedName,
         email: user.email ?? null,
         selected_plan: "free",
       })
@@ -42,6 +71,7 @@ export async function POST() {
         id: user.id,
         email: user.email ?? null,
         has_seen_welcome: true,
+        display_name: sanitizedName,
         selected_plan: "free",
       });
       if (insertAttempt.error) {
@@ -58,7 +88,7 @@ export async function POST() {
       }
     }
 
-    return NextResponse.json({ ok: true }, { status: 200 });
+    return NextResponse.json({ ok: true, displayName: sanitizedName }, { status: 200 });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unable to complete welcome step." },

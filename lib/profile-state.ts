@@ -6,6 +6,7 @@ export type ProfileStateRow = {
   email?: string | null;
   selected_plan?: string | null;
   has_seen_welcome?: boolean | null;
+  display_name?: string | null;
 } | null;
 
 type ProfileQueryClient = {
@@ -54,7 +55,17 @@ export type ResolvedProfileState = {
   exists: boolean;
   hasSeenWelcome: boolean;
   selectedPlanId: MembershipPlanId | null;
+  displayName: string | null;
 };
+
+export const DISPLAY_NAME_MAX_LENGTH = 40;
+
+export function sanitizeDisplayName(input: unknown): string | null {
+  if (typeof input !== "string") return null;
+  const trimmed = input.trim().replace(/\s+/g, " ");
+  if (!trimmed) return null;
+  return trimmed.slice(0, DISPLAY_NAME_MAX_LENGTH);
+}
 
 export async function ensureProfileRow(
   supabase: ProfileQueryClient,
@@ -127,12 +138,13 @@ export async function loadProfileState(
       exists: false,
       hasSeenWelcome: false,
       selectedPlanId: null,
+      displayName: null,
     } satisfies ResolvedProfileState;
   }
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, selected_plan, has_seen_welcome")
+    .select("id, selected_plan, has_seen_welcome, display_name")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -150,6 +162,7 @@ export async function loadProfileState(
       exists: false,
       hasSeenWelcome: false,
       selectedPlanId: "free",
+      displayName: null,
     } satisfies ResolvedProfileState;
   }
 
@@ -174,7 +187,50 @@ export async function loadProfileState(
     exists: true,
     hasSeenWelcome: Boolean(data.has_seen_welcome),
     selectedPlanId: normalizedPlan,
+    displayName: sanitizeDisplayName(data.display_name),
   } satisfies ResolvedProfileState;
+}
+
+export async function setDisplayName(
+  supabase: ProfileQueryClient,
+  user: ProfileIdentity | null | undefined,
+  displayName: string,
+  context: string,
+) {
+  if (!user?.id) {
+    const error = new Error("User id missing for display_name update.");
+    console.error("Memora: failed to update display_name", {
+      context,
+      user,
+      error,
+    });
+    return { ok: false as const, error };
+  }
+
+  const sanitized = sanitizeDisplayName(displayName);
+  if (!sanitized) {
+    const error = new Error("Please enter at least one non-blank character.");
+    return { ok: false as const, error };
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      display_name: sanitized,
+      email: user.email ?? null,
+    })
+    .eq("id", user.id);
+
+  if (error) {
+    console.error("Memora: failed to update display_name", {
+      context,
+      userId: user.id,
+      error,
+    });
+    return { ok: false as const, error };
+  }
+
+  return { ok: true as const, error: null, displayName: sanitized };
 }
 
 export async function setHasSeenWelcome(

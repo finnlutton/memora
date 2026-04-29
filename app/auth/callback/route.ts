@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
   const normalizedOrigin = new URL(requestOrigin);
   url.protocol = normalizedOrigin.protocol;
   url.host = normalizedOrigin.host;
-  if (!profileState.hasSeenWelcome) {
+  if (!profileState.hasSeenWelcome || !profileState.displayName) {
     applyInternalRedirect(url, next, "/welcome");
     if (url.pathname !== "/welcome") {
       applyInternalRedirect(url, "/welcome", "/welcome");
@@ -109,6 +109,7 @@ export async function GET(request: NextRequest) {
   const fallbackRoute = getNextAuthenticatedRoute({
     ...createMembershipState(profileState.selectedPlanId),
     welcomeStepCompleted: profileState.hasSeenWelcome,
+    displayName: profileState.displayName,
   });
   applyInternalRedirect(url, next, fallbackRoute);
   return NextResponse.redirect(url);

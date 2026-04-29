@@ -18,6 +18,8 @@ import {
 import {
   ensureProfileRow,
   loadProfileState,
+  sanitizeDisplayName,
+  setDisplayName,
   setHasSeenWelcome,
   setSelectedPlan,
 } from "@/lib/profile-state";
@@ -176,6 +178,12 @@ type OnboardingState = {
   selectedPlanId: MembershipPlanId | null;
   onboardingComplete: boolean;
   welcomeStepCompleted: boolean;
+  /**
+   * The user's chosen display name (first name or nickname). Null
+   * until they finish the welcome step. Surfaced in the dashboard
+   * heading, editable from Settings → Account.
+   */
+  displayName: string | null;
   user: {
     id: string;
     email: string;
@@ -258,10 +266,24 @@ type MemoraStore = {
   signOut: () => void;
   syncOnboardingFromUser: (
     user: AuthUserLike,
-    profileState?: { hasSeenWelcome: boolean; selectedPlanId: MembershipPlanId | null },
+    profileState?: {
+      hasSeenWelcome: boolean;
+      selectedPlanId: MembershipPlanId | null;
+      displayName?: string | null;
+    },
   ) => void;
   completeCheckout: (planId: MembershipPlanId) => Promise<void>;
-  completeWelcomeStep: () => Promise<void>;
+  /**
+   * Save the user's chosen display name and mark the welcome step
+   * complete. Called from the /welcome page after the user submits
+   * their first name or nickname.
+   */
+  completeWelcomeStep: (displayName: string) => Promise<void>;
+  /**
+   * Update the user's display name without re-triggering the
+   * welcome flow. Used by Settings → Account.
+   */
+  updateDisplayName: (nextName: string) => Promise<void>;
   resetOnboarding: () => void;
   getNextOnboardingRoute: () => string;
   scanOrphanedStorageObjects: () => Promise<{
@@ -798,6 +820,7 @@ const defaultOnboardingState: OnboardingState = {
   selectedPlanId: null,
   onboardingComplete: false,
   welcomeStepCompleted: false,
+  displayName: null,
   user: null,
 };
 
@@ -883,7 +906,11 @@ function loadStoredGalleryCollections() {
 
 function buildOnboardingStateFromUser(
   user: AuthUserLike,
-  profileState = { hasSeenWelcome: false, selectedPlanId: null as MembershipPlanId | null },
+  profileState: {
+    hasSeenWelcome: boolean;
+    selectedPlanId: MembershipPlanId | null;
+    displayName?: string | null;
+  } = { hasSeenWelcome: false, selectedPlanId: null, displayName: null },
 ): OnboardingState {
   const membershipState = createMembershipState(profileState.selectedPlanId);
 
@@ -892,6 +919,7 @@ function buildOnboardingStateFromUser(
     selectedPlanId: membershipState.selectedPlanId,
     onboardingComplete: membershipState.onboardingComplete,
     welcomeStepCompleted: Boolean(user) ? profileState.hasSeenWelcome : false,
+    displayName: Boolean(user) ? profileState.displayName ?? null : null,
     user: user?.id ? { id: user.id, email: user.email ?? "" } : null,
   };
 }
@@ -1040,7 +1068,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
               },
               "store:initial-sync",
             )
-          : { hasSeenWelcome: false, selectedPlanId: null };
+          : { hasSeenWelcome: false, selectedPlanId: null, displayName: null };
         const persistedUserGalleries = nextUser
           ? await withTimeout(
               loadUserGalleriesFromSupabase(supabase, nextUser.id),
@@ -1181,9 +1209,9 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             "loadProfileState",
           ).catch((error) => {
             console.error("Memora: loadProfileState failed", error);
-            return { hasSeenWelcome: false, selectedPlanId: null };
+            return { hasSeenWelcome: false, selectedPlanId: null, displayName: null };
           })
-        : { hasSeenWelcome: false, selectedPlanId: null };
+        : { hasSeenWelcome: false, selectedPlanId: null, displayName: null };
       const nextUserGalleries = user
         ? await withTimeout(
             loadUserGalleriesFromSupabase(supabase, user.id),
@@ -2563,13 +2591,18 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           welcomeStepCompleted: true,
         }));
       },
-      async completeWelcomeStep() {
+      async completeWelcomeStep(rawDisplayName) {
         const supabase = getSupabase();
         const userId = onboarding.user?.id;
         const userEmail = onboarding.user?.email ?? null;
 
         if (!userId) {
           throw new Error("Please sign in again before continuing.");
+        }
+
+        const sanitized = sanitizeDisplayName(rawDisplayName);
+        if (!sanitized) {
+          throw new Error("Please enter a name we can call you by.");
         }
 
         const profileState = await loadProfileState(
@@ -2596,6 +2629,19 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
+        const nameWrite = await setDisplayName(
+          supabase,
+          {
+            id: userId,
+            email: userEmail,
+          },
+          sanitized,
+          "store:complete-welcome-step:display-name",
+        );
+        if (!nameWrite.ok) {
+          throw nameWrite.error ?? new Error("Unable to save your name right now.");
+        }
+
         const profileWrite = await setHasSeenWelcome(
           supabase,
           {
@@ -2618,6 +2664,35 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         setOnboarding((current) => ({
           ...current,
           welcomeStepCompleted: true,
+          displayName: sanitized,
+        }));
+      },
+      async updateDisplayName(rawDisplayName) {
+        const supabase = getSupabase();
+        const userId = onboarding.user?.id;
+        const userEmail = onboarding.user?.email ?? null;
+
+        if (!userId) {
+          throw new Error("Please sign in again before continuing.");
+        }
+
+        const sanitized = sanitizeDisplayName(rawDisplayName);
+        if (!sanitized) {
+          throw new Error("Please enter at least one non-blank character.");
+        }
+
+        const result = await setDisplayName(
+          supabase,
+          { id: userId, email: userEmail },
+          sanitized,
+          "store:update-display-name",
+        );
+        if (!result.ok) {
+          throw result.error ?? new Error("Unable to save your name right now.");
+        }
+        setOnboarding((current) => ({
+          ...current,
+          displayName: sanitized,
         }));
       },
       resetOnboarding() {
@@ -2629,6 +2704,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         }
         return getNextAuthenticatedRoute({
           welcomeStepCompleted: onboarding.welcomeStepCompleted,
+          displayName: onboarding.displayName,
           selectedPlanId: onboarding.selectedPlanId,
           onboardingComplete: onboarding.onboardingComplete,
         });
