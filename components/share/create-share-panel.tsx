@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, Plus, Share2, X } from "lucide-react";
+import { Check, Pencil, Plus, Share2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { createId } from "@/lib/utils";
@@ -160,28 +160,37 @@ export function CreateSharePanel({
               {groups.map((group) => {
                 const checked = selectedGroupIds.includes(group.id);
                 return (
-                  <div key={group.id} className="flex items-center gap-2">
+                  <div key={group.id} className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => onToggleGroup(group.id)}
-                      className={`inline-flex h-5 w-5 items-center justify-center rounded-full border transition ${
-                        checked
-                          ? "border-[color:var(--accent-strong)] bg-[color:var(--accent-strong)] text-white"
-                          : "border-[rgba(41,62,90,0.28)] text-transparent"
-                      }`}
+                      aria-pressed={checked}
                       aria-label={`Select ${group.name}`}
+                      className="flex flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-[color:var(--ink)] transition hover:bg-[rgba(22,35,56,0.05)]"
                     >
-                      <Check className="h-3 w-3" />
+                      <span
+                        className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition ${
+                          checked
+                            ? "border-[color:var(--accent-strong)] bg-[color:var(--accent-strong)] text-white"
+                            : "border-[rgba(41,62,90,0.28)] text-transparent"
+                        }`}
+                      >
+                        <Check className="h-3 w-3" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate">{group.name}</span>
+                        <span className="mt-0.5 block truncate text-xs text-[color:var(--ink-soft)]">
+                          {group.members.map((member) => member.label).join(", ") || "No members yet"}
+                        </span>
+                      </span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingGroupId(group.id)}
-                      className="flex-1 rounded-lg px-2 py-1.5 text-left text-sm text-[color:var(--ink)] transition hover:bg-[rgba(22,35,56,0.05)]"
+                      aria-label={`Edit ${group.name}`}
+                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[color:var(--ink-soft)] transition hover:bg-[rgba(22,35,56,0.06)] hover:text-[color:var(--ink)]"
                     >
-                      <p>{group.name}</p>
-                      <p className="mt-0.5 text-xs text-[color:var(--ink-soft)]">
-                        {group.members.map((member) => member.label).join(", ") || "No members yet"}
-                      </p>
+                      <Pencil className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 );

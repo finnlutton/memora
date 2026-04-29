@@ -70,6 +70,38 @@ export function MembershipPlansPanel() {
     "free") as MembershipPlanId;
   const cancelAtPeriodEnd = Boolean(billing?.cancelAtPeriodEnd);
   const renewDate = formatDate(billing?.currentPeriodEnd ?? null);
+  const effectivePlan = publicMembershipPlans.find((p) => p.id === effectivePlanId);
+  const [billingPortalBusy, setBillingPortalBusy] = useState(false);
+  const [billingPortalError, setBillingPortalError] = useState<string | null>(null);
+
+  const openBillingPortal = async () => {
+    if (billingPortalBusy) return;
+    setBillingPortalBusy(true);
+    setBillingPortalError(null);
+    try {
+      const response = await fetch("/api/stripe/create-portal-session", {
+        method: "POST",
+      });
+      const data = (await response.json()) as {
+        url?: string;
+        message?: string;
+        error?: string;
+      };
+      if (response.ok && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      setBillingPortalError(
+        data.message ?? data.error ?? "Could not open billing portal.",
+      );
+    } catch {
+      setBillingPortalError(
+        "Could not reach billing portal. Try again in a moment.",
+      );
+    } finally {
+      setBillingPortalBusy(false);
+    }
+  };
 
   const labelFor = (planId: MembershipPlanId, busy: boolean) => {
     if (busy) return planId === "free" ? "Saving…" : "Redirecting…";
@@ -142,13 +174,32 @@ export function MembershipPlansPanel() {
 
   return (
     <section className="mx-auto w-full max-w-5xl space-y-6">
-      {/* Cancel-at-period-end note for paid users */}
+      {/* Thin status notice for paid users in cancel-at-period-end. */}
       {effectivePlanId !== "free" && cancelAtPeriodEnd && renewDate ? (
-        <p className="border border-[color:var(--border)] bg-white px-4 py-3 text-[12.5px] leading-5 text-[color:var(--ink-soft)]">
-          Your plan is active until{" "}
-          <span className="text-[color:var(--ink)]">{renewDate}</span> and
-          will not renew. Manage billing to keep it.
-        </p>
+        <div className="border border-[color:var(--border)] bg-white px-4 py-3 text-[12.5px] leading-5 text-[color:var(--ink-soft)]">
+          <p>
+            Your{" "}
+            <span className="text-[color:var(--ink)]">
+              {effectivePlan?.name ?? "current"}
+            </span>{" "}
+            plan is active until{" "}
+            <span className="text-[color:var(--ink)]">{renewDate}</span>.{" "}
+            <button
+              type="button"
+              onClick={openBillingPortal}
+              disabled={billingPortalBusy}
+              className="text-[color:var(--ink)] underline decoration-[color:var(--ink-faint)] underline-offset-[3px] transition hover:decoration-[color:var(--ink-soft)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {billingPortalBusy ? "Opening…" : "Manage billing"}
+            </button>{" "}
+            to adjust your plan.
+          </p>
+          {billingPortalError ? (
+            <p className="mt-1 text-[12px] leading-5 text-[color:var(--accent-strong)]">
+              {billingPortalError}
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       {/* ── Recurring plan row ────────────────────────────────────────── */}

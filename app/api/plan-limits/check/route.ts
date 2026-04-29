@@ -1,6 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { canCreate, getMembershipPlan, normalizePlanId, type PlanResource } from "@/lib/plans";
+import {
+  canCreate,
+  getMembershipPlan,
+  normalizePlanId,
+  startOfCurrentMonthUtcIso,
+  type PlanResource,
+} from "@/lib/plans";
 
 type CheckPayload = {
   resource?: PlanResource;
@@ -11,20 +17,6 @@ type CheckPayload = {
 
 function isFiniteLimit(value: number | null): value is number {
   return typeof value === "number" && Number.isFinite(value);
-}
-
-function planLimitResponse(resource: PlanResource, currentPlan: string, limit: number, currentUsage: number) {
-  return NextResponse.json(
-    {
-      error: "Plan limit reached.",
-      code: "PLAN_LIMIT_REACHED",
-      resource,
-      currentPlan,
-      limit,
-      currentUsage,
-    },
-    { status: 409 },
-  );
 }
 
 export async function POST(request: NextRequest) {
@@ -125,18 +117,38 @@ export async function POST(request: NextRequest) {
         currentUsage = countRes.count ?? 0;
       }
     } else if (resource === "shares") {
-      const countRes = await supabase
+      // Plus enforces a monthly quota that resets the 1st of each
+      // calendar month (UTC); every other plan caps total shares
+      // ever created so revoking does not free up headroom.
+      const period = plan.shareLimitPeriod ?? "lifetime";
+      let query = supabase
         .from("shares")
         .select("id", { count: "exact", head: true })
-        .eq("owner_user_id", user.id)
-        .is("revoked_at", null);
+        .eq("owner_user_id", user.id);
+      if (period === "monthly") {
+        query = query.gte("created_at", startOfCurrentMonthUtcIso());
+      }
+      const countRes = await query;
       if (countRes.error) throw countRes.error;
       currentUsage = countRes.count ?? 0;
     }
 
     const { allowed, limit } = canCreate(resource, currentUsage, plan);
+    const sharePeriod =
+      resource === "shares" ? plan.shareLimitPeriod ?? "lifetime" : undefined;
     if (!allowed && isFiniteLimit(limit)) {
-      return planLimitResponse(resource, plan.id, limit, currentUsage);
+      return NextResponse.json(
+        {
+          error: "Plan limit reached.",
+          code: "PLAN_LIMIT_REACHED",
+          resource,
+          currentPlan: plan.id,
+          limit,
+          currentUsage,
+          ...(sharePeriod ? { sharePeriod } : {}),
+        },
+        { status: 409 },
+      );
     }
 
     return NextResponse.json(
@@ -146,6 +158,7 @@ export async function POST(request: NextRequest) {
         currentPlan: plan.id,
         limit,
         currentUsage,
+        ...(sharePeriod ? { sharePeriod } : {}),
       },
       { status: 200 },
     );

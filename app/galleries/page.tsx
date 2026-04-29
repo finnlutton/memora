@@ -13,9 +13,8 @@ import { WorkspaceTopbar } from "@/components/workspace-topbar";
 import { Button } from "@/components/ui/button";
 import { useFormDraft } from "@/hooks/use-form-draft";
 import { useMemoraStore } from "@/hooks/use-memora-store";
-import { createId } from "@/lib/utils";
+import { useRecipientGroups } from "@/hooks/use-recipient-groups";
 import { getMembershipPlan } from "@/lib/plans";
-import type { RecipientGroup } from "@/types/share";
 
 export default function GalleriesPage() {
   const { galleries, hydrated, onboarding } = useMemoraStore();
@@ -32,27 +31,14 @@ export default function GalleriesPage() {
       field: "customMessage",
       initialValue: "",
     });
-  const [recipientGroups, setRecipientGroups] = useState<RecipientGroup[]>([
-    {
-      id: createId("group"),
-      name: "Parents",
-      members: [{ id: createId("member"), label: "Mom & Dad" }],
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: createId("group"),
-      name: "Grandparents",
-      members: [{ id: createId("member"), label: "Grandma & Grandpa" }],
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: createId("group"),
-      name: "Close Friends",
-      members: [{ id: createId("member"), label: "Core group" }],
-      updatedAt: new Date().toISOString(),
-    },
-  ]);
-  const [shareUsage, setShareUsage] = useState<{ current: number; limit: number | null } | null>(null);
+  const [recipientGroups, setRecipientGroups] = useRecipientGroups(
+    onboarding.user?.id ?? null,
+  );
+  const [shareUsage, setShareUsage] = useState<{
+    current: number;
+    limit: number | null;
+    period: "lifetime" | "monthly" | null;
+  } | null>(null);
   const sortedGalleries = useMemo(
     () =>
       [...galleries].sort(
@@ -80,11 +66,14 @@ export default function GalleriesPage() {
       ? `${sortedGalleries.length} of ${selectedPlan.galleryCount}`
       : `${sortedGalleries.length}`
     : `${sortedGalleries.length}`;
+  const shareUsageSuffix = shareUsage?.period === "monthly"
+    ? "private share links this month"
+    : "private share links";
   const shareUsageLabel =
     shareUsage && Number.isFinite(shareUsage.limit)
-      ? `${shareUsage.current} / ${shareUsage.limit} active share links`
+      ? `${shareUsage.current} / ${shareUsage.limit} ${shareUsageSuffix}`
       : shareUsage
-        ? `${shareUsage.current} active share links`
+        ? `${shareUsage.current} ${shareUsageSuffix}`
         : "Share usage unavailable";
   const shareUsageLabelCompact =
     shareUsage && Number.isFinite(shareUsage.limit)
@@ -108,11 +97,13 @@ export default function GalleriesPage() {
         const payload = (await response.json()) as {
           currentUsage?: number;
           limit?: number | null;
+          sharePeriod?: "lifetime" | "monthly";
         };
         if (!response.ok || cancelled) return;
         setShareUsage({
           current: payload.currentUsage ?? 0,
           limit: payload.limit ?? null,
+          period: payload.sharePeriod ?? null,
         });
       } catch {
         if (!cancelled) setShareUsage(null);

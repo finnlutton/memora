@@ -1,6 +1,11 @@
 import { randomBytes } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
-import { canCreate, getMembershipPlan, normalizePlanId } from "@/lib/plans";
+import {
+  canCreate,
+  getMembershipPlan,
+  normalizePlanId,
+  startOfCurrentMonthUtcIso,
+} from "@/lib/plans";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type CreateSharePayload = {
@@ -77,32 +82,46 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Select at least one gallery to share." }, { status: 400 });
     }
 
-    const [{ data: profile }, { count: activeSharesCount, error: activeSharesError }] = await Promise.all([
-      supabase.from("profiles").select("selected_plan").eq("id", user.id).maybeSingle<{ selected_plan: string | null }>(),
-      supabase
-        .from("shares")
-        .select("id", { count: "exact", head: true })
-        .eq("owner_user_id", user.id)
-        .is("revoked_at", null),
-    ]);
-    if (activeSharesError) {
-      return NextResponse.json({ error: activeSharesError.message }, { status: 500 });
-    }
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("selected_plan")
+      .eq("id", user.id)
+      .maybeSingle<{ selected_plan: string | null }>();
     const plan = getMembershipPlan(normalizePlanId(profile?.selected_plan ?? null));
     if (!plan) {
       return NextResponse.json({ error: "No plan selected." }, { status: 500 });
     }
-    const usage = activeSharesCount ?? 0;
+
+    // Plus enforces a monthly quota that resets the 1st of each calendar
+    // month (UTC); every other plan caps total shares ever created so
+    // revoking does not free up headroom.
+    const sharePeriod = plan.shareLimitPeriod ?? "lifetime";
+    let countQuery = supabase
+      .from("shares")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_user_id", user.id);
+    if (sharePeriod === "monthly") {
+      countQuery = countQuery.gte("created_at", startOfCurrentMonthUtcIso());
+    }
+    const { count: shareUsageCount, error: shareUsageError } = await countQuery;
+    if (shareUsageError) {
+      return NextResponse.json({ error: shareUsageError.message }, { status: 500 });
+    }
+    const usage = shareUsageCount ?? 0;
     const shareCheck = canCreate("shares", usage, plan);
     if (!shareCheck.allowed && Number.isFinite(shareCheck.limit)) {
       return NextResponse.json(
         {
-          error: "Share limit reached for your current plan.",
+          error:
+            sharePeriod === "monthly"
+              ? "Monthly share-link limit reached for your current plan."
+              : "Share limit reached for your current plan.",
           code: "PLAN_LIMIT_REACHED",
           resource: "shares",
           currentPlan: plan.id,
           limit: shareCheck.limit,
           currentUsage: usage,
+          sharePeriod,
         },
         { status: 409 },
       );

@@ -38,6 +38,16 @@ export type MembershipPlan = {
   directPhotosPerGallery: number;
   /** null = unlimited */
   activeShareLinks: number | null;
+  /**
+   * Window over which `activeShareLinks` is measured.
+   *   "lifetime" — count every share the user has ever created
+   *                (revoked or not), so revoking does not free up
+   *                headroom.
+   *   "monthly"  — count shares created since the start of the
+   *                current calendar month (UTC). Resets on the 1st.
+   * Omitted for plans where `activeShareLinks` is null/unlimited.
+   */
+  shareLimitPeriod?: "lifetime" | "monthly";
   summary: string;
   features: string[];
   /** Pricing page accent. */
@@ -85,10 +95,11 @@ export const membershipPlans: MembershipPlan[] = [
     photosPerSubgallery: 15,
     directPhotosPerGallery: 15,
     activeShareLinks: 3,
+    shareLimitPeriod: "lifetime",
     summary: "A quiet way to start your archive.",
     features: [
       formatGalleryCount(2),
-      "3 active share links",
+      "3 private share links",
     ],
     featured: false,
     effectiveCost: `$${dollars(0)}`,
@@ -96,20 +107,21 @@ export const membershipPlans: MembershipPlan[] = [
   {
     id: "plus",
     name: "Plus",
-    priceMonthlyLabel: "$2.99",
-    price: annualPriceFromMonthly(2.99),
+    priceMonthlyLabel: "$1.99",
+    price: annualPriceFromMonthly(1.99),
     galleryCount: 20,
     subgalleriesPerGallery: 10,
     photosPerSubgallery: 40,
     directPhotosPerGallery: 40,
-    activeShareLinks: 50,
+    activeShareLinks: 12,
+    shareLimitPeriod: "monthly",
     summary: "Built for travelers and families keeping things in one place.",
     features: [
       formatGalleryCount(20),
-      "50 active share links",
+      "12 private share links per month",
     ],
     featured: true,
-    effectiveCost: `$${dollars(annualPriceFromMonthly(2.99) / 20)}`,
+    effectiveCost: `$${dollars(annualPriceFromMonthly(1.99) / 20)}`,
     stripeMode: "subscription",
   },
   {
@@ -136,8 +148,8 @@ export const membershipPlans: MembershipPlan[] = [
   {
     id: "lifetime",
     name: "Lifetime",
-    priceMonthlyLabel: "$79.99",
-    price: 79.99,
+    priceMonthlyLabel: "$49.99",
+    price: 49.99,
     galleryCount: UNLIMITED,
     subgalleriesPerGallery: UNLIMITED,
     photosPerSubgallery: UNLIMITED,
@@ -255,6 +267,17 @@ export function canCreate(
 export const publicMembershipPlans: MembershipPlan[] = membershipPlans.filter(
   (plan) => !plan.internal,
 );
+
+/**
+ * Start of the current calendar month in UTC, as an ISO string.
+ * Shared by share-usage counters that enforce monthly quotas.
+ */
+export function startOfCurrentMonthUtcIso(): string {
+  const now = new Date();
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+  ).toISOString();
+}
 
 /* ── Stripe price-id helpers (server-only callers) ─────────────────────── */
 
