@@ -34,6 +34,15 @@ function buildEmailRedirectUrl() {
   return buildAbsoluteAppUrl("/email-confirmed", appOrigin);
 }
 
+function buildPasswordResetRedirectUrl() {
+  const appOrigin = getClientSiteOrigin();
+  if (!appOrigin) {
+    return undefined;
+  }
+
+  return buildAbsoluteAppUrl("/reset-password", appOrigin);
+}
+
 function navigateAfterAuth(nextRoute: string, router: ReturnType<typeof useRouter>) {
   if (typeof window !== "undefined") {
     window.location.replace(nextRoute);
@@ -91,7 +100,7 @@ export function AuthCard() {
     try {
       const supabase = createSupabaseBrowserClient();
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: buildEmailRedirectUrl(),
+        redirectTo: buildPasswordResetRedirectUrl(),
       });
       if (resetError) {
         setError(resetError.message);
