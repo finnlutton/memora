@@ -39,7 +39,7 @@ export default function SubgalleryDetailPage() {
         <Button asChild variant="ghost">
           <Link href={`/galleries/${gallery.id}`}>
             <ArrowLeft className="h-4 w-4" />
-            Back to scenes
+            Back to subgalleries
           </Link>
         </Button>
         <div className="flex flex-wrap gap-3">
