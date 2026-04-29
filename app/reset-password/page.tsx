@@ -5,24 +5,41 @@ import { Button } from "@/components/ui/button";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 /**
- * Password recovery callback.
+ * Password recovery form.
  *
- * Supabase's `resetPasswordForEmail` sends a magic link that lands
- * here with a recovery code in the URL. The browser client has
- * `detectSessionInUrl: true` by default and will exchange that
- * code into a transient session as soon as the page loads.
+ * The OTP/PKCE exchange happens server-side in `/auth/callback` (which
+ * `resetPasswordForEmail` redirects to via `?next=/reset-password`). By the
+ * time we render here, the recovery session cookie is already set — we just
+ * confirm with `getSession()` and show the "set new password" form.
  *
- * We then expose a tiny "set new password" form that calls
- * `updateUser({ password })` and signs the user out on success so
- * they re-enter the auth flow on whatever device they actually want
- * to log in on. The transient recovery session is not a long-lived
- * authenticated state — closing the loop with a fresh sign-in is
- * the cleaner story.
+ * `updateUser({ password })` then writes the new password and we sign the
+ * recovery session out so the user re-enters the normal login flow on
+ * whatever device they actually use.
  */
 
 const MIN_PASSWORD_LENGTH = 8;
 
 type Status = "checking" | "ready" | "invalid" | "submitting" | "done";
+
+function describeUrlError(): string | null {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  // Supabase implicit-flow errors arrive in the URL fragment; PKCE/server
+  // errors come back as query params. Read both.
+  const hash = window.location.hash.startsWith("#")
+    ? window.location.hash.slice(1)
+    : "";
+  const fragment = new URLSearchParams(hash);
+  const errorCode =
+    params.get("error_code") ?? fragment.get("error_code") ?? null;
+  const errorDescription =
+    params.get("error_description") ?? fragment.get("error_description") ?? null;
+  const error = params.get("error") ?? fragment.get("error") ?? null;
+  if (!errorCode && !errorDescription && !error) return null;
+  if (errorDescription) return errorDescription.replace(/\+/g, " ");
+  if (errorCode) return errorCode.replace(/_/g, " ");
+  return error;
+}
 
 export default function ResetPasswordPage() {
   const [status, setStatus] = useState<Status>("checking");
@@ -30,15 +47,21 @@ export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Wait briefly for the SDK to consume the URL fragment / query and
-  // settle a session. If a user shows up, the recovery worked.
   useEffect(() => {
     let cancelled = false;
+
+    // If the email link verification failed upstream, Supabase redirects
+    // here with the failure reason in the URL. Surface it instead of the
+    // generic "expired" copy.
+    const urlError = describeUrlError();
+    if (urlError) {
+      setError(urlError);
+      setStatus("invalid");
+      return;
+    }
+
     const supabase = createSupabaseBrowserClient();
 
-    // The PASSWORD_RECOVERY auth event fires once the SDK has
-    // exchanged the recovery code in the URL for a session. Listen
-    // first so we don't race the SDK on slow networks.
     const { data: subscription } = supabase.auth.onAuthStateChange(
       (event: string) => {
         if (cancelled) return;
@@ -48,15 +71,14 @@ export default function ResetPasswordPage() {
       },
     );
 
-    // In case the URL was consumed before this listener attached,
-    // double-check current session synchronously.
     void (async () => {
       const { data } = await supabase.auth.getSession();
       if (cancelled) return;
       if (data.session) {
         setStatus("ready");
       } else {
-        // Give the SDK a moment to consume the URL on first paint.
+        // Server-side exchange should have set the cookie before we render,
+        // but allow one short retry in case the redirect raced cookie write.
         window.setTimeout(async () => {
           if (cancelled) return;
           const recheck = await supabase.auth.getSession();
@@ -134,8 +156,9 @@ export default function ResetPasswordPage() {
               This reset link is no longer valid
             </h1>
             <p className="mt-3 text-sm leading-7 text-[color:var(--ink-soft)]">
-              The link may have expired or already been used. Head back to the
-              login page and request a new one.
+              {error
+                ? error
+                : "The link may have expired or already been used. Head back to the login page and request a new one."}
             </p>
             <a
               href="/auth?mode=signin"

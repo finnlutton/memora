@@ -46,6 +46,7 @@ export async function GET(request: NextRequest) {
   const next = safeInternalPath(
     requestUrl.searchParams.get("next") ?? requestUrl.searchParams.get("redirect"),
   );
+  const isRecoveryFlow = type === "recovery" || next === "/reset-password";
   const supabase = await createSupabaseServerClient();
 
   if (code) {
@@ -77,6 +78,19 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const url = new URL(request.nextUrl.toString());
+  const normalizedOrigin = new URL(requestOrigin);
+  url.protocol = normalizedOrigin.protocol;
+  url.host = normalizedOrigin.host;
+
+  // Recovery flow: hand off to the password-reset form regardless of the
+  // user's onboarding state. Skip profile bootstrapping — this is a transient
+  // recovery session that ends with signOut() once the password is updated.
+  if (isRecoveryFlow) {
+    applyInternalRedirect(url, next, "/reset-password");
+    return NextResponse.redirect(url);
+  }
+
   await ensureProfileRow(
     supabase as unknown as ProfileQueryClient,
     {
@@ -94,10 +108,6 @@ export async function GET(request: NextRequest) {
     },
     "auth-callback",
   );
-  const url = new URL(request.nextUrl.toString());
-  const normalizedOrigin = new URL(requestOrigin);
-  url.protocol = normalizedOrigin.protocol;
-  url.host = normalizedOrigin.host;
   if (!profileState.hasSeenWelcome || !profileState.displayName) {
     applyInternalRedirect(url, next, "/welcome");
     if (url.pathname !== "/welcome") {

@@ -40,7 +40,11 @@ function buildPasswordResetRedirectUrl() {
     return undefined;
   }
 
-  return buildAbsoluteAppUrl("/reset-password", appOrigin);
+  // Route through the server-side callback so the OTP/PKCE exchange runs on
+  // the server (sets cookies reliably) before we hand off to the form. The
+  // callback honours `next` for recovery flows and skips the onboarding
+  // welcome redirect.
+  return buildAbsoluteAppUrl("/auth/callback?next=/reset-password", appOrigin);
 }
 
 function navigateAfterAuth(nextRoute: string, router: ReturnType<typeof useRouter>) {
