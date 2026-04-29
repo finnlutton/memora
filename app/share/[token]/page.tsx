@@ -195,9 +195,6 @@ export default async function PublicSharePage({
                         {formatDateRange(gallery.start_date, gallery.end_date)}
                       </p>
                     ) : null}
-                    {gallery.description ? (
-                      <p className="line-clamp-3 text-sm leading-6 text-[color:var(--ink-soft)]">{gallery.description}</p>
-                    ) : null}
                   </div>
                 </Link>
               );

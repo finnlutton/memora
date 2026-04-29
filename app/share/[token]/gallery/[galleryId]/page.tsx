@@ -182,7 +182,7 @@ export default async function PublicSharedGalleryPage({
         </div>
 
         {(subgalleries ?? []).length ? (
-          <section className="grid gap-x-3 gap-y-7 sm:grid-cols-2 md:gap-x-8 md:gap-y-12 xl:grid-cols-3">
+          <section className="grid gap-x-3 gap-y-7 sm:grid-cols-2 md:gap-x-8 md:gap-y-12">
             {(subgalleries ?? []).map((subgallery) => {
               const cover = isLikelyStoragePath(subgallery.cover_image_path ?? "")
                 ? signedUrlByPath.get(subgallery.cover_image_path ?? "") ?? ""
@@ -190,7 +190,6 @@ export default async function PublicSharedGalleryPage({
               const formattedLocation = formatLocationForCard(subgallery.location);
               const dateText = dateLabelForSubgallery(subgallery);
               const metaParts = [formattedLocation, dateText].filter(Boolean) as string[];
-              const excerpt = subgallery.description?.trim().slice(0, 120) ?? "";
 
               return (
                 <Link
@@ -213,12 +212,6 @@ export default async function PublicSharedGalleryPage({
                     {metaParts.length ? (
                       <p className="font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)]">
                         {metaParts.join(" · ")}
-                      </p>
-                    ) : null}
-                    {excerpt ? (
-                      <p className="font-serif text-[15px] italic leading-snug text-[color:var(--ink-soft)] md:text-[16px]">
-                        {excerpt}
-                        {(subgallery.description?.length ?? 0) > 120 ? "…" : ""}
                       </p>
                     ) : null}
                   </div>
