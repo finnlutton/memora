@@ -130,26 +130,12 @@ export default function GalleriesPage() {
         title="My Galleries"
         subtitle="Curate, preserve, and share your experiences here."
         hideTitleOnMobile
+        // Desktop: stack actions vertically and center the stack
+        // against the page title's vertical mid-line. Mobile keeps
+        // the original side-by-side row.
+        actionsClassName="md:flex-col md:items-stretch md:self-center md:gap-2.5 md:pt-0"
         actions={
           <>
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-8 gap-1 whitespace-nowrap px-2 py-1 text-[9px] tracking-[0.06em] text-[color:var(--ink)] md:h-auto md:gap-1.5 md:px-3 md:py-2 md:text-xs md:tracking-[0.14em]"
-              disabled={shareLimitReached}
-              onClick={() => {
-                setShareMode(true);
-                setSharePanelOpen(false);
-                setSelectedGalleryIds([]);
-                setSelectedGroupIds([]);
-                setCustomMessage("");
-                clearCustomMessageDraft();
-              }}
-            >
-              <Share2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
-              <span className="md:hidden">Share</span>
-              <span className="hidden md:inline">Share Galleries</span>
-            </Button>
             {hasReachedGalleryLimit ? (
               <Button
                 asChild
@@ -173,6 +159,24 @@ export default function GalleriesPage() {
                 </Link>
               </Button>
             )}
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-8 gap-1 whitespace-nowrap px-2 py-1 text-[9px] tracking-[0.06em] text-[color:var(--ink)] md:h-auto md:gap-1.5 md:px-3 md:py-2 md:text-xs md:tracking-[0.14em]"
+              disabled={shareLimitReached}
+              onClick={() => {
+                setShareMode(true);
+                setSharePanelOpen(false);
+                setSelectedGalleryIds([]);
+                setSelectedGroupIds([]);
+                setCustomMessage("");
+                clearCustomMessageDraft();
+              }}
+            >
+              <Share2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
+              <span className="md:hidden">Share</span>
+              <span className="hidden md:inline">Share Galleries</span>
+            </Button>
           </>
         }
       />

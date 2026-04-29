@@ -8,6 +8,7 @@ export function WorkspaceTopbar({
   subtitle,
   actions,
   className,
+  actionsClassName,
   hideTitleOnMobile = false,
 }: {
   eyebrow?: string;
@@ -15,6 +16,13 @@ export function WorkspaceTopbar({
   subtitle?: string;
   actions?: React.ReactNode;
   className?: string;
+  /**
+   * Extra classes appended to the actions container. Useful when a
+   * specific page wants a non-default action layout — e.g. the
+   * galleries dashboard stacks its actions vertically on desktop and
+   * vertically centers them against the title.
+   */
+  actionsClassName?: string;
   /**
    * Hide the page title on mobile only. Useful when the active nav strip
    * already names the page (e.g. galleries dashboard) and the giant serif
@@ -57,7 +65,12 @@ export function WorkspaceTopbar({
         ) : null}
       </div>
       {actions ? (
-        <div className="flex flex-wrap items-center justify-end gap-1.5 md:gap-2 md:pt-2">
+        <div
+          className={cn(
+            "flex flex-wrap items-center justify-end gap-1.5 md:gap-2 md:pt-2",
+            actionsClassName,
+          )}
+        >
           {actions}
         </div>
       ) : null}
