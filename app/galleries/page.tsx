@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Pencil, Plus, Share2, X } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { GalleryCard } from "@/components/gallery-card";
 import { GalleryCardSkeletonGrid } from "@/components/gallery-card-skeleton";
@@ -472,21 +473,21 @@ function DraftsStrip({
             <ArrowRight className="h-3.5 w-3.5" />
           </span>
         </Link>
-        <button
-          type="button"
-          onClick={() => {
-            if (
-              typeof window === "undefined" ||
-              window.confirm("Discard this draft? This cannot be undone.")
-            ) {
-              onDiscard();
-            }
-          }}
-          aria-label="Discard draft"
-          className="inline-flex shrink-0 items-center justify-center border border-[color:var(--border)] bg-white/80 px-2.5 text-[color:var(--ink-soft)] transition hover:border-[color:var(--border-strong)] hover:bg-white hover:text-[color:var(--ink)]"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        <ConfirmDeleteDialog
+          title="Discard this draft?"
+          description="Your in-progress gallery will be removed. This can't be undone."
+          confirmLabel="Discard"
+          onConfirm={onDiscard}
+          trigger={
+            <button
+              type="button"
+              aria-label="Discard draft"
+              className="inline-flex shrink-0 items-center justify-center border border-[color:var(--border)] bg-white/80 px-2.5 text-[color:var(--ink-soft)] transition hover:border-[color:var(--border-strong)] hover:bg-white hover:text-[color:var(--ink)]"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          }
+        />
       </div>
     </section>
   );

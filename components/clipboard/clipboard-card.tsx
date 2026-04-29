@@ -3,6 +3,7 @@
 import { Pencil, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import type { ClipboardItem } from "@/hooks/use-clipboard-items";
 
 /**
@@ -188,18 +189,20 @@ export function ClipboardCard({
             <Pencil className="h-3.5 w-3.5" strokeWidth={1.8} />
           </button>
         ) : null}
-        <button
-          type="button"
-          onClick={() => {
-            if (window.confirm("Delete this memory?")) {
-              void onRemove(item.id);
-            }
-          }}
-          aria-label="Delete memory"
-          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-[color:var(--ink)] shadow-[0_3px_8px_rgba(14,22,34,0.18)] transition hover:bg-white hover:text-[#9a4545]"
-        >
-          <Trash2 className="h-3.5 w-3.5" strokeWidth={1.8} />
-        </button>
+        <ConfirmDeleteDialog
+          title="Delete this memory?"
+          description="This memory will be removed from your clipboard. This can't be undone."
+          onConfirm={() => void onRemove(item.id)}
+          trigger={
+            <button
+              type="button"
+              aria-label="Delete memory"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-[color:var(--ink)] shadow-[0_3px_8px_rgba(14,22,34,0.18)] transition hover:bg-white hover:text-[#9a4545]"
+            >
+              <Trash2 className="h-3.5 w-3.5" strokeWidth={1.8} />
+            </button>
+          }
+        />
       </div>
     </article>
   );
