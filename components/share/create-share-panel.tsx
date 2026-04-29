@@ -7,6 +7,51 @@ import { useToast } from "@/components/ui/toast";
 import { createId } from "@/lib/utils";
 import type { RecipientGroup } from "@/types/share";
 
+// How many members of a group we surface inline before truncating to
+// "+N more". Tuned to one visible row at the panel's narrowest width.
+const MEMBER_PREVIEW_LIMIT = 3;
+
+function MemberPreview({
+  group,
+  expanded,
+  onToggleExpand,
+}: {
+  group: RecipientGroup;
+  expanded: boolean;
+  onToggleExpand: (next: boolean) => void;
+}) {
+  const labels = group.members.map((member) => member.label);
+  if (labels.length === 0) {
+    return (
+      <span className="mt-0.5 block text-xs text-[color:var(--ink-soft)]">
+        No members yet
+      </span>
+    );
+  }
+  const fitsInline = labels.length <= MEMBER_PREVIEW_LIMIT;
+  const visible = expanded || fitsInline ? labels : labels.slice(0, MEMBER_PREVIEW_LIMIT);
+  const hiddenCount = labels.length - visible.length;
+  return (
+    <span className="mt-0.5 block text-xs text-[color:var(--ink-soft)]">
+      <span className={expanded ? "" : "line-clamp-2"}>{visible.join(", ")}</span>
+      {!fitsInline ? (
+        <button
+          type="button"
+          onClick={(event) => {
+            // Prevent the parent row's toggle button from firing.
+            event.stopPropagation();
+            event.preventDefault();
+            onToggleExpand(!expanded);
+          }}
+          className="ml-1 inline text-[color:var(--ink)] underline decoration-[color:var(--ink-faint)] underline-offset-[3px] transition hover:decoration-[color:var(--ink-soft)]"
+        >
+          {expanded ? "Show less" : `+${hiddenCount} more`}
+        </button>
+      ) : null}
+    </span>
+  );
+}
+
 type CreateSharePanelProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -43,6 +88,10 @@ export function CreateSharePanel({
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupMembers, setNewGroupMembers] = useState("");
+  // Per-group expansion of the truncated member preview. Local state
+  // because expansion is a transient UI concern, not part of the
+  // share draft.
+  const [expandedGroupIds, setExpandedGroupIds] = useState<string[]>([]);
 
   const selectedGroupsCount = selectedGroupIds.length;
   const [busy, setBusy] = useState(false);
@@ -83,7 +132,7 @@ export function CreateSharePanel({
               Create a share set
             </h2>
             <p className="mt-1.5 text-xs leading-6 text-[color:var(--ink-soft)] md:mt-2 md:text-sm">
-              Choose galleries, pick recipient groups, and add a custom note. Sending and public pages come next.
+              Choose galleries, pick recipient groups, add a custom note, and create a private share link.
             </p>
           </div>
           <button
@@ -156,20 +205,31 @@ export function CreateSharePanel({
               <p className="text-xs text-[color:var(--ink-soft)]">{selectedGroupsCount} selected</p>
             </div>
 
+            {/*
+              Sets recipient expectation up front: groups personalize
+              the welcome on the share page, but Memora doesn't email
+              anyone — the link still has to be sent by the owner.
+            */}
+            <p className="text-xs leading-5 text-[color:var(--ink-soft)]">
+              Recipient groups personalize the welcome on the share page. You&apos;ll
+              still need to send the link yourself.
+            </p>
+
             <div className="space-y-2">
               {groups.map((group) => {
                 const checked = selectedGroupIds.includes(group.id);
+                const isExpanded = expandedGroupIds.includes(group.id);
                 return (
-                  <div key={group.id} className="flex items-center gap-1">
+                  <div key={group.id} className="flex items-start gap-1">
                     <button
                       type="button"
                       onClick={() => onToggleGroup(group.id)}
                       aria-pressed={checked}
                       aria-label={`Select ${group.name}`}
-                      className="flex flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-[color:var(--ink)] transition hover:bg-[rgba(22,35,56,0.05)]"
+                      className="flex flex-1 items-start gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-[color:var(--ink)] transition hover:bg-[rgba(22,35,56,0.05)]"
                     >
                       <span
-                        className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition ${
+                        className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition ${
                           checked
                             ? "border-[color:var(--accent-strong)] bg-[color:var(--accent-strong)] text-white"
                             : "border-[rgba(41,62,90,0.28)] text-transparent"
@@ -179,16 +239,24 @@ export function CreateSharePanel({
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate">{group.name}</span>
-                        <span className="mt-0.5 block truncate text-xs text-[color:var(--ink-soft)]">
-                          {group.members.map((member) => member.label).join(", ") || "No members yet"}
-                        </span>
+                        <MemberPreview
+                          group={group}
+                          expanded={isExpanded}
+                          onToggleExpand={(next) =>
+                            setExpandedGroupIds((current) =>
+                              next
+                                ? Array.from(new Set([...current, group.id]))
+                                : current.filter((id) => id !== group.id),
+                            )
+                          }
+                        />
                       </span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingGroupId(group.id)}
                       aria-label={`Edit ${group.name}`}
-                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[color:var(--ink-soft)] transition hover:bg-[rgba(22,35,56,0.06)] hover:text-[color:var(--ink)]"
+                      className="mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[color:var(--ink-soft)] transition hover:bg-[rgba(22,35,56,0.06)] hover:text-[color:var(--ink)]"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
@@ -208,9 +276,12 @@ export function CreateSharePanel({
               <input
                 value={newGroupMembers}
                 onChange={(event) => setNewGroupMembers(event.target.value)}
-                placeholder="Members (comma separated)"
+                placeholder="Mom, Dad, Gigi"
                 className="mt-2 w-full border border-[rgba(26,42,67,0.12)] bg-white px-3 py-2 text-sm text-[color:var(--ink)] outline-none focus:border-[color:var(--accent)]"
               />
+              <p className="mt-1.5 text-[11.5px] leading-5 text-[color:var(--ink-soft)]">
+                Type one member per slot, separated by commas — e.g. <span className="text-[color:var(--ink)]">Mom, Dad, Gigi</span>.
+              </p>
               <Button
                 type="button"
                 variant="ghost"
@@ -223,15 +294,22 @@ export function CreateSharePanel({
                     .map((value) => value.trim())
                     .filter(Boolean)
                     .map((label) => ({ id: createId("member"), label }));
+                  const newGroupId = createId("group");
                   onGroupsChange([
                     ...groups,
                     {
-                      id: createId("group"),
+                      id: newGroupId,
                       name,
                       members,
                       updatedAt: new Date().toISOString(),
                     },
                   ]);
+                  // Auto-select the freshly created group so the next
+                  // click is "Create share link", not "find my new
+                  // group at the bottom and select it".
+                  if (!selectedGroupIds.includes(newGroupId)) {
+                    onToggleGroup(newGroupId);
+                  }
                   setNewGroupName("");
                   setNewGroupMembers("");
                 }}
@@ -303,10 +381,13 @@ export function CreateSharePanel({
             <label className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">
               Custom message
             </label>
+            <p className="text-xs leading-5 text-[color:var(--ink-soft)]">
+              Recipients will see this above the gallery list.
+            </p>
             <textarea
               value={customMessage}
               onChange={(event) => onCustomMessageChange(event.target.value)}
-              placeholder="Optional message to show above shared galleries. Example: We loved this trip and wanted to share highlights with you."
+              placeholder="Optional. Example: We loved this trip and wanted to share highlights with you."
               className="min-h-24 w-full resize-none border border-[rgba(26,42,67,0.12)] bg-white px-2.5 py-1.5 text-sm leading-6 text-[color:var(--ink)] outline-none transition focus:border-[color:var(--accent)] md:min-h-28 md:px-3 md:py-2"
             />
           </section>

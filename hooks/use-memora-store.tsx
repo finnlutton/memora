@@ -218,6 +218,13 @@ type MemoraStore = {
     input: SubgalleryInput,
   ) => Promise<void>;
   deleteSubgallery: (galleryId: string, subgalleryId: string) => Promise<void>;
+  /**
+   * Persist a new ordering of subgalleries within a gallery.
+   * `orderedIds` is the desired top-to-bottom order. Updates
+   * `display_order` for each row in parallel and reflects the change
+   * in local state immediately.
+   */
+  reorderSubgalleries: (galleryId: string, orderedIds: string[]) => Promise<void>;
   // Direct gallery photos (no subgallery wrapper) and date dividers.
   addGalleryPhotos: (galleryId: string, photos: MemoryPhoto[]) => Promise<void>;
   updateGalleryPhoto: (
@@ -401,6 +408,35 @@ function parseDateLabelToRange(dateLabel: string): { startDate: string | null; e
     return { startDate: value, endDate: value };
   }
   return { startDate: null, endDate: null };
+}
+
+/**
+ * Subgallery dates can come from two places: the new precise
+ * `startDate` / `endDate` pair the form now collects, or the legacy
+ * free-form `dateLabel` string. Prefer the precise pair when either
+ * end is set; otherwise parse `dateLabel` for any back-compat input.
+ */
+function resolveSubgalleryDateRange(input: SubgalleryInput): {
+  startDate: string | null;
+  endDate: string | null;
+  dateLabel: string;
+} {
+  const start = input.startDate?.trim() ?? "";
+  const end = input.endDate?.trim() ?? "";
+  if (start || end) {
+    return {
+      startDate: start || end || null,
+      endDate: end || start || null,
+      // Form now drives display via start/end on the viewer side; we
+      // null out the legacy free-form label so it doesn't shadow the
+      // newer precise dates.
+      dateLabel: "",
+    };
+  }
+  const fallback = input.dateLabel?.trim() ?? "";
+  if (!fallback) return { startDate: null, endDate: null, dateLabel: "" };
+  const parsed = parseDateLabelToRange(fallback);
+  return { startDate: parsed.startDate, endDate: parsed.endDate, dateLabel: fallback };
 }
 
 function dateLabelFromRange(startDate: string | null, endDate: string | null, fallback?: string | null) {
@@ -716,6 +752,8 @@ async function loadUserGalleriesFromSupabase(
       locationLat: subgallery.location_lat ?? null,
       locationLng: subgallery.location_lng ?? null,
       dateLabel: dateLabelFromRange(subgallery.start_date, subgallery.end_date, subgallery.date_label),
+      startDate: subgallery.start_date ?? "",
+      endDate: subgallery.end_date ?? "",
       description: subgallery.description ?? "",
       photos: sortPhotos(photosBySubgallery.get(subgallery.id) ?? []),
       createdAt: subgallery.created_at,
@@ -1624,7 +1662,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           );
           persistedPhotos = uploadedPhotos;
 
-          const range = parseDateLabelToRange(input.dateLabel);
+          const range = resolveSubgalleryDateRange(input);
 
           if (process.env.NODE_ENV !== "production") {
             console.info("Memora: create subgallery insert start", {
@@ -1632,7 +1670,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
               subgalleryId,
               userId,
               location: input.location,
-              dateLabel: input.dateLabel,
+              startDate: range.startDate,
+              endDate: range.endDate,
             });
           }
 
@@ -1648,7 +1687,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             location_lng: input.locationLng,
             start_date: range.startDate,
             end_date: range.endDate,
-            date_label: input.dateLabel || null,
+            date_label: range.dateLabel || null,
             display_order: galleries
               .find((gallery) => gallery.id === galleryId)
               ?.subgalleries.length ?? 0,
@@ -1720,12 +1759,20 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           })),
         );
 
+        const localRange = resolveSubgalleryDateRange(input);
         const nextSubgallery: Subgallery = {
           ...input,
           coverImage: input.coverImage || persistedCover,
           photos: localPhotos,
           locationLat: input.locationLat,
           locationLng: input.locationLng,
+          dateLabel: dateLabelFromRange(
+            localRange.startDate,
+            localRange.endDate,
+            localRange.dateLabel,
+          ),
+          startDate: localRange.startDate ?? "",
+          endDate: localRange.endDate ?? "",
           id: subgalleryId,
           galleryId,
           createdAt: timestamp,
@@ -1772,6 +1819,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             order: index,
           })),
         );
+        const range = resolveSubgalleryDateRange(input);
 
         if (onboarding.isAuthenticated) {
           await enforcePlanLimitOnServer("photos", { desiredUsage: input.photos.length });
@@ -1828,7 +1876,6 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             }),
           );
 
-          const range = parseDateLabelToRange(input.dateLabel);
           const { error: subgalleryError } = await supabase
             .from("subgalleries")
             .update({
@@ -1840,7 +1887,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
               location_lng: input.locationLng,
               start_date: range.startDate,
               end_date: range.endDate,
-              date_label: input.dateLabel || null,
+              date_label: range.dateLabel || null,
               updated_at: timestamp,
             })
             .eq("id", subgalleryId)
@@ -1911,6 +1958,13 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
                               order: index,
                             })),
                           ),
+                          dateLabel: dateLabelFromRange(
+                            range.startDate,
+                            range.endDate,
+                            range.dateLabel,
+                          ),
+                          startDate: range.startDate ?? "",
+                          endDate: range.endDate ?? "",
                           updatedAt: timestamp,
                         }
                       : subgallery,
@@ -1967,6 +2021,58 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
                   ),
                 }
               : gallery,
+          ),
+        );
+      },
+
+      async reorderSubgalleries(galleryId, orderedIds) {
+        const gallery = galleries.find((entry) => entry.id === galleryId);
+        if (!gallery) return;
+        // Defensive: only reorder ids that actually belong to this
+        // gallery, in the order provided. Anything missing keeps its
+        // current relative position appended at the end so a stale
+        // call can't drop subgalleries from local state.
+        const knownIds = new Set(gallery.subgalleries.map((s) => s.id));
+        const requested = orderedIds.filter((id) => knownIds.has(id));
+        const missing = gallery.subgalleries
+          .map((s) => s.id)
+          .filter((id) => !requested.includes(id));
+        const finalOrder = [...requested, ...missing];
+
+        if (onboarding.isAuthenticated) {
+          const supabase = createSupabaseBrowserClient();
+          const { data } = await supabase.auth.getUser();
+          const userId = data.user?.id;
+          if (!userId) {
+            throw new Error("Please sign in again to reorder subgalleries.");
+          }
+          await Promise.all(
+            finalOrder.map((id, index) =>
+              supabase
+                .from("subgalleries")
+                .update({ display_order: index })
+                .eq("id", id)
+                .eq("gallery_id", galleryId)
+                .eq("user_id", userId),
+            ),
+          );
+        }
+
+        const subgalleryById = new Map(
+          gallery.subgalleries.map((subgallery) => [subgallery.id, subgallery]),
+        );
+        const reordered = finalOrder
+          .map((id) => subgalleryById.get(id))
+          .filter((subgallery): subgallery is Subgallery => Boolean(subgallery));
+        setActiveGalleries((current) =>
+          current.map((entry) =>
+            entry.id === galleryId
+              ? {
+                  ...entry,
+                  subgalleries: reordered,
+                  updatedAt: new Date().toISOString(),
+                }
+              : entry,
           ),
         );
       },

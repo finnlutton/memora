@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PhotoGrid } from "@/components/photo-grid";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { formatLocationForCard } from "@/lib/utils";
 import type { MemoryPhoto } from "@/types/memora";
 
 const STORAGE_BUCKET = "gallery-images";
@@ -58,12 +59,20 @@ function formatDateRange(startDate: string | null, endDate: string | null) {
   return formatSingle(startDate ?? endDate ?? "");
 }
 
-function InvalidShareState({ token, message }: { token: string; message: string }) {
+function InvalidShareState({
+  token,
+  message,
+  heading = "Share unavailable",
+}: {
+  token: string;
+  message: string;
+  heading?: string;
+}) {
   return (
     <main className="min-h-screen bg-[color:var(--background)] px-4 py-8 text-[color:var(--ink)] md:px-5 md:py-10">
       <div className="mx-auto max-w-3xl">
         <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
-        <h1 className="mt-2 font-serif text-3xl leading-tight md:mt-3 md:text-4xl">Share unavailable</h1>
+        <h1 className="mt-2 font-serif text-3xl leading-tight md:mt-3 md:text-4xl">{heading}</h1>
         <p className="mt-3 text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:leading-7">{message}</p>
         <Link href={`/share/${token}`} className="mt-6 inline-block text-sm text-[color:var(--ink)] underline underline-offset-4">
           Back to shared galleries
@@ -88,7 +97,21 @@ export default async function PublicSharedSubgalleryPage({
     .maybeSingle<ShareRow>();
 
   if (!share || share.revoked_at) {
-    return <InvalidShareState token={token} message="This share link may be invalid or has been revoked." />;
+    if (share?.revoked_at) {
+      return (
+        <InvalidShareState
+          token={token}
+          heading="This share link has been revoked"
+          message="The sender has revoked this share link. Reach out to them if you'd like access again."
+        />
+      );
+    }
+    return (
+      <InvalidShareState
+        token={token}
+        message="This share link may be invalid or no longer active."
+      />
+    );
   }
 
   const { data: shareGalleryRows } = await admin
@@ -154,21 +177,47 @@ export default async function PublicSharedSubgalleryPage({
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 border-b border-[rgba(30,46,72,0.1)] pb-4 md:mb-8 md:pb-5">
           <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
-          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-[color:var(--ink-soft)]">
-            <Link href={`/share/${token}`} className="underline underline-offset-4">All shared galleries</Link>
-            <span>/</span>
-            <Link href={`/share/${token}/gallery/${gallery.id}`} className="underline underline-offset-4">{gallery.title}</Link>
-            <span>/</span>
-            <span>{subgallery.title}</span>
+          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[color:var(--ink-soft)]">
+            {/*
+              Mobile breadcrumb: collapse middle segments to a single
+              "← Gallery title" so a long subgallery title doesn't push
+              the row into a multi-line wrap. Full ladder returns at md+.
+            */}
+            <Link
+              href={`/share/${token}/gallery/${gallery.id}`}
+              className="inline-flex max-w-[12rem] items-center gap-1 underline underline-offset-4 md:hidden"
+              aria-label={`Back to ${gallery.title}`}
+            >
+              <span aria-hidden>←</span>
+              <span className="truncate">{gallery.title}</span>
+            </Link>
+            <Link
+              href={`/share/${token}`}
+              className="hidden underline underline-offset-4 md:inline"
+            >
+              All shared galleries
+            </Link>
+            <span aria-hidden className="hidden md:inline">/</span>
+            <Link
+              href={`/share/${token}/gallery/${gallery.id}`}
+              className="hidden underline underline-offset-4 md:inline"
+            >
+              {gallery.title}
+            </Link>
+            <span aria-hidden className="hidden md:inline">/</span>
+            <span className="hidden min-w-0 truncate md:inline">{subgallery.title}</span>
           </div>
           <h1 className="mt-2 font-serif text-3xl leading-tight md:text-5xl">{subgallery.title}</h1>
-          {(subgallery.location || subgallery.date_label || formatDateRange(subgallery.start_date, subgallery.end_date)) ? (
-            <p className="mt-2.5 text-sm text-[color:var(--ink-soft)] md:mt-3">
-              {[subgallery.location, subgallery.date_label || formatDateRange(subgallery.start_date, subgallery.end_date)]
-                .filter(Boolean)
-                .join(" • ")}
-            </p>
-          ) : null}
+          {(() => {
+            const formattedLocation = formatLocationForCard(subgallery.location);
+            const dateText = subgallery.date_label || formatDateRange(subgallery.start_date, subgallery.end_date);
+            if (!formattedLocation && !dateText) return null;
+            return (
+              <p className="mt-2.5 text-sm text-[color:var(--ink-soft)] md:mt-3">
+                {[formattedLocation, dateText].filter(Boolean).join(" • ")}
+              </p>
+            );
+          })()}
           {subgallery.description ? (
             <p className="mt-3 max-w-3xl text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:text-[15px] md:leading-7">{subgallery.description}</p>
           ) : null}
@@ -179,8 +228,17 @@ export default async function PublicSharedSubgalleryPage({
           {photos.length ? (
             <PhotoGrid photos={photos} />
           ) : (
-            <div className="border border-[rgba(30,46,72,0.12)] bg-white/72 px-6 py-8">
-              <p className="font-serif text-2xl leading-tight">No photos in this scene yet.</p>
+            <div className="border border-[rgba(30,46,72,0.12)] bg-white/72 px-6 py-10 text-center">
+              <p className="font-serif text-2xl leading-tight">Photos still on the way.</p>
+              <p className="mt-2 text-sm leading-6 text-[color:var(--ink-soft)]">
+                The sender hasn&apos;t added photos to this scene yet. They&apos;ll appear here as soon as they do.
+              </p>
+              <Link
+                href={`/share/${token}/gallery/${gallery.id}`}
+                className="mt-4 inline-block text-sm text-[color:var(--ink)] underline underline-offset-4"
+              >
+                Back to {gallery.title}
+              </Link>
             </div>
           )}
         </section>

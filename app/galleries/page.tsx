@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, Share2 } from "lucide-react";
+import { ArrowRight, Pencil, Plus, Share2, X } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { GalleryCard } from "@/components/gallery-card";
@@ -12,6 +12,7 @@ import { CreateSharePanel } from "@/components/share/create-share-panel";
 import { WorkspaceTopbar } from "@/components/workspace-topbar";
 import { Button } from "@/components/ui/button";
 import { useFormDraft } from "@/hooks/use-form-draft";
+import { useGalleryDraftSnapshot } from "@/hooks/use-gallery-draft";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 import { useRecipientGroups } from "@/hooks/use-recipient-groups";
 import { getMembershipPlan } from "@/lib/plans";
@@ -34,6 +35,12 @@ export default function GalleriesPage() {
   const [recipientGroups, setRecipientGroups] = useRecipientGroups(
     onboarding.user?.id ?? null,
   );
+  // In-progress gallery draft (single slot per user). Surfaced as a
+  // Drafts strip above the gallery grid so a user who left mid-create
+  // can pick up where they left off without being thrown back into
+  // the form unprompted.
+  const { draft: galleryDraft, clear: clearGalleryDraft } =
+    useGalleryDraftSnapshot(onboarding.user?.id ?? null);
   const [shareUsage, setShareUsage] = useState<{
     current: number;
     limit: number | null;
@@ -206,6 +213,10 @@ export default function GalleriesPage() {
             Upgrade to create more share links.
           </Link>
         </p>
+      ) : null}
+
+      {galleryDraft ? (
+        <DraftsStrip draft={galleryDraft} onDiscard={clearGalleryDraft} />
       ) : null}
 
       {!hydrated ? (
@@ -402,5 +413,81 @@ function QuickStat({
         )}
       </p>
     </div>
+  );
+}
+
+function formatDraftTimestamp(iso: string): string {
+  if (!iso) return "Just now";
+  const updatedAt = new Date(iso);
+  if (Number.isNaN(updatedAt.getTime())) return "Just now";
+  const now = Date.now();
+  const diffMinutes = Math.round((now - updatedAt.getTime()) / 60_000);
+  if (diffMinutes < 1) return "Just now";
+  if (diffMinutes < 60) return `${diffMinutes} min ago`;
+  const diffHours = Math.round(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours} hr${diffHours === 1 ? "" : "s"} ago`;
+  return updatedAt.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year:
+      updatedAt.getFullYear() === new Date().getFullYear() ? undefined : "numeric",
+  });
+}
+
+function DraftsStrip({
+  draft,
+  onDiscard,
+}: {
+  draft: import("@/hooks/use-gallery-draft").GalleryDraft;
+  onDiscard: () => void;
+}) {
+  const title = draft.title.trim() || "Untitled draft";
+  const timestamp = formatDraftTimestamp(draft.updatedAt);
+  return (
+    <section className="mb-4 md:mb-6">
+      <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-[color:var(--ink-soft)]">
+        Drafts
+      </p>
+      <div className="mt-2 flex items-stretch gap-2 overflow-x-auto pb-1 md:gap-3">
+        <Link
+          href="/galleries/new"
+          className="group flex min-w-[16rem] flex-1 items-center justify-between gap-3 border border-[color:var(--border)] bg-white/80 px-3.5 py-2.5 transition hover:border-[color:var(--border-strong)] hover:bg-white md:min-w-[20rem]"
+        >
+          <div className="min-w-0 flex-1">
+            <p className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
+              <Pencil className="h-3 w-3" />
+              In progress · {timestamp}
+            </p>
+            <p className="mt-1 truncate font-serif text-[18px] leading-tight text-[color:var(--ink)] md:text-[20px]">
+              {title}
+            </p>
+            {draft.location ? (
+              <p className="mt-0.5 truncate text-[12px] text-[color:var(--ink-soft)]">
+                {draft.location}
+              </p>
+            ) : null}
+          </div>
+          <span className="inline-flex items-center gap-1.5 self-center text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)] transition group-hover:text-[color:var(--ink)]">
+            Continue
+            <ArrowRight className="h-3.5 w-3.5" />
+          </span>
+        </Link>
+        <button
+          type="button"
+          onClick={() => {
+            if (
+              typeof window === "undefined" ||
+              window.confirm("Discard this draft? This cannot be undone.")
+            ) {
+              onDiscard();
+            }
+          }}
+          aria-label="Discard draft"
+          className="inline-flex shrink-0 items-center justify-center border border-[color:var(--border)] bg-white/80 px-2.5 text-[color:var(--ink-soft)] transition hover:border-[color:var(--border-strong)] hover:bg-white hover:text-[color:var(--ink)]"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </section>
   );
 }

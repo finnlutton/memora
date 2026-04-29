@@ -62,13 +62,18 @@ export default async function PublicSharePage({
     .maybeSingle<ShareRow>();
 
   if (shareError || !share || share.revoked_at) {
+    const isRevoked = !!share?.revoked_at;
     return (
       <main className="min-h-screen bg-[color:var(--background)] px-4 py-8 text-[color:var(--ink)] md:px-5 md:py-10">
         <div className="mx-auto max-w-3xl">
           <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
-          <h1 className="mt-2 font-serif text-3xl leading-tight md:mt-3 md:text-4xl">This share link is unavailable</h1>
+          <h1 className="mt-2 font-serif text-3xl leading-tight md:mt-3 md:text-4xl">
+            {isRevoked ? "This share link has been revoked" : "This share link is unavailable"}
+          </h1>
           <p className="mt-3 text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:leading-7">
-            The link may be invalid, revoked, or no longer active. Ask the person who shared it to send you a new one.
+            {isRevoked
+              ? "The sender has revoked this share link. Reach out to them if you'd like access again."
+              : "The link may be invalid or no longer active. Ask the person who shared it to send you a new one."}
           </p>
           <Link href="/" className="mt-6 inline-block text-sm text-[color:var(--ink)] underline underline-offset-4">
             Return to Memora
@@ -197,8 +202,11 @@ export default async function PublicSharePage({
             })}
           </section>
         ) : (
-          <section className="border border-[rgba(30,46,72,0.12)] bg-white/72 px-6 py-8">
-            <p className="font-serif text-2xl leading-tight">No galleries available in this share yet.</p>
+          <section className="border border-[rgba(30,46,72,0.12)] bg-white/72 px-6 py-10 text-center">
+            <p className="font-serif text-2xl leading-tight">Nothing to see just yet.</p>
+            <p className="mt-2 text-sm leading-6 text-[color:var(--ink-soft)]">
+              The sender hasn&apos;t added any galleries to this share yet. Check back soon — anything they add will show up here automatically.
+            </p>
           </section>
         )}
         <footer className="mt-10 border-t border-[rgba(30,46,72,0.08)] pt-6 text-center md:mt-14 md:pt-8">

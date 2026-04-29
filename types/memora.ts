@@ -45,7 +45,15 @@ export type Subgallery = {
   location: string;
   locationLat?: number | null;
   locationLng?: number | null;
+  /**
+   * `dateLabel` is the legacy free-form display string. New writes
+   * prefer the precise `startDate` / `endDate` pair below; the store
+   * keeps `dateLabel` populated (derived from the range) for any
+   * surface that still reads it directly.
+   */
   dateLabel: string;
+  startDate?: string;
+  endDate?: string;
   description: string;
   photos: MemoryPhoto[];
   createdAt: string;
@@ -96,7 +104,16 @@ export type SubgalleryInput = {
   location: string;
   locationLat: number | null;
   locationLng: number | null;
-  dateLabel: string;
+  /**
+   * Subgalleries now collect dates the same way galleries do — an
+   * optional precise start and end pair. `dateLabel` is retained as
+   * an optional fallback so any legacy caller (or future re-import
+   * path) can still post a free-form string; the store prefers
+   * `startDate` / `endDate` when either is non-empty.
+   */
+  startDate: string;
+  endDate: string;
+  dateLabel?: string;
   description: string;
   photos: MemoryPhoto[];
 };

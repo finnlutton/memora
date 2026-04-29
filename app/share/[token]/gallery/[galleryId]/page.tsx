@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { formatLocationForCard } from "@/lib/utils";
 
 const STORAGE_BUCKET = "gallery-images";
 
@@ -56,12 +57,20 @@ function dateLabelForSubgallery(subgallery: SubgalleryRow) {
   return subgallery.date_label || formatDateRange(subgallery.start_date, subgallery.end_date);
 }
 
-function InvalidShareState({ token, message }: { token: string; message: string }) {
+function InvalidShareState({
+  token,
+  message,
+  heading = "Share unavailable",
+}: {
+  token: string;
+  message: string;
+  heading?: string;
+}) {
   return (
     <main className="min-h-screen bg-[color:var(--background)] px-4 py-8 text-[color:var(--ink)] md:px-5 md:py-10">
       <div className="mx-auto max-w-3xl">
         <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
-        <h1 className="mt-2 font-serif text-3xl leading-tight md:mt-3 md:text-4xl">Share unavailable</h1>
+        <h1 className="mt-2 font-serif text-3xl leading-tight md:mt-3 md:text-4xl">{heading}</h1>
         <p className="mt-3 text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:leading-7">{message}</p>
         <Link href={`/share/${token}`} className="mt-6 inline-block text-sm text-[color:var(--ink)] underline underline-offset-4">
           Back to shared galleries
@@ -86,7 +95,21 @@ export default async function PublicSharedGalleryPage({
     .maybeSingle<ShareRow>();
 
   if (!share || share.revoked_at) {
-    return <InvalidShareState token={token} message="This share link may be invalid or has been revoked." />;
+    if (share?.revoked_at) {
+      return (
+        <InvalidShareState
+          token={token}
+          heading="This share link has been revoked"
+          message="The sender has revoked this share link. Reach out to them if you'd like access again."
+        />
+      );
+    }
+    return (
+      <InvalidShareState
+        token={token}
+        message="This share link may be invalid or no longer active."
+      />
+    );
   }
 
   const { data: shareGalleryRows } = await admin
@@ -139,10 +162,23 @@ export default async function PublicSharedGalleryPage({
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 border-b border-[rgba(30,46,72,0.1)] pb-4 md:mb-8 md:pb-5">
           <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
-          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-[color:var(--ink-soft)]">
-            <Link href={`/share/${token}`} className="underline underline-offset-4">All shared galleries</Link>
-            <span>/</span>
-            <span>{gallery.title}</span>
+          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[color:var(--ink-soft)]">
+            {/*
+              On mobile we collapse the parent crumb to a leading "←"
+              so a long gallery title doesn't push the breadcrumb to
+              wrap. The full word ladder returns on md+ where there's
+              room for it.
+            */}
+            <Link
+              href={`/share/${token}`}
+              className="inline-flex items-center gap-1 underline underline-offset-4"
+              aria-label="All shared galleries"
+            >
+              <span aria-hidden className="md:hidden">←</span>
+              <span className="hidden md:inline">All shared galleries</span>
+            </Link>
+            <span aria-hidden>/</span>
+            <span className="min-w-0 truncate">{gallery.title}</span>
           </div>
           <h1 className="mt-2 font-serif text-3xl leading-tight md:text-5xl">{gallery.title}</h1>
           {/*
@@ -178,11 +214,16 @@ export default async function PublicSharedGalleryPage({
                   </div>
                   <div className="space-y-2 px-4 py-3.5">
                     <h2 className="font-serif text-xl leading-tight">{subgallery.title}</h2>
-                    {(subgallery.location || dateLabelForSubgallery(subgallery)) ? (
-                      <p className="text-xs text-[color:var(--ink-soft)]">
-                        {[subgallery.location, dateLabelForSubgallery(subgallery)].filter(Boolean).join(" • ")}
-                      </p>
-                    ) : null}
+                    {(() => {
+                      const formattedLocation = formatLocationForCard(subgallery.location);
+                      const dateText = dateLabelForSubgallery(subgallery);
+                      if (!formattedLocation && !dateText) return null;
+                      return (
+                        <p className="text-xs text-[color:var(--ink-soft)]">
+                          {[formattedLocation, dateText].filter(Boolean).join(" • ")}
+                        </p>
+                      );
+                    })()}
                     {subgallery.description ? (
                       <p className="line-clamp-3 text-sm leading-6 text-[color:var(--ink-soft)]">{subgallery.description}</p>
                     ) : null}
@@ -192,8 +233,17 @@ export default async function PublicSharedGalleryPage({
             })}
           </section>
         ) : (
-          <section className="border border-[rgba(30,46,72,0.12)] bg-white/72 px-6 py-8">
-            <p className="font-serif text-2xl leading-tight">No subgalleries in this shared gallery yet.</p>
+          <section className="border border-[rgba(30,46,72,0.12)] bg-white/72 px-6 py-10 text-center">
+            <p className="font-serif text-2xl leading-tight">More to come.</p>
+            <p className="mt-2 text-sm leading-6 text-[color:var(--ink-soft)]">
+              The sender hasn&apos;t added any scenes inside this gallery yet. New scenes will appear here as soon as they do.
+            </p>
+            <Link
+              href={`/share/${token}`}
+              className="mt-4 inline-block text-sm text-[color:var(--ink)] underline underline-offset-4"
+            >
+              Back to all shared galleries
+            </Link>
           </section>
         )}
       </div>

@@ -8,6 +8,7 @@ import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { PhotoGrid } from "@/components/photo-grid";
 import { Button } from "@/components/ui/button";
 import { useMemoraStore } from "@/hooks/use-memora-store";
+import { formatLocationForCard } from "@/lib/utils";
 
 export default function SubgalleryDetailPage() {
   const params = useParams<{ galleryId: string; subgalleryId: string }>();
@@ -68,7 +69,10 @@ export default function SubgalleryDetailPage() {
           </p>
           <h1 className="mt-2 font-serif text-3xl text-[color:var(--ink)] md:mt-3 md:text-5xl">{subgallery.title}</h1>
           <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-[color:var(--ink-soft)] md:mt-4 md:gap-x-4 md:gap-y-2">
-            {subgallery.location ? <span>{subgallery.location}</span> : null}
+            {(() => {
+              const formatted = formatLocationForCard(subgallery.location);
+              return formatted ? <span>{formatted}</span> : null;
+            })()}
             {subgallery.location && subgallery.dateLabel ? (
               <span className="text-[color:var(--ink-faint)]">/</span>
             ) : null}

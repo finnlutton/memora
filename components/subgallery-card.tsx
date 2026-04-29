@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { CalendarDays, MapPin } from "lucide-react";
-import { nextImageUnoptimizedForSrc } from "@/lib/utils";
+import { formatLocationForCard, nextImageUnoptimizedForSrc } from "@/lib/utils";
 import type { Subgallery } from "@/types/memora";
 
 export function SubgalleryCard({
@@ -43,7 +43,7 @@ export function SubgalleryCard({
             <div className="mt-2.5 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.18em] text-white/70 md:mt-3 md:gap-3 md:text-xs">
               <span className="inline-flex items-center gap-1.5">
                 <MapPin className="h-3.5 w-3.5" />
-                {subgallery.location}
+                {formatLocationForCard(subgallery.location)}
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <CalendarDays className="h-3.5 w-3.5" />

@@ -8,6 +8,7 @@ import { ArrowLeft, ArrowRight, Check, Save } from "lucide-react";
 import { LocationAutocompleteInput } from "@/components/location-autocomplete-input";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { Button } from "@/components/ui/button";
+import { DateField } from "@/components/ui/date-field";
 import { useFormDraft } from "@/hooks/use-form-draft";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 import { filesToPhotos, readFileAsDataUrl } from "@/lib/file";
@@ -57,11 +58,8 @@ export function SubgalleryForm({
   const [location, setLocation] = useState(initialValue?.location ?? "");
   const [locationLat, setLocationLat] = useState<number | null>(initialValue?.locationLat ?? null);
   const [locationLng, setLocationLng] = useState<number | null>(initialValue?.locationLng ?? null);
-  const [dateLabel, setDateLabel, clearDateLabelDraft] = useFormDraft({
-    scope: draftScope,
-    field: "dateLabel",
-    initialValue: initialValue?.dateLabel ?? "",
-  });
+  const [startDate, setStartDate] = useState(initialValue?.startDate ?? "");
+  const [endDate, setEndDate] = useState(initialValue?.endDate ?? "");
   const [description, setDescription, clearDescriptionDraft] = useFormDraft({
     scope: draftScope,
     field: "description",
@@ -87,12 +85,12 @@ export function SubgalleryForm({
         location,
         locationLat,
         locationLng,
-        dateLabel,
+        startDate,
+        endDate,
         description,
         photos,
       });
       clearTitleDraft();
-      clearDateLabelDraft();
       clearDescriptionDraft();
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Unable to save subgallery.");
@@ -135,27 +133,38 @@ export function SubgalleryForm({
                 />
               </div>
 
+              <div className="space-y-2">
+                <Label>Location (optional)</Label>
+                <LocationAutocompleteInput
+                  value={{ label: location, lat: locationLat, lng: locationLng }}
+                  onChange={(next) => {
+                    setLocation(next.label);
+                    setLocationLat(next.lat);
+                    setLocationLng(next.lng);
+                  }}
+                  className={fieldClassName()}
+                  placeholder="Zermatt, Switzerland"
+                />
+              </div>
+
               <div className="grid gap-7 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Location</Label>
-                  <LocationAutocompleteInput
-                    value={{ label: location, lat: locationLat, lng: locationLng }}
-                    onChange={(next) => {
-                      setLocation(next.label);
-                      setLocationLat(next.lat);
-                      setLocationLng(next.lng);
-                    }}
-                    className={fieldClassName()}
-                    placeholder="Zermatt, Switzerland"
+                  <Label>Start date (optional)</Label>
+                  <DateField
+                    value={startDate}
+                    onChange={setStartDate}
+                    ariaLabel="Start date"
+                    placeholder="Choose a date"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Date or timeframe</Label>
-                  <input
-                    value={dateLabel}
-                    onChange={(event) => setDateLabel(event.target.value)}
-                    className={fieldClassName()}
-                    placeholder="Feb 11–13"
+                  <Label>End date (optional)</Label>
+                  <DateField
+                    value={endDate}
+                    onChange={setEndDate}
+                    ariaLabel="End date"
+                    placeholder="Choose a date"
+                    min={startDate || undefined}
                   />
                 </div>
               </div>

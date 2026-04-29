@@ -3,13 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Save } from "lucide-react";
 import { LocationAutocompleteInput } from "@/components/location-autocomplete-input";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-field";
-import { useFormDraft } from "@/hooks/use-form-draft";
+import { useGalleryDraftWriter } from "@/hooks/use-gallery-draft";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 import { readFileAsDataUrl } from "@/lib/file";
 import { nextImageUnoptimizedForSrc, splitCommaSeparated } from "@/lib/utils";
@@ -51,37 +51,72 @@ export function GalleryForm({
 }) {
   const router = useRouter();
   const { onboarding } = useMemoraStore();
+  const isNewGallery = !initialValue;
+  // Draft persistence applies to NEW galleries only. Edits to an
+  // existing gallery should never resurrect or write to the in-progress
+  // draft slot — that slot belongs to the next "create new gallery"
+  // attempt, not to revisions of saved work.
+  const { initialDraft, save: saveDraft, clear: clearDraft } = useGalleryDraftWriter(
+    onboarding.user?.id ?? null,
+    isNewGallery,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [coverImage, setCoverImage] = useState(
     initialValue?.coverImage ?? defaultCoverImage ?? "",
   );
-  // Draft scope: `<userId or anon>:gallery:<galleryId or new>`. Drafts
-  // are sessionStorage-only and text-only — see `useFormDraft`. They
-  // persist across tab-returns and remounts but are wiped on
-  // successful submit and on tab close.
-  const draftScope = `${onboarding.user?.id ?? "anon"}:gallery:${
-    initialValue?.id ?? "new"
-  }`;
-  const [title, setTitle, clearTitleDraft] = useFormDraft({
-    scope: draftScope,
-    field: "title",
-    initialValue: initialValue?.title ?? "",
-  });
-  const [description, setDescription, clearDescriptionDraft] = useFormDraft({
-    scope: draftScope,
-    field: "description",
-    initialValue: initialValue?.description ?? "",
-  });
-  const [startDate, setStartDate] = useState(initialValue?.startDate ?? "");
-  const [endDate, setEndDate] = useState(initialValue?.endDate ?? "");
-  const [location, setLocation] = useState(initialValue?.locations[0] ?? "");
-  const [locationLat, setLocationLat] = useState<number | null>(initialValue?.locationLat ?? null);
-  const [locationLng, setLocationLng] = useState<number | null>(initialValue?.locationLng ?? null);
+  const [title, setTitle] = useState(
+    initialValue?.title ?? (isNewGallery ? initialDraft.title : ""),
+  );
+  const [description, setDescription] = useState(
+    initialValue?.description ?? (isNewGallery ? initialDraft.description : ""),
+  );
+  const [startDate, setStartDate] = useState(
+    initialValue?.startDate ?? (isNewGallery ? initialDraft.startDate : ""),
+  );
+  const [endDate, setEndDate] = useState(
+    initialValue?.endDate ?? (isNewGallery ? initialDraft.endDate : ""),
+  );
+  const [location, setLocation] = useState(
+    initialValue?.locations[0] ?? (isNewGallery ? initialDraft.location : ""),
+  );
+  const [locationLat, setLocationLat] = useState<number | null>(
+    initialValue?.locationLat ?? (isNewGallery ? initialDraft.locationLat : null),
+  );
+  const [locationLng, setLocationLng] = useState<number | null>(
+    initialValue?.locationLng ?? (isNewGallery ? initialDraft.locationLng : null),
+  );
+  // People is intentionally NOT persisted to the draft — list of
+  // names is fast to retype and we'd rather keep the draft surface
+  // small. See `hooks/use-gallery-draft.ts`.
   const [people, setPeople] = useState(initialValue?.people.join(", ") ?? "");
-  const [moodTags, setMoodTags] = useState(initialValue?.moodTags.join(", ") ?? "");
-  const [privacy, setPrivacy] = useState<Gallery["privacy"]>(initialValue?.privacy ?? "private");
   const [isUploading, setIsUploading] = useState(false);
+
+  // Mirror every persisted field into localStorage. Debounced inside
+  // the hook; non-fatal on quota errors.
+  useEffect(() => {
+    if (!isNewGallery) return;
+    saveDraft({
+      title,
+      description,
+      startDate,
+      endDate,
+      location,
+      locationLat,
+      locationLng,
+      updatedAt: "",
+    });
+  }, [
+    isNewGallery,
+    saveDraft,
+    title,
+    description,
+    startDate,
+    endDate,
+    location,
+    locationLat,
+    locationLng,
+  ]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -100,13 +135,16 @@ export function GalleryForm({
         locationLat,
         locationLng,
         people: splitCommaSeparated(people),
-        moodTags: splitCommaSeparated(moodTags),
-        privacy,
+        // Mood and visibility were removed from the form. Mood now
+        // submits as an empty array; visibility defaults to private
+        // (the only meaningful state today — there is no live public
+        // gallery surface).
+        moodTags: [],
+        privacy: "private",
       });
-      // Successful save — drop the saved draft so a future visit to
-      // this form starts clean instead of pre-filling stale text.
-      clearTitleDraft();
-      clearDescriptionDraft();
+      // Successful save — clear the in-progress draft so the next
+      // "Create gallery" visit starts clean.
+      clearDraft();
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Unable to save gallery.");
     } finally {
@@ -209,44 +247,6 @@ export function GalleryForm({
                 </span>
               </div>
 
-              <div className="space-y-2">
-                <Label>Mood</Label>
-                <input
-                  value={moodTags}
-                  onChange={(event) => setMoodTags(event.target.value)}
-                  className={fieldClassName()}
-                  placeholder="Snow light, train days, quiet luxury"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Visibility</Label>
-                <div className="flex gap-2 pt-1">
-                  {(["private", "public"] as const).map((option) => {
-                    const active = privacy === option;
-                    return (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() => setPrivacy(option)}
-                        aria-pressed={active}
-                        className={`inline-flex items-center gap-2 border px-3.5 py-2 text-[13px] font-medium tracking-[0.01em] transition ${
-                          active
-                            ? "border-[color:var(--ink)] bg-[color:var(--ink)] text-white"
-                            : "border-[color:var(--border-strong)] bg-[color:var(--background)] text-[color:var(--ink-soft)] hover:border-[color:var(--ink-soft)] hover:text-[color:var(--ink)]"
-                        }`}
-                      >
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            active ? "bg-white" : "bg-[color:var(--border-strong)]"
-                          }`}
-                        />
-                        <span className="capitalize">{option}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
             </div>
           </div>
 
