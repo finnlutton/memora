@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { CollapsibleEntry } from "@/components/collapsible-entry";
+import { PhotoGrid } from "@/components/photo-grid";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { formatLocationForCard } from "@/lib/utils";
+import type { MemoryPhoto } from "@/types/memora";
 
 const STORAGE_BUCKET = "gallery-images";
 
@@ -31,6 +33,14 @@ type SubgalleryRow = {
   date_label: string | null;
   start_date: string | null;
   end_date: string | null;
+};
+
+type DirectPhotoRow = {
+  id: string;
+  storage_path: string;
+  caption: string | null;
+  display_order: number | null;
+  created_at: string;
 };
 
 function isLikelyStoragePath(path: string) {
@@ -134,29 +144,60 @@ export default async function PublicSharedGalleryPage({
     return <InvalidShareState token={token} message="This gallery is no longer available." />;
   }
 
-  const { data: subgalleries } = await admin
-    .from("subgalleries")
-    .select("id, title, description, cover_image_path, location, date_label, start_date, end_date")
-    .eq("gallery_id", galleryId)
-    .order("display_order", { ascending: true })
-    .returns<SubgalleryRow[]>();
+  const [{ data: subgalleries }, { data: directPhotoRows }] = await Promise.all([
+    admin
+      .from("subgalleries")
+      .select("id, title, description, cover_image_path, location, date_label, start_date, end_date")
+      .eq("gallery_id", galleryId)
+      .order("display_order", { ascending: true })
+      .returns<SubgalleryRow[]>(),
+    admin
+      .from("photos")
+      .select("id, storage_path, caption, display_order, created_at")
+      .eq("gallery_id", galleryId)
+      .is("subgallery_id", null)
+      .order("display_order", { ascending: true })
+      .returns<DirectPhotoRow[]>(),
+  ]);
 
   // The gallery cover used to render as a hero banner here, but
   // recipients found it redundant with the cover that already shows
-  // on the share landing page tile. We now only sign the subgallery
-  // covers that are actually rendered on this page.
+  // on the share landing page tile. We sign covers for subgallery
+  // tiles plus paths for any direct gallery photos rendered below.
   const coverPaths = (subgalleries ?? [])
     .map((subgallery) => subgallery.cover_image_path ?? "")
     .filter((path) => path && isLikelyStoragePath(path));
+  const directPhotoPaths = (directPhotoRows ?? [])
+    .map((photo) => photo.storage_path)
+    .filter((path) => path && isLikelyStoragePath(path));
 
   const signedUrlByPath = new Map<string, string>();
-  if (coverPaths.length) {
-    const uniquePaths = Array.from(new Set(coverPaths));
+  const allPaths = [...coverPaths, ...directPhotoPaths];
+  if (allPaths.length) {
+    const uniquePaths = Array.from(new Set(allPaths));
     const { data } = await admin.storage.from(STORAGE_BUCKET).createSignedUrls(uniquePaths, 60 * 60);
     (data ?? []).forEach((entry, index) => {
       if (entry.signedUrl) signedUrlByPath.set(uniquePaths[index], entry.signedUrl);
     });
   }
+
+  const directPhotos: MemoryPhoto[] = (directPhotoRows ?? []).map((photo, index) => {
+    const src = isLikelyStoragePath(photo.storage_path)
+      ? signedUrlByPath.get(photo.storage_path) ?? photo.storage_path
+      : photo.storage_path;
+    return {
+      id: photo.id,
+      galleryId,
+      subgalleryId: null,
+      src,
+      caption: photo.caption ?? "",
+      createdAt: photo.created_at,
+      order: photo.display_order ?? index,
+    };
+  });
+
+  const hasSubgalleries = (subgalleries ?? []).length > 0;
+  const hasDirectPhotos = directPhotos.length > 0;
 
   return (
     <main className="min-h-screen bg-[color:var(--background)] px-4 py-6 text-[color:var(--ink)] md:px-8 md:py-8">
@@ -181,7 +222,7 @@ export default async function PublicSharedGalleryPage({
           ) : null}
         </div>
 
-        {(subgalleries ?? []).length ? (
+        {hasSubgalleries ? (
           <section className="grid gap-x-3 gap-y-7 sm:grid-cols-2 md:gap-x-8 md:gap-y-12">
             {(subgalleries ?? []).map((subgallery) => {
               const cover = isLikelyStoragePath(subgallery.cover_image_path ?? "")
@@ -219,11 +260,20 @@ export default async function PublicSharedGalleryPage({
               );
             })}
           </section>
-        ) : (
+        ) : null}
+
+        {hasDirectPhotos ? (
+          <section className={hasSubgalleries ? "mt-10 md:mt-14" : ""}>
+            <p className="mb-3 font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">Photos</p>
+            <PhotoGrid photos={directPhotos} />
+          </section>
+        ) : null}
+
+        {!hasSubgalleries && !hasDirectPhotos ? (
           <section className="border-y border-[color:var(--border)] px-6 py-10 text-center">
             <p className="font-serif text-2xl leading-tight">More to come.</p>
             <p className="mt-2 text-sm leading-6 text-[color:var(--ink-soft)]">
-              The sender hasn&apos;t added any scenes inside this gallery yet. New scenes will appear here as soon as they do.
+              The sender hasn&apos;t added any scenes or photos to this gallery yet. New content will appear here as soon as they do.
             </p>
             <Link
               href={`/share/${token}`}
@@ -232,7 +282,7 @@ export default async function PublicSharedGalleryPage({
               Back to all shared galleries
             </Link>
           </section>
-        )}
+        ) : null}
       </div>
     </main>
   );
