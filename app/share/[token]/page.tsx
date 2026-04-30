@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  buildShareMetadata,
+  getShareMetaContext,
+  INVALID_SHARE_METADATA,
+  signCoverUrlForOg,
+} from "@/lib/share-metadata";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const STORAGE_BUCKET = "gallery-images";
@@ -43,6 +50,58 @@ function formatDateRange(startDate: string | null, endDate: string | null) {
   if (!startDate && !endDate) return "";
   if (startDate && endDate && startDate !== endDate) return `${formatSingle(startDate)} - ${formatSingle(endDate)}`;
   return formatSingle(startDate ?? endDate ?? "");
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<Metadata> {
+  const { token } = await params;
+  const ctx = await getShareMetaContext(token);
+  if (!ctx || ctx.revoked) return INVALID_SHARE_METADATA;
+
+  const admin = createSupabaseAdminClient();
+  const { data: linkedRows } = await admin
+    .from("share_galleries")
+    .select("gallery_id")
+    .eq("share_id", ctx.shareId)
+    .returns<{ gallery_id: string }[]>();
+
+  const galleryIds = (linkedRows ?? []).map((row) => row.gallery_id);
+  const { data: galleryRows } = galleryIds.length
+    ? await admin
+        .from("galleries")
+        .select("title, description, cover_image_path, updated_at")
+        .in("id", galleryIds)
+        .order("updated_at", { ascending: false })
+        .returns<
+          {
+            title: string;
+            description: string | null;
+            cover_image_path: string | null;
+            updated_at: string;
+          }[]
+        >()
+    : { data: [] as Array<{ title: string; description: string | null; cover_image_path: string | null; updated_at: string }> };
+
+  const galleries = galleryRows ?? [];
+  const headline = galleries[0];
+
+  let title: string;
+  if (galleries.length === 0) {
+    title = `${ctx.senderName} shared photos with you`;
+  } else if (galleries.length === 1) {
+    title = `${ctx.senderName} shared ${headline.title} with you`;
+  } else {
+    title = `${ctx.senderName} shared ${galleries.length} galleries with you`;
+  }
+
+  const coverUrl = await signCoverUrlForOg(headline?.cover_image_path ?? null);
+  const description =
+    galleries.length === 1 ? headline.description ?? null : null;
+
+  return buildShareMetadata({ title, description, coverUrl });
 }
 
 export default async function PublicSharePage({

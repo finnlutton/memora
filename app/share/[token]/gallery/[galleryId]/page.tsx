@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { CollapsibleEntry } from "@/components/collapsible-entry";
 import { PhotoGrid } from "@/components/photo-grid";
+import {
+  buildShareMetadata,
+  getShareMetaContext,
+  INVALID_SHARE_METADATA,
+  signCoverUrlForOg,
+} from "@/lib/share-metadata";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { formatLocationForCard } from "@/lib/utils";
 import type { MemoryPhoto } from "@/types/memora";
@@ -89,6 +96,45 @@ function InvalidShareState({
       </div>
     </main>
   );
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string; galleryId: string }>;
+}): Promise<Metadata> {
+  const { token, galleryId } = await params;
+  const ctx = await getShareMetaContext(token);
+  if (!ctx || ctx.revoked) return INVALID_SHARE_METADATA;
+
+  const admin = createSupabaseAdminClient();
+  const { data: linkRow } = await admin
+    .from("share_galleries")
+    .select("gallery_id")
+    .eq("share_id", ctx.shareId)
+    .eq("gallery_id", galleryId)
+    .maybeSingle<{ gallery_id: string }>();
+
+  if (!linkRow) return INVALID_SHARE_METADATA;
+
+  const { data: gallery } = await admin
+    .from("galleries")
+    .select("title, description, cover_image_path")
+    .eq("id", galleryId)
+    .maybeSingle<{
+      title: string;
+      description: string | null;
+      cover_image_path: string | null;
+    }>();
+
+  if (!gallery) return INVALID_SHARE_METADATA;
+
+  const coverUrl = await signCoverUrlForOg(gallery.cover_image_path);
+  return buildShareMetadata({
+    title: `${ctx.senderName} shared ${gallery.title} with you`,
+    description: gallery.description,
+    coverUrl,
+  });
 }
 
 export default async function PublicSharedGalleryPage({

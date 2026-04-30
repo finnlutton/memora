@@ -3,7 +3,15 @@ import { AppProviders } from "@/components/providers/app-providers";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
+// metadataBase resolves the relative `/og-default.png` path below into the
+// absolute URL that unfurl bots need. NEXT_PUBLIC_SITE_URL wins so preview
+// deploys can override; production falls back to the canonical apex.
+const siteOrigin =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+  "https://memoragallery.com";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteOrigin),
   title: "Memora",
   description: "A more intentional home for the moments that matter.",
   manifest: "/manifest.webmanifest",
@@ -21,6 +29,23 @@ export const metadata: Metadata = {
       sizes: "180x180",
       type: "image/png",
     },
+  },
+  // Default unfurl for the marketing site (homepage, /auth, /terms, etc.).
+  // Share routes override openGraph + twitter via their own generateMetadata
+  // so this image only shows when the new logo asset matters.
+  // Drop a 1200×630 PNG at /public/og-default.png to enable the image.
+  openGraph: {
+    title: "Memora",
+    description: "A more intentional home for the moments that matter.",
+    type: "website",
+    url: siteOrigin,
+    images: [{ url: "/og-default.png", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Memora",
+    description: "A more intentional home for the moments that matter.",
+    images: ["/og-default.png"],
   },
 };
 
