@@ -143,7 +143,7 @@ export function BillingStatusCard() {
         <div className="mt-4">
           <Link
             href="/galleries/settings/membership"
-            className="inline-flex items-center justify-center bg-[#00A86B] px-3.5 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-[#00925d]"
+            className="inline-flex items-center justify-center bg-[color:var(--ink)] px-3.5 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-[color:var(--ink-soft)]"
           >
             Upgrade plan
           </Link>
