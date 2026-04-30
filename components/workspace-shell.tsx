@@ -63,9 +63,24 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
 
   const navItems = useMemo(
     () => [
-      { href: "/galleries", label: "Galleries", icon: MyGalleriesIcon },
-      { href: "/galleries/clipboard", label: "Clipboard", icon: ClipboardIcon },
-      { href: "/galleries/map", label: "Memory Map", icon: GlobeIcon },
+      {
+        href: "/galleries",
+        label: "Galleries",
+        icon: MyGalleriesIcon,
+        tourNav: "galleries",
+      },
+      {
+        href: "/galleries/clipboard",
+        label: "Clipboard",
+        icon: ClipboardIcon,
+        tourNav: "clipboard",
+      },
+      {
+        href: "/galleries/map",
+        label: "Memory Map",
+        icon: GlobeIcon,
+        tourNav: "map",
+      },
     ],
     [],
   );
@@ -75,8 +90,13 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
   // intact without making them visually compete with the real
   // destinations above.
   const utilityItems = [
-    { href: "/galleries/help", label: "Help", icon: HelpIcon },
-    { href: "/galleries/settings", label: "Account Info", icon: SettingsIcon },
+    { href: "/galleries/help", label: "Help", icon: HelpIcon, tourNav: undefined },
+    {
+      href: "/galleries/settings",
+      label: "Account Info",
+      icon: SettingsIcon,
+      tourNav: "settings" as const,
+    },
   ];
 
   const isItemActive = (href: string) => {
@@ -150,6 +170,7 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
                   href={item.href}
                   title={collapsed ? item.label : undefined}
                   aria-current={active ? "page" : undefined}
+                  data-tour-nav={item.tourNav}
                   className={cn(
                     "group relative flex h-10 items-center gap-3 rounded-md pr-2 text-[13px] transition-colors",
                     active
@@ -196,6 +217,7 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
                   href={item.href}
                   title={collapsed ? item.label : undefined}
                   aria-current={active ? "page" : undefined}
+                  data-tour-nav={item.tourNav}
                   className={cn(
                     "group relative mb-1 flex h-10 items-center gap-3 rounded-md pr-2 text-[13px] transition-colors",
                     active
@@ -267,6 +289,7 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
+                data-tour-nav={item.tourNav}
                 className={cn(
                   "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium uppercase tracking-[0.14em] transition-colors",
                   active

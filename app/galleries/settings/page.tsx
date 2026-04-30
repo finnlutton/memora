@@ -2,8 +2,9 @@
 
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, Check, Pencil, X as XIcon } from "lucide-react";
+import { AlertTriangle, Check, Pencil, Sparkles, X as XIcon } from "lucide-react";
 import { AppearancePicker } from "@/components/appearance-picker";
 import { AppShell } from "@/components/app-shell";
 import { DeleteAccountDialog } from "@/components/delete-account-dialog";
@@ -13,6 +14,7 @@ import { LegalLinks } from "@/components/legal-links";
 import { Button } from "@/components/ui/button";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 import { DISPLAY_NAME_MAX_LENGTH } from "@/lib/profile-state";
+import { dispatchTourReplay } from "@/lib/tour";
 
 export default function WorkspaceSettingsPage() {
   const { onboarding } = useMemoraStore();
@@ -31,18 +33,22 @@ export default function WorkspaceSettingsPage() {
       */}
       <section
         aria-labelledby="settings-appearance-heading"
+        data-tour-id="settings-appearance"
         className="mx-auto mb-6 w-full max-w-5xl border-b border-[color:var(--border)] pb-6"
       >
-        <div className="mb-4">
-          <p
-            id="settings-appearance-heading"
-            className="text-[10px] font-medium uppercase tracking-[0.24em] text-[color:var(--ink)]"
-          >
-            Appearance
-          </p>
-          <p className="mt-2 max-w-xl text-sm text-[color:var(--ink-soft)]">
-            Choose the palette your archive is dressed in. Applies immediately, only to your account.
-          </p>
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p
+              id="settings-appearance-heading"
+              className="text-[10px] font-medium uppercase tracking-[0.24em] text-[color:var(--ink)]"
+            >
+              Appearance
+            </p>
+            <p className="mt-2 max-w-xl text-sm text-[color:var(--ink-soft)]">
+              Choose the palette your archive is dressed in. Applies immediately, only to your account.
+            </p>
+          </div>
+          <ReplayTourButton />
         </div>
         <AppearancePicker />
       </section>
@@ -130,6 +136,29 @@ export default function WorkspaceSettingsPage() {
         <LegalLinks />
       </footer>
     </AppShell>
+  );
+}
+
+/**
+ * Quiet entry to replay the first-run product tour. Sits on the
+ * Appearance row because that's where the tour ends ("Make Memora
+ * yours") — closing the loop. Resets the localStorage flag and
+ * pushes the user to /galleries so the tour mounts fresh on step 1.
+ */
+function ReplayTourButton() {
+  const router = useRouter();
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        dispatchTourReplay();
+        router.push("/galleries");
+      }}
+      className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] bg-transparent px-3 py-1.5 text-[10.5px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)] transition hover:border-[color:var(--ink)] hover:text-[color:var(--ink)]"
+    >
+      <Sparkles className="h-3.5 w-3.5" />
+      Replay product tour
+    </button>
   );
 }
 

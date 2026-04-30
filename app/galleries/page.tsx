@@ -125,65 +125,70 @@ export default function GalleriesPage() {
 
   return (
     <AppShell>
-      <WorkspaceTopbar
-        eyebrow="Workspace"
-        title={
-          onboarding.displayName
-            ? `${onboarding.displayName}${onboarding.displayName.endsWith("s") ? "'" : "'s"} galleries`
-            : "My Galleries"
-        }
-        subtitle="Curate, preserve, and share your experiences here."
-        hideTitleOnMobile
-        // Desktop: stack actions vertically and center the stack
-        // against the page title's vertical mid-line. Mobile keeps
-        // the original side-by-side row.
-        actionsClassName="md:flex-col md:items-stretch md:self-center md:gap-2.5 md:pt-0"
-        actions={
-          <>
-            {hasReachedGalleryLimit ? (
+      <div data-tour-id="galleries-title">
+        <WorkspaceTopbar
+          eyebrow="Workspace"
+          title={
+            onboarding.displayName
+              ? `${onboarding.displayName}${onboarding.displayName.endsWith("s") ? "'" : "'s"} galleries`
+              : "My Galleries"
+          }
+          subtitle="Curate, preserve, and share your experiences here."
+          hideTitleOnMobile
+          // Desktop: stack actions vertically and center the stack
+          // against the page title's vertical mid-line. Mobile keeps
+          // the original side-by-side row.
+          actionsClassName="md:flex-col md:items-stretch md:self-center md:gap-2.5 md:pt-0"
+          actions={
+            <>
+              {hasReachedGalleryLimit ? (
+                <Button
+                  asChild
+                  variant="secondary"
+                  data-tour-id="gallery-create"
+                  className="h-8 gap-1 whitespace-nowrap px-2 py-1 text-[9px] tracking-[0.06em] md:h-auto md:gap-1.5 md:px-3 md:py-2 md:text-xs md:tracking-[0.14em]"
+                >
+                  <Link href="/galleries/settings/membership?source=gallery-limit">
+                    <span className="md:hidden">Upgrade</span>
+                    <span className="hidden md:inline">Upgrade plan</span>
+                  </Link>
+                </Button>
+              ) : (
+                <Button
+                  asChild
+                  data-tour-id="gallery-create"
+                  className="h-8 gap-1 whitespace-nowrap px-2 py-1 text-[9px] tracking-[0.06em] md:h-auto md:gap-1.5 md:px-3 md:py-2 md:text-xs md:tracking-[0.14em]"
+                >
+                  <Link href="/galleries/new">
+                    <Plus className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                    <span className="md:hidden">Create</span>
+                    <span className="hidden md:inline">Create gallery</span>
+                  </Link>
+                </Button>
+              )}
               <Button
-                asChild
-                variant="secondary"
-                className="h-8 gap-1 whitespace-nowrap px-2 py-1 text-[9px] tracking-[0.06em] md:h-auto md:gap-1.5 md:px-3 md:py-2 md:text-xs md:tracking-[0.14em]"
+                type="button"
+                variant="ghost"
+                data-tour-id="gallery-share"
+                className="h-8 gap-1 whitespace-nowrap px-2 py-1 text-[9px] tracking-[0.06em] text-[color:var(--ink)] md:h-auto md:gap-1.5 md:px-3 md:py-2 md:text-xs md:tracking-[0.14em]"
+                disabled={shareLimitReached}
+                onClick={() => {
+                  setShareMode(true);
+                  setSharePanelOpen(false);
+                  setSelectedGalleryIds([]);
+                  setSelectedGroupIds([]);
+                  setCustomMessage("");
+                  clearCustomMessageDraft();
+                }}
               >
-                <Link href="/galleries/settings/membership?source=gallery-limit">
-                  <span className="md:hidden">Upgrade</span>
-                  <span className="hidden md:inline">Upgrade plan</span>
-                </Link>
+                <Share2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                <span className="md:hidden">Share</span>
+                <span className="hidden md:inline">Share Galleries</span>
               </Button>
-            ) : (
-              <Button
-                asChild
-                className="h-8 gap-1 whitespace-nowrap px-2 py-1 text-[9px] tracking-[0.06em] md:h-auto md:gap-1.5 md:px-3 md:py-2 md:text-xs md:tracking-[0.14em]"
-              >
-                <Link href="/galleries/new">
-                  <Plus className="h-2.5 w-2.5 md:h-3 md:w-3" />
-                  <span className="md:hidden">Create</span>
-                  <span className="hidden md:inline">Create gallery</span>
-                </Link>
-              </Button>
-            )}
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-8 gap-1 whitespace-nowrap px-2 py-1 text-[9px] tracking-[0.06em] text-[color:var(--ink)] md:h-auto md:gap-1.5 md:px-3 md:py-2 md:text-xs md:tracking-[0.14em]"
-              disabled={shareLimitReached}
-              onClick={() => {
-                setShareMode(true);
-                setSharePanelOpen(false);
-                setSelectedGalleryIds([]);
-                setSelectedGroupIds([]);
-                setCustomMessage("");
-                clearCustomMessageDraft();
-              }}
-            >
-              <Share2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
-              <span className="md:hidden">Share</span>
-              <span className="hidden md:inline">Share Galleries</span>
-            </Button>
-          </>
-        }
-      />
+            </>
+          }
+        />
+      </div>
 
       <section className="mb-3 grid grid-cols-3 gap-2 border-t border-b border-[color:var(--border)] py-3 md:mb-8 md:my-8 md:gap-6 md:py-5">
         {/*

@@ -82,7 +82,10 @@ export default function ClipboardPage() {
           flows above the stacked cards. pointer-events-none on desktop
           so clicks-to-add still pass through to the canvas underneath.
         */}
-        <header className="pointer-events-none absolute left-5 right-5 top-6 z-20 max-w-2xl md:left-12 md:top-12">
+        <header
+          data-tour-id="clipboard-prompt"
+          className="pointer-events-none absolute left-5 right-5 top-6 z-20 max-w-2xl md:left-12 md:top-12"
+        >
           <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-[color:var(--ink-soft)]">
             Your scraps are worth keeping
           </p>
