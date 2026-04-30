@@ -26,7 +26,13 @@ export function AppShell({
   const router = useRouter();
   const isHomePage = pathname === "/";
   const isProductRoute = pathname.startsWith("/galleries") || pathname.startsWith("/welcome");
+  // While the URL is still /auth, force the logged-out header even after the
+  // store flips to authenticated. Otherwise the legacy "My Dashboard" link and
+  // Settings dropdown flash for one render between sign-in success and the
+  // hard navigation to /galleries or /welcome.
+  const isAuthRoute = pathname.startsWith("/auth");
   const { onboarding, getNextOnboardingRoute, signOut } = useMemoraStore();
+  const showAuthenticatedNav = onboarding.isAuthenticated && !isAuthRoute;
   const createHref = onboarding.isAuthenticated
     ? onboarding.onboardingComplete
       ? "/galleries/new"
@@ -120,14 +126,14 @@ export function AppShell({
             />
           </Link>
           <nav className="flex shrink-0 items-center gap-1 md:gap-3">
-            {onboarding.isAuthenticated ? (
+            {showAuthenticatedNav ? (
               <NavLink href="/galleries">My Dashboard</NavLink>
             ) : isHomePage ? (
               <NavLink href="/#about-product">About Us</NavLink>
             ) : (
               <NavLink href="/">About Us</NavLink>
             )}
-            {!onboarding.isAuthenticated ? (
+            {!showAuthenticatedNav ? (
               <Button
                 asChild
                 variant="primary"
@@ -136,7 +142,7 @@ export function AppShell({
                 <Link href={createHref}>Create</Link>
               </Button>
             ) : null}
-            {onboarding.isAuthenticated ? (
+            {showAuthenticatedNav ? (
               <SettingsDropdown
                 email={onboarding.user?.email ?? ""}
                 planLabel={selectedPlan?.name ?? "No plan selected"}
