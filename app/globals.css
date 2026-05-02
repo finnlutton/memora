@@ -7,6 +7,12 @@
  * Applied via `data-theme` on <html>, set before first paint by an inline
  * script in app/layout.tsx. Themes are user-facing at /galleries/settings.
  *
+ * Scoping: each theme's variables are bound to BOTH `:root[data-theme=…]`
+ * AND `[data-theme=…]` so any descendant element with the attribute can
+ * override the theme for its subtree. Public share pages rely on this to
+ * render with the creator's chosen theme regardless of the viewer's
+ * personal theme on <html>.
+ *
  * Design rules:
  *   - Saturation is low (≤20%) across every theme so photographs stay hero.
  *   - Ink contrast against --background holds ≥6:1 in every theme (AA body).
@@ -15,7 +21,8 @@
  *     (see WorldGlobe, AppShell, WorkspaceShell).
  * ========================================================================== */
 
-:root {
+:root,
+[data-theme="harbor"] {
   /* Harbor — default mellow blue */
   --background: #f5f8fc;
   --paper: #eef3f8;
@@ -64,7 +71,8 @@
 }
 
 /* Grove — soft sage. Cloistered garden, gardener's journal. */
-:root[data-theme="grove"] {
+:root[data-theme="grove"],
+[data-theme="grove"] {
   --background: #f4f7f1;
   --paper: #edf1e8;
   --paper-strong: #dde4d3;
@@ -92,7 +100,8 @@
 
 /* Dusk — soft blush. Late afternoon light. Tuned for AA contrast on
  * ink-soft, ink-faint, and borders (warm-on-warm is the hardest case). */
-:root[data-theme="dusk"] {
+:root[data-theme="dusk"],
+[data-theme="dusk"] {
   --background: #faf4f2;
   --paper: #f4ebe8;
   --paper-strong: #e8d8d3;

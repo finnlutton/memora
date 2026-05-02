@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ShareThemeFrame } from "@/components/share/share-theme-frame";
 import {
   buildShareMetadata,
   getShareMetaContext,
@@ -16,6 +17,7 @@ type ShareRow = {
   revoked_at: string | null;
   recipient_group_name: string | null;
   recipient_member_labels: string[] | null;
+  theme_id: string | null;
 };
 
 type ShareGalleryRow = {
@@ -115,7 +117,7 @@ export default async function PublicSharePage({
   const { data: share, error: shareError } = await admin
     .from("shares")
     .select(
-      "id, message, revoked_at, recipient_group_name, recipient_member_labels",
+      "id, message, revoked_at, recipient_group_name, recipient_member_labels, theme_id",
     )
     .eq("token", token)
     .maybeSingle<ShareRow>();
@@ -123,22 +125,24 @@ export default async function PublicSharePage({
   if (shareError || !share || share.revoked_at) {
     const isRevoked = !!share?.revoked_at;
     return (
-      <main className="min-h-screen bg-[color:var(--background)] px-4 py-8 text-[color:var(--ink)] md:px-5 md:py-10">
-        <div className="mx-auto max-w-3xl">
-          <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
-          <h1 className="mt-2 font-serif text-3xl leading-tight md:mt-3 md:text-4xl">
-            {isRevoked ? "This share link has been revoked" : "This share link is unavailable"}
-          </h1>
-          <p className="mt-3 text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:leading-7">
-            {isRevoked
-              ? "The sender has revoked this share link. Reach out to them if you'd like access again."
-              : "The link may be invalid or no longer active. Ask the person who shared it to send you a new one."}
-          </p>
-          <Link href="/" className="mt-6 inline-block text-sm text-[color:var(--ink)] underline underline-offset-4">
-            Return to Memora
-          </Link>
-        </div>
-      </main>
+      <ShareThemeFrame themeId={share?.theme_id ?? null}>
+        <main className="min-h-screen bg-[color:var(--background)] px-4 py-8 text-[color:var(--ink)] md:px-5 md:py-10">
+          <div className="mx-auto max-w-3xl">
+            <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
+            <h1 className="mt-2 font-serif text-3xl leading-tight md:mt-3 md:text-4xl">
+              {isRevoked ? "This share link has been revoked" : "This share link is unavailable"}
+            </h1>
+            <p className="mt-3 text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:leading-7">
+              {isRevoked
+                ? "The sender has revoked this share link. Reach out to them if you'd like access again."
+                : "The link may be invalid or no longer active. Ask the person who shared it to send you a new one."}
+            </p>
+            <Link href="/" className="mt-6 inline-block text-sm text-[color:var(--ink)] underline underline-offset-4">
+              Return to Memora
+            </Link>
+          </div>
+        </main>
+      </ShareThemeFrame>
     );
   }
 
@@ -185,6 +189,7 @@ export default async function PublicSharePage({
   }
 
   return (
+    <ShareThemeFrame themeId={share.theme_id}>
     <main className="min-h-screen bg-[color:var(--background)] px-4 py-6 text-[color:var(--ink)] md:px-8 md:py-8">
       {/*
         Header eyebrow + title personalize the share when the sender
@@ -287,6 +292,7 @@ export default async function PublicSharePage({
         </footer>
       </div>
     </main>
+    </ShareThemeFrame>
   );
 }
 

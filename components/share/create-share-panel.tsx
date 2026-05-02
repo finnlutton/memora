@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Check, Pencil, Plus, Share2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
+import { useTheme } from "@/hooks/use-theme";
+import { THEME_IDS, THEMES, type ThemeId } from "@/lib/theme";
 import { createId } from "@/lib/utils";
 import type { RecipientGroup } from "@/types/share";
 
@@ -68,6 +70,7 @@ type CreateSharePanelProps = {
     message: string;
     recipientGroupName: string | null;
     recipientMemberLabels: string[];
+    themeId: ThemeId;
   }) => Promise<{ shareUrl: string }>;
 };
 
@@ -85,6 +88,12 @@ export function CreateSharePanel({
   onCreateShare,
 }: CreateSharePanelProps) {
   const { addToast } = useToast();
+  const { theme: currentTheme } = useTheme();
+  // The picker defaults to the creator's current in-app theme — that
+  // mirrors the prior implicit behavior — but they can override it per
+  // share so the recipient sees the palette they intended, not the one
+  // the sender happens to be using right now.
+  const [shareThemeId, setShareThemeId] = useState<ThemeId>(currentTheme);
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupMembers, setNewGroupMembers] = useState("");
@@ -110,8 +119,12 @@ export function CreateSharePanel({
       setShareUrl(null);
       setCopied(false);
       setEditingGroupId(null);
+      // Re-seed the picker from the current account theme each time the
+      // panel re-opens so a one-off override on the previous share doesn't
+      // silently persist into the next one.
+      setShareThemeId(currentTheme);
     }
-  }, [open]);
+  }, [open, currentTheme]);
 
   useEffect(() => {
     if (!copied) return;
@@ -377,6 +390,62 @@ export function CreateSharePanel({
             ) : null}
           </section>
 
+          <section className="space-y-3 border-b border-[rgba(26,42,67,0.1)] pb-6">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">
+                Theme
+              </p>
+              <p className="mt-1 text-xs leading-5 text-[color:var(--ink-soft)]">
+                Choose how the recipient&apos;s share page looks. Defaults to your current
+                theme — change it here if you&apos;d rather they see a different one.
+              </p>
+            </div>
+            <div
+              role="radiogroup"
+              aria-label="Share page theme"
+              className="grid grid-cols-3 gap-2"
+            >
+              {THEME_IDS.map((id) => {
+                const definition = THEMES[id];
+                const selected = shareThemeId === id;
+                const [bg, paper, paperStrong, accent, ink] = definition.swatch;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => setShareThemeId(id)}
+                    className={`group flex flex-col items-stretch gap-2 rounded-lg border p-2 text-left transition ${
+                      selected
+                        ? "border-[color:var(--accent-strong)] bg-[rgba(22,35,56,0.04)]"
+                        : "border-[rgba(26,42,67,0.12)] bg-white/75 hover:border-[rgba(26,42,67,0.22)]"
+                    }`}
+                  >
+                    <span
+                      aria-hidden
+                      className="flex h-6 overflow-hidden rounded-[4px] border border-[rgba(26,42,67,0.12)]"
+                    >
+                      <span style={{ backgroundColor: bg }} className="flex-1" />
+                      <span style={{ backgroundColor: paper }} className="flex-1" />
+                      <span style={{ backgroundColor: paperStrong }} className="flex-1" />
+                      <span style={{ backgroundColor: accent }} className="flex-1" />
+                      <span style={{ backgroundColor: ink }} className="flex-1" />
+                    </span>
+                    <span className="flex items-center justify-between gap-1">
+                      <span className="text-sm text-[color:var(--ink)]">
+                        {definition.name}
+                      </span>
+                      {selected ? (
+                        <Check className="h-3.5 w-3.5 text-[color:var(--accent-strong)]" />
+                      ) : null}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
           <section className="space-y-2">
             <label className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">
               Custom message
@@ -429,6 +498,7 @@ export function CreateSharePanel({
                   message: customMessage,
                   recipientGroupName,
                   recipientMemberLabels,
+                  themeId: shareThemeId,
                 });
                 setShareUrl(result.shareUrl);
               } catch (createError) {

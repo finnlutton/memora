@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CollapsibleEntry } from "@/components/collapsible-entry";
 import { PhotoGrid } from "@/components/photo-grid";
+import { ShareThemeFrame } from "@/components/share/share-theme-frame";
 import {
   buildShareMetadata,
   getShareMetaContext,
@@ -18,6 +19,7 @@ type ShareRow = {
   id: string;
   message: string | null;
   revoked_at: string | null;
+  theme_id: string | null;
 };
 
 type ShareGalleryRow = { gallery_id: string };
@@ -79,22 +81,26 @@ function InvalidShareState({
   token,
   message,
   heading = "Share unavailable",
+  themeId = null,
 }: {
   token: string;
   message: string;
   heading?: string;
+  themeId?: string | null;
 }) {
   return (
-    <main className="min-h-screen bg-[color:var(--background)] px-4 py-8 text-[color:var(--ink)] md:px-5 md:py-10">
-      <div className="mx-auto max-w-3xl">
-        <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
-        <h1 className="mt-2 font-serif text-3xl leading-tight md:mt-3 md:text-4xl">{heading}</h1>
-        <p className="mt-3 text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:leading-7">{message}</p>
-        <Link href={`/share/${token}`} className="mt-6 inline-block text-sm text-[color:var(--ink)] underline underline-offset-4">
-          Back to shared galleries
-        </Link>
-      </div>
-    </main>
+    <ShareThemeFrame themeId={themeId}>
+      <main className="min-h-screen bg-[color:var(--background)] px-4 py-8 text-[color:var(--ink)] md:px-5 md:py-10">
+        <div className="mx-auto max-w-3xl">
+          <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
+          <h1 className="mt-2 font-serif text-3xl leading-tight md:mt-3 md:text-4xl">{heading}</h1>
+          <p className="mt-3 text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:leading-7">{message}</p>
+          <Link href={`/share/${token}`} className="mt-6 inline-block text-sm text-[color:var(--ink)] underline underline-offset-4">
+            Back to shared galleries
+          </Link>
+        </div>
+      </main>
+    </ShareThemeFrame>
   );
 }
 
@@ -147,7 +153,7 @@ export default async function PublicSharedGalleryPage({
 
   const { data: share } = await admin
     .from("shares")
-    .select("id, message, revoked_at")
+    .select("id, message, revoked_at, theme_id")
     .eq("token", token)
     .maybeSingle<ShareRow>();
 
@@ -158,6 +164,7 @@ export default async function PublicSharedGalleryPage({
           token={token}
           heading="This share link has been revoked"
           message="The sender has revoked this share link. Reach out to them if you'd like access again."
+          themeId={share.theme_id}
         />
       );
     }
@@ -177,7 +184,13 @@ export default async function PublicSharedGalleryPage({
     .returns<ShareGalleryRow[]>();
 
   if (!shareGalleryRows?.length) {
-    return <InvalidShareState token={token} message="This gallery is not available in the current share link." />;
+    return (
+      <InvalidShareState
+        token={token}
+        message="This gallery is not available in the current share link."
+        themeId={share.theme_id}
+      />
+    );
   }
 
   const { data: gallery } = await admin
@@ -187,7 +200,13 @@ export default async function PublicSharedGalleryPage({
     .maybeSingle<GalleryRow>();
 
   if (!gallery) {
-    return <InvalidShareState token={token} message="This gallery is no longer available." />;
+    return (
+      <InvalidShareState
+        token={token}
+        message="This gallery is no longer available."
+        themeId={share.theme_id}
+      />
+    );
   }
 
   const [{ data: subgalleries }, { data: directPhotoRows }] = await Promise.all([
@@ -246,6 +265,7 @@ export default async function PublicSharedGalleryPage({
   const hasDirectPhotos = directPhotos.length > 0;
 
   return (
+    <ShareThemeFrame themeId={share.theme_id}>
     <main className="min-h-screen bg-[color:var(--background)] px-4 py-6 text-[color:var(--ink)] md:px-8 md:py-8">
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 border-b border-[color:var(--border)] pb-4 md:mb-8 md:pb-5">
@@ -331,6 +351,7 @@ export default async function PublicSharedGalleryPage({
         ) : null}
       </div>
     </main>
+    </ShareThemeFrame>
   );
 }
 

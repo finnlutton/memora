@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { AppProviders } from "@/components/providers/app-providers";
+import { ThemeRouteSync } from "@/components/theme-route-sync";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
@@ -72,6 +73,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full">
+        <ThemeRouteSync />
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

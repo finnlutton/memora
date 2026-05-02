@@ -7,6 +7,7 @@ import {
   startOfCurrentMonthUtcIso,
 } from "@/lib/plans";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { DEFAULT_THEME, isThemeId, type ThemeId } from "@/lib/theme";
 
 type CreateSharePayload = {
   galleryIds?: string[];
@@ -23,6 +24,12 @@ type CreateSharePayload = {
    * title; same access-control caveat as above.
    */
   recipientMemberLabels?: string[];
+  /**
+   * Visual theme the public share page should render in. Independent of
+   * the creator's in-app theme — picked per share so a Dusk-using sender
+   * can still hand out Harbor links, and vice versa.
+   */
+  themeId?: string | null;
 };
 
 const RECIPIENT_GROUP_NAME_MAX = 120;
@@ -77,6 +84,9 @@ export async function POST(request: NextRequest) {
     const recipientMemberLabels = sanitizeRecipientMemberLabels(
       payload.recipientMemberLabels,
     );
+    const themeId: ThemeId = isThemeId(payload.themeId)
+      ? payload.themeId
+      : DEFAULT_THEME;
 
     if (galleryIds.length === 0) {
       return NextResponse.json({ error: "Select at least one gallery to share." }, { status: 400 });
@@ -156,6 +166,7 @@ export async function POST(request: NextRequest) {
           message,
           recipient_group_name: recipientGroupName,
           recipient_member_labels: recipientMemberLabels,
+          theme_id: themeId,
         })
         .select("id, token")
         .single();
