@@ -9,6 +9,7 @@ import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { GalleryCard } from "@/components/gallery-card";
 import { GalleryCardSkeletonGrid } from "@/components/gallery-card-skeleton";
+import { OverLimitBanner } from "@/components/over-limit-banner";
 import { CreateSharePanel } from "@/components/share/create-share-panel";
 import { WorkspaceTopbar } from "@/components/workspace-topbar";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import { useFormDraft } from "@/hooks/use-form-draft";
 import { useGalleryDraftSnapshot } from "@/hooks/use-gallery-draft";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 import { useRecipientGroups } from "@/hooks/use-recipient-groups";
+import { computeOverLimit } from "@/lib/over-limit";
 import { getMembershipPlan } from "@/lib/plans";
 
 export default function GalleriesPage() {
@@ -60,6 +62,10 @@ export default function GalleriesPage() {
     onboarding.isAuthenticated &&
       selectedPlan &&
       sortedGalleries.length >= selectedPlan.galleryCount,
+  );
+  const overLimitReport = useMemo(
+    () => computeOverLimit(galleries, selectedPlan ?? null),
+    [galleries, selectedPlan],
   );
   const usageLabel = selectedPlan
     ? Number.isFinite(selectedPlan.galleryCount)
@@ -227,6 +233,14 @@ export default function GalleriesPage() {
             Upgrade to create more share links.
           </Link>
         </p>
+      ) : null}
+
+      {hydrated && onboarding.isAuthenticated && overLimitReport.hasOverLimit && selectedPlan ? (
+        <OverLimitBanner
+          report={overLimitReport}
+          planName={selectedPlan.name}
+          scope="workspace"
+        />
       ) : null}
 
       {galleryDraft ? (

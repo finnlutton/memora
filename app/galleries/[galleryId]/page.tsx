@@ -8,18 +8,24 @@ import { AppShell } from "@/components/app-shell";
 import { CollapsibleEntry } from "@/components/collapsible-entry";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { GalleryDirectPhotos } from "@/components/gallery-direct-photos";
+import { OverLimitBanner } from "@/components/over-limit-banner";
 import { SubgalleryCarousel } from "@/components/subgallery-carousel";
 import { WorkspaceTopbar } from "@/components/workspace-topbar";
 import { Button } from "@/components/ui/button";
 import { useMemoraStore } from "@/hooks/use-memora-store";
+import { computeOverLimit } from "@/lib/over-limit";
+import { getMembershipPlan } from "@/lib/plans";
 
 export default function GalleryDetailPage() {
   const params = useParams<{ galleryId: string }>();
   const router = useRouter();
-  const { getGallery, deleteGallery, hydrated } = useMemoraStore();
+  const { galleries, getGallery, deleteGallery, hydrated, onboarding } =
+    useMemoraStore();
   const gallery = getGallery(params.galleryId);
   const [activeSubgalleryIndex, setActiveSubgalleryIndex] = useState(0);
   const [actionsOpen, setActionsOpen] = useState(false);
+  const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);
+  const overLimitReport = computeOverLimit(galleries, selectedPlan ?? null);
 
   if (!gallery) {
     return (
@@ -108,6 +114,14 @@ export default function GalleryDetailPage() {
           </>
         }
       />
+      {hydrated && onboarding.isAuthenticated && overLimitReport.hasOverLimit && selectedPlan ? (
+        <OverLimitBanner
+          report={overLimitReport}
+          planName={selectedPlan.name}
+          scope="gallery"
+          galleryId={gallery.id}
+        />
+      ) : null}
       {gallery.description ? (
         <CollapsibleEntry text={gallery.description} className="mb-6 md:mb-8" />
       ) : null}
