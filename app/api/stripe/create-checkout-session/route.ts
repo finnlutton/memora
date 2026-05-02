@@ -7,6 +7,7 @@ import {
   normalizePlanId,
   type MembershipPlanId,
 } from "@/lib/plans";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { buildAbsoluteAppUrl, getServerSiteOrigin } from "@/lib/site-url";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -24,6 +25,14 @@ export async function POST(request: NextRequest) {
   if (authError || !user) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
+
+  const rate = await checkRateLimit(request, {
+    name: "stripe-checkout-session",
+    limit: 10,
+    window: "1 m",
+    key: user.id,
+  });
+  if (!rate.allowed) return rate.response;
 
   // 2. Parse + validate the request body. The client only sends planId.
   const body = (await request.json().catch(() => null)) as { planId?: string } | null;

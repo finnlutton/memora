@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   canCreate,
@@ -30,6 +31,14 @@ export async function POST(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
     }
+
+    const rate = await checkRateLimit(request, {
+      name: "plan-limits-check",
+      limit: 60,
+      window: "1 m",
+      key: user.id,
+    });
+    if (!rate.allowed) return rate.response;
 
     const payload = (await request.json()) as CheckPayload;
     const resource = payload.resource;

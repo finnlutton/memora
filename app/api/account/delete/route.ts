@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getStripeClient } from "@/lib/stripe";
@@ -55,7 +56,7 @@ async function listAllStorageObjectsUnderPrefix(
   return files;
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   try {
     const supabase = await createSupabaseServerClient();
     const {
@@ -66,6 +67,14 @@ export async function DELETE() {
     if (authError || !user) {
       return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
     }
+
+    const rate = await checkRateLimit(request, {
+      name: "account-delete",
+      limit: 3,
+      window: "1 h",
+      key: user.id,
+    });
+    if (!rate.allowed) return rate.response;
 
     const admin = createSupabaseAdminClient();
 

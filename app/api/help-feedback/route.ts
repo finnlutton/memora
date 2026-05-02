@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { Resend } from "resend";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const HELP_INBOX = process.env.SUPPORT_EMAIL_TO ?? "cfl63@cornell.edu";
@@ -32,6 +33,14 @@ export async function POST(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
     }
+
+    const rate = await checkRateLimit(request, {
+      name: "help-feedback",
+      limit: 5,
+      window: "1 h",
+      key: user.id,
+    });
+    if (!rate.allowed) return rate.response;
 
     const payload = (await request.json()) as HelpFeedbackPayload;
     const category = payload.category?.trim() || "";

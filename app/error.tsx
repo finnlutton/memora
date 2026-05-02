@@ -2,11 +2,12 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import * as Sentry from "@sentry/nextjs";
 
 // Per-segment error boundary. Caught errors stop propagation here so the
 // root layout (theme script, providers) keeps rendering. We never expose
-// the raw error message to the user — it only goes to the console for
-// devtools / Sentry forwarding once that's wired up.
+// the raw error message to the user; it goes to Sentry (when configured)
+// and to the browser console for local debugging.
 export default function GlobalRouteError({
   error,
   reset,
@@ -15,6 +16,7 @@ export default function GlobalRouteError({
   reset: () => void;
 }) {
   useEffect(() => {
+    Sentry.captureException(error);
     console.error("Memora: route error boundary", error);
   }, [error]);
 

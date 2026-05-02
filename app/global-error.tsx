@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 
 // Last-resort boundary — catches errors thrown from the root layout
 // itself (e.g. AppProviders, ThemeRouteSync). Because this replaces the
@@ -15,6 +16,7 @@ export default function RootGlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
+    Sentry.captureException(error);
     console.error("Memora: root global-error boundary", error);
   }, [error]);
 

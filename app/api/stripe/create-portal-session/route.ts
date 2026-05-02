@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { buildAbsoluteAppUrl, getServerSiteOrigin } from "@/lib/site-url";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -15,6 +16,14 @@ export async function POST(request: NextRequest) {
   if (authError || !user) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
+
+  const rate = await checkRateLimit(request, {
+    name: "stripe-portal-session",
+    limit: 10,
+    window: "1 m",
+    key: user.id,
+  });
+  if (!rate.allowed) return rate.response;
 
   const admin = createSupabaseAdminClient();
   const { data: profile, error: profileError } = await admin

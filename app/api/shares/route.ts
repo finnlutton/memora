@@ -6,6 +6,7 @@ import {
   normalizePlanId,
   startOfCurrentMonthUtcIso,
 } from "@/lib/plans";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { DEFAULT_THEME, isThemeId, type ThemeId } from "@/lib/theme";
 
@@ -74,6 +75,14 @@ export async function POST(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
     }
+
+    const rate = await checkRateLimit(request, {
+      name: "shares-create",
+      limit: 30,
+      window: "1 h",
+      key: user.id,
+    });
+    if (!rate.allowed) return rate.response;
 
     const payload = (await request.json()) as CreateSharePayload;
     const galleryIds = uniqueNonEmptyIds(payload.galleryIds ?? []);
