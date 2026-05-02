@@ -106,9 +106,11 @@ export default function HomePage() {
         aria-label="Memora Map"
         className="relative mx-auto w-full max-w-7xl px-4 py-24 md:px-6 md:py-32"
       >
+        {/* Full-bleed so the radial fade dissolves into the page bg
+            instead of clipping at the max-w-7xl right edge. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_70%_50%,rgba(120,150,195,0.10)_0%,transparent_60%)]"
+          className="pointer-events-none absolute left-1/2 top-0 -z-10 h-full w-screen -translate-x-1/2 bg-[radial-gradient(ellipse_at_60%_50%,rgba(120,150,195,0.10)_0%,transparent_55%)]"
         />
         <HomeMemoryGlobe />
       </section>

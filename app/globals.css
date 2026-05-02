@@ -146,6 +146,11 @@ body {
   background:
     radial-gradient(circle at top left, var(--halo), transparent 26%),
     linear-gradient(180deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+  /* Without these, Chrome paints the body gradient at viewport height and
+     tiles it down a tall page — visible as a horizontal seam roughly every
+     viewport-height (e.g. cutting through the marketing globe). */
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
   color: var(--foreground);
   font-family: var(--font-body), sans-serif;
   font-size: 16px;
