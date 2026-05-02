@@ -3,9 +3,15 @@ import { createServerClient } from "@supabase/ssr";
 import type { User } from "@supabase/supabase-js";
 import { createMembershipState, getNextAuthenticatedRoute } from "@/lib/onboarding";
 import { loadProfileState } from "@/lib/profile-state";
+import { applySecurityHeaders } from "@/lib/security-headers";
 import { getServerSiteOrigin } from "@/lib/site-url";
 
 type ProfileQueryClient = Parameters<typeof loadProfileState>[0];
+
+function withSecurityHeaders(response: NextResponse): NextResponse {
+  applySecurityHeaders(response);
+  return response;
+}
 
 function isProtectedPath(pathname: string) {
   return (
@@ -28,13 +34,13 @@ export async function middleware(request: NextRequest) {
     const normalizedOrigin = new URL(siteOrigin);
     canonicalUrl.protocol = normalizedOrigin.protocol;
     canonicalUrl.host = normalizedOrigin.host;
-    return NextResponse.redirect(canonicalUrl);
+    return withSecurityHeaders(NextResponse.redirect(canonicalUrl));
   }
 
   const pathname = request.nextUrl.pathname;
   if (pathname !== "/auth" && !isProtectedPath(pathname)) {
     // Public marketing routes should never depend on Supabase.
-    return response;
+    return withSecurityHeaders(response);
   }
 
   const supabase = createServerClient(
@@ -81,14 +87,14 @@ export async function middleware(request: NextRequest) {
         displayName: profileState.displayName,
       },
     );
-    return NextResponse.redirect(url);
+    return withSecurityHeaders(NextResponse.redirect(url));
   }
 
   if (isProtectedPath(pathname) && pathname !== "/" && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth";
     url.searchParams.set("redirect", `${pathname}${request.nextUrl.search}`);
-    return NextResponse.redirect(url);
+    return withSecurityHeaders(NextResponse.redirect(url));
   }
 
   if (user) {
@@ -111,30 +117,35 @@ export async function middleware(request: NextRequest) {
       const url = request.nextUrl.clone();
       url.pathname = nextRoute;
       url.search = "";
-      return NextResponse.redirect(url);
+      return withSecurityHeaders(NextResponse.redirect(url));
     }
 
     if (pathname.startsWith("/welcome") && nextRoute !== "/welcome") {
       const url = request.nextUrl.clone();
       url.pathname = nextRoute;
       url.search = "";
-      return NextResponse.redirect(url);
+      return withSecurityHeaders(NextResponse.redirect(url));
     }
 
     if (pathname === "/") {
       const url = request.nextUrl.clone();
       url.pathname = nextRoute;
       url.search = "";
-      return NextResponse.redirect(url);
+      return withSecurityHeaders(NextResponse.redirect(url));
     }
 
   }
 
-  return response;
+  return withSecurityHeaders(response);
 }
 
 export const config = {
-  // Only run middleware for routes that should be auth-aware.
-  // Keep marketing pages fully public.
-  matcher: ["/", "/auth", "/welcome/:path*", "/galleries/:path*"],
+  // Run on every HTML response so security headers (CSP, HSTS, etc.) apply
+  // app-wide. Excludes Next.js internals, static assets (any path with a
+  // file extension), and the Sentry tunnel route — none of which need the
+  // headers and adding them would only burn cycles. Auth-gating logic
+  // inside the handler still self-gates via isProtectedPath().
+  matcher: [
+    "/((?!_next/static|_next/image|monitoring|.*\\.[a-zA-Z0-9]+$).*)",
+  ],
 };
