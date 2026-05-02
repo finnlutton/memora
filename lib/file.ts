@@ -5,6 +5,31 @@ import type { MemoryPhoto } from "@/types/memora";
 const MAX_EDGE_PX = 1920;
 const JPEG_QUALITY = 0.82;
 
+/**
+ * Wall-clock cap on `createImageBitmap`. On slow phones, large or oddly-encoded
+ * files (looking at you, 50MB iPhone HEIC) can decode for ages or never resolve
+ * at all. We'd rather fail fast and let the caller surface a clear error than
+ * leave the user staring at a spinner.
+ */
+const DECODE_TIMEOUT_MS = 30_000;
+
+/**
+ * If compression fails (HEIC without browser support, decode error, missing
+ * canvas API, timeout), we fall back to the original file as-is. Cap that
+ * fallback size so a multi-megabyte raw upload doesn't slip through — anything
+ * larger gets rejected and surfaces an error instead.
+ */
+const RAW_FALLBACK_MAX_BYTES = 5 * 1024 * 1024;
+
+class CompressionError extends Error {
+  readonly userMessage: string;
+  constructor(userMessage: string) {
+    super(userMessage);
+    this.name = "CompressionError";
+    this.userMessage = userMessage;
+  }
+}
+
 function readFileAsRawDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -14,27 +39,49 @@ function readFileAsRawDataUrl(file: File) {
   });
 }
 
+function decodeImageBitmap(file: File): Promise<ImageBitmap> {
+  return new Promise<ImageBitmap>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error("Image decode timed out"));
+    }, DECODE_TIMEOUT_MS);
+    createImageBitmap(file).then(
+      (bitmap) => {
+        clearTimeout(timer);
+        resolve(bitmap);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
+}
+
+function fitWithinMaxEdge(width: number, height: number) {
+  if (width <= MAX_EDGE_PX && height <= MAX_EDGE_PX) {
+    return { width, height };
+  }
+  if (width >= height) {
+    return {
+      width: MAX_EDGE_PX,
+      height: Math.round((height * MAX_EDGE_PX) / width),
+    };
+  }
+  return {
+    width: Math.round((width * MAX_EDGE_PX) / height),
+    height: MAX_EDGE_PX,
+  };
+}
+
 async function compressRasterImageToJpegDataUrl(file: File): Promise<string> {
-  const bitmap = await createImageBitmap(file);
+  const bitmap = await decodeImageBitmap(file);
   try {
-    let { width, height } = bitmap;
-    const max = MAX_EDGE_PX;
-    if (width > max || height > max) {
-      if (width >= height) {
-        height = Math.round((height * max) / width);
-        width = max;
-      } else {
-        width = Math.round((width * max) / height);
-        height = max;
-      }
-    }
+    const { width, height } = fitWithinMaxEdge(bitmap.width, bitmap.height);
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      return readFileAsRawDataUrl(file);
-    }
+    if (!ctx) throw new Error("Canvas 2D context unavailable");
     ctx.drawImage(bitmap, 0, 0, width, height);
     return canvas.toDataURL("image/jpeg", JPEG_QUALITY);
   } finally {
@@ -42,17 +89,30 @@ async function compressRasterImageToJpegDataUrl(file: File): Promise<string> {
   }
 }
 
+function rejectIfFallbackTooLarge(file: File): void {
+  if (file.size > RAW_FALLBACK_MAX_BYTES) {
+    throw new CompressionError(
+      "We couldn't process this image. Try a smaller file or a JPEG/PNG export.",
+    );
+  }
+}
+
 /**
  * Reads an image file as a data URL, resizing and JPEG-compressing raster images
- * so localStorage quota is not exceeded as quickly.
+ * so localStorage quota is not exceeded as quickly. Falls back to the raw bytes
+ * only for small originals; larger files that fail to decode are rejected so we
+ * don't blow the localStorage budget with a multi-MB data URL.
  */
 export async function readFileAsDataUrl(file: File) {
   if (typeof window === "undefined" || !file.type.startsWith("image/")) {
+    rejectIfFallbackTooLarge(file);
     return readFileAsRawDataUrl(file);
   }
   try {
     return await compressRasterImageToJpegDataUrl(file);
-  } catch {
+  } catch (error) {
+    if (error instanceof CompressionError) throw error;
+    rejectIfFallbackTooLarge(file);
     return readFileAsRawDataUrl(file);
   }
 }
@@ -62,46 +122,38 @@ export async function readFileAsDataUrl(file: File) {
  * raw 12 MP camera JPEG to storage. Caps the long edge at 1920 px and
  * re-encodes as JPEG @ q=82 — visually identical at the sizes Memora
  * actually displays, but typically 5–15× smaller on disk and over the
- * wire. Falls back to the original File on any failure (SSR, non-image
- * MIME, decode error, missing canvas API).
+ * wire. Falls back to the original File on any failure (HEIC without
+ * browser support, decode error, missing canvas API), but only for small
+ * originals — large files that can't be compressed are rejected with a
+ * user-readable error rather than uploaded raw.
  */
 export async function compressImageFile(file: File): Promise<File> {
   if (typeof window === "undefined" || !file.type.startsWith("image/")) {
+    rejectIfFallbackTooLarge(file);
     return file;
   }
   try {
-    const bitmap = await createImageBitmap(file);
+    const bitmap = await decodeImageBitmap(file);
     try {
-      let { width, height } = bitmap;
-      const max = MAX_EDGE_PX;
-      if (width > max || height > max) {
-        if (width >= height) {
-          height = Math.round((height * max) / width);
-          width = max;
-        } else {
-          width = Math.round((width * max) / height);
-          height = max;
-        }
-      }
+      const { width, height } = fitWithinMaxEdge(bitmap.width, bitmap.height);
       const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext("2d");
-      if (!ctx) return file;
+      if (!ctx) throw new Error("Canvas 2D context unavailable");
       ctx.drawImage(bitmap, 0, 0, width, height);
       const blob = await new Promise<Blob | null>((resolve) =>
         canvas.toBlob((b) => resolve(b), "image/jpeg", JPEG_QUALITY),
       );
-      if (!blob) return file;
+      if (!blob) throw new Error("Canvas toBlob returned null");
       const baseName = file.name.replace(/\.[^.]+$/, "") || "photo";
       return new File([blob], `${baseName}.jpg`, { type: "image/jpeg" });
     } finally {
       bitmap.close();
     }
-  } catch {
-    // If anything goes wrong (HEIC without browser support, decode
-    // failure, etc.), fall back to the original file rather than
-    // blocking the upload.
+  } catch (error) {
+    if (error instanceof CompressionError) throw error;
+    rejectIfFallbackTooLarge(file);
     return file;
   }
 }

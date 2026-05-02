@@ -91,6 +91,7 @@ export function GalleryForm({
   // small. See `hooks/use-gallery-draft.ts`.
   const [people, setPeople] = useState(initialValue?.people.join(", ") ?? "");
   const [isUploading, setIsUploading] = useState(false);
+  const [coverError, setCoverError] = useState("");
 
   // Mirror every persisted field into localStorage. Debounced inside
   // the hook; non-fatal on quota errors.
@@ -280,13 +281,29 @@ export function GalleryForm({
               label={coverImage ? "Replace cover image" : "Choose a cover image"}
               hint="Drop a hero image or click to browse."
               busy={isUploading}
+              onError={(message) => setCoverError(message)}
               onFilesSelected={async (files) => {
                 setIsUploading(true);
-                const nextSrc = await readFileAsDataUrl(files[0]);
-                setCoverImage(nextSrc);
-                setIsUploading(false);
+                try {
+                  const nextSrc = await readFileAsDataUrl(files[0]);
+                  setCoverImage(nextSrc);
+                  setCoverError("");
+                } catch (error) {
+                  setCoverError(
+                    error instanceof Error
+                      ? error.message
+                      : "We couldn't process this image.",
+                  );
+                } finally {
+                  setIsUploading(false);
+                }
               }}
             />
+            {coverError ? (
+              <p className="text-[12px] leading-5 text-[color:var(--error-text)]">
+                {coverError}
+              </p>
+            ) : null}
           </aside>
         </div>
 

@@ -68,6 +68,8 @@ export function SubgalleryForm({
   const [photos, setPhotos] = useState<MemoryPhoto[]>(initialValue?.photos ?? []);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
+  const [coverError, setCoverError] = useState("");
+  const [photosError, setPhotosError] = useState("");
   const isPhotoLimitFinite = photoLimit != null && Number.isFinite(photoLimit);
   const reachedPhotoLimit = isPhotoLimitFinite && photos.length >= (photoLimit ?? 0);
   const remainingPhotoSlots = isPhotoLimitFinite ? Math.max(0, (photoLimit ?? 0) - photos.length) : null;
@@ -211,13 +213,29 @@ export function SubgalleryForm({
               label={coverImage ? "Replace cover image" : "Select a cover photo"}
               hint="Drop a hero image or click to browse."
               busy={isUploadingCover}
+              onError={(message) => setCoverError(message)}
               onFilesSelected={async (files) => {
                 setIsUploadingCover(true);
-                const nextSrc = await readFileAsDataUrl(files[0]);
-                setCoverImage(nextSrc);
-                setIsUploadingCover(false);
+                try {
+                  const nextSrc = await readFileAsDataUrl(files[0]);
+                  setCoverImage(nextSrc);
+                  setCoverError("");
+                } catch (error) {
+                  setCoverError(
+                    error instanceof Error
+                      ? error.message
+                      : "We couldn't process this image.",
+                  );
+                } finally {
+                  setIsUploadingCover(false);
+                }
               }}
             />
+            {coverError ? (
+              <p className="text-[12px] leading-5 text-[color:var(--error-text)]">
+                {coverError}
+              </p>
+            ) : null}
           </aside>
         </div>
 
@@ -293,20 +311,36 @@ export function SubgalleryForm({
             multiple
             busy={isUploadingPhotos}
             disabled={reachedPhotoLimit}
+            onError={(message) => setPhotosError(message)}
             onFilesSelected={async (files) => {
               if (reachedPhotoLimit) return;
               setIsUploadingPhotos(true);
-              const tempSubgalleryId = initialValue?.id ?? createId("draft-subgallery");
-              const allowedFiles =
-                remainingPhotoSlots == null ? files : files.slice(0, remainingPhotoSlots);
-              const uploaded = await filesToPhotos(allowedFiles, tempSubgalleryId, photos.length);
-              setPhotos((current) => [...current, ...uploaded]);
-              if (!coverImage && uploaded[0]) {
-                setCoverImage(uploaded[0].src);
+              try {
+                const tempSubgalleryId = initialValue?.id ?? createId("draft-subgallery");
+                const allowedFiles =
+                  remainingPhotoSlots == null ? files : files.slice(0, remainingPhotoSlots);
+                const uploaded = await filesToPhotos(allowedFiles, tempSubgalleryId, photos.length);
+                setPhotos((current) => [...current, ...uploaded]);
+                if (!coverImage && uploaded[0]) {
+                  setCoverImage(uploaded[0].src);
+                }
+                setPhotosError("");
+              } catch (error) {
+                setPhotosError(
+                  error instanceof Error
+                    ? error.message
+                    : "We couldn't process one or more of those images.",
+                );
+              } finally {
+                setIsUploadingPhotos(false);
               }
-              setIsUploadingPhotos(false);
             }}
           />
+          {photosError ? (
+            <p className="border-t border-[color:var(--border-strong)]/50 px-5 py-2.5 text-[13px] font-medium text-[color:var(--error-text)] md:px-8">
+              {photosError}
+            </p>
+          ) : null}
         </div>
 
         {photos.length > 0 ? (

@@ -3,6 +3,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { ImagePlus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { MAX_UPLOAD_BYTES } from "@/components/upload-dropzone";
 import type { ClipboardLayout } from "@/hooks/use-clipboard-items";
 
 /**
@@ -167,10 +168,17 @@ export function AddMemoryDialog({
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,image/avif,.heic,.heif"
                     className="hidden"
                     onChange={(e) => {
                       const next = e.target.files?.[0] ?? null;
+                      if (next && next.size > MAX_UPLOAD_BYTES) {
+                        const mb = (MAX_UPLOAD_BYTES / (1024 * 1024)).toFixed(0);
+                        setError(`That image is too large — keep it under ${mb} MB.`);
+                        e.target.value = "";
+                        return;
+                      }
+                      setError(null);
                       setFile(next);
                     }}
                   />

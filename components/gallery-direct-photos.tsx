@@ -199,6 +199,7 @@ export function GalleryDirectPhotos({ gallery }: { gallery: Gallery }) {
             hint="Drag images here or click to upload."
             multiple
             busy={busy}
+            onError={(message) => setError(message || null)}
             onFilesSelected={onFiles}
           />
         </div>

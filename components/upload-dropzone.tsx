@@ -3,11 +3,55 @@
 import { useRef, useState } from "react";
 import { ImagePlus, LoaderCircle, UploadCloud } from "lucide-react";
 
+export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+
+const ALLOWED_IMAGE_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/heic",
+  "image/heif",
+  "image/avif",
+]);
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function fileExt(name: string) {
+  const dot = name.lastIndexOf(".");
+  return dot === -1 ? "" : name.slice(dot + 1).toLowerCase();
+}
+
+const HEIC_EXTS = new Set(["heic", "heif"]);
+
+function validateImageFile(file: File): string | null {
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return `${file.name} is ${formatBytes(file.size)} — files must be under ${formatBytes(MAX_UPLOAD_BYTES)}.`;
+  }
+  const type = (file.type || "").toLowerCase();
+  if (type) {
+    if (!type.startsWith("image/") || !ALLOWED_IMAGE_MIME_TYPES.has(type)) {
+      return `${file.name} isn't a supported image format.`;
+    }
+    return null;
+  }
+  // Some browsers (notably iOS Safari) leave .heic files with empty MIME —
+  // accept by extension as a last resort.
+  if (HEIC_EXTS.has(fileExt(file.name))) return null;
+  return `${file.name} isn't a supported image format.`;
+}
+
 export function UploadDropzone({
   label,
   hint,
   multiple = false,
   onFilesSelected,
+  onError,
   busy = false,
   disabled = false,
 }: {
@@ -15,6 +59,7 @@ export function UploadDropzone({
   hint: string;
   multiple?: boolean;
   onFilesSelected: (files: File[]) => void | Promise<void>;
+  onError?: (message: string) => void;
   busy?: boolean;
   disabled?: boolean;
 }) {
@@ -25,7 +70,28 @@ export function UploadDropzone({
     if (disabled) return;
     const files = Array.from(fileList ?? []);
     if (!files.length) return;
-    await onFilesSelected(files);
+
+    const accepted: File[] = [];
+    const rejections: string[] = [];
+    for (const file of files) {
+      const reason = validateImageFile(file);
+      if (reason) rejections.push(reason);
+      else accepted.push(file);
+    }
+
+    if (rejections.length) {
+      onError?.(rejections.join(" "));
+    } else {
+      onError?.("");
+    }
+
+    if (!accepted.length) {
+      // Reset native input so picking the same rejected file again still fires onChange.
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
+    await onFilesSelected(accepted);
+    if (inputRef.current) inputRef.current.value = "";
   };
 
   return (
@@ -71,7 +137,7 @@ export function UploadDropzone({
         type="file"
         multiple={multiple}
         className="hidden"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,image/avif,.heic,.heif"
         onChange={(event) => void handleFiles(event.target.files)}
       />
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[color:var(--border-strong)] bg-[color:var(--paper)] text-[color:var(--ink)]">
@@ -88,7 +154,7 @@ export function UploadDropzone({
         <p className="mt-0.5 text-[13px] leading-5 text-[color:var(--ink-soft)]">{hint}</p>
       </div>
       <p className="hidden shrink-0 text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)] md:block">
-        {isOver ? "Release to upload" : "Drop or click"}
+        {isOver ? "Release to upload" : `Max ${formatBytes(MAX_UPLOAD_BYTES)}`}
       </p>
     </div>
   );
