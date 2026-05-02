@@ -260,6 +260,43 @@ export function canCreate(
   };
 }
 
+const PLAN_LIMIT_PREFIX = "PLAN_LIMIT_REACHED:";
+
+const RESOURCE_LABEL: Record<string, string> = {
+  galleries: "gallery",
+  subgalleries: "subgallery",
+  photos: "photo",
+  directPhotos: "photo",
+  shares: "share-link",
+};
+
+/**
+ * Detects the `PLAN_LIMIT_REACHED:<resource>` exception raised by the
+ * Postgres BEFORE INSERT triggers (see migrations/...plan_limit_*.sql)
+ * and turns it into a user-readable Error. Returns null if the input
+ * isn't a trigger error, so callers can rethrow the original.
+ */
+export function translatePlanLimitError(error: unknown): Error | null {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof (error as { message?: unknown })?.message === "string"
+        ? (error as { message: string }).message
+        : "";
+  if (!message.startsWith(PLAN_LIMIT_PREFIX)) return null;
+  const resource = message.slice(PLAN_LIMIT_PREFIX.length);
+  const label = RESOURCE_LABEL[resource] ?? "item";
+  const friendly = new Error(
+    `You've reached the ${label} limit on your current plan. Upgrade or remove items to continue.`,
+  );
+  // Preserve the machine-readable payload so callers that want to render
+  // a custom upgrade CTA can still introspect.
+  (friendly as Error & { code?: string; resource?: string }).code =
+    "PLAN_LIMIT_REACHED";
+  (friendly as Error & { code?: string; resource?: string }).resource = resource;
+  return friendly;
+}
+
 /**
  * Public plans for the pricing grid — anything with `internal: true` is
  * filtered out so it never appears as a buyable option.

@@ -165,6 +165,7 @@ export async function POST(request: NextRequest) {
 
     let shareRow: { id: string; token: string } | null = null;
     let insertError: string | null = null;
+    let triggerLimitError = false;
     for (let attempt = 0; attempt < 4; attempt += 1) {
       const token = generateToken();
       const { data, error } = await supabase
@@ -186,9 +187,34 @@ export async function POST(request: NextRequest) {
       }
 
       insertError = error.message;
+      // Backstop trigger fired — pre-flight already caught the common
+      // case, so we land here only when a crafted client bypasses it or
+      // the user races two tabs through the limit.
+      if (error.message.startsWith("PLAN_LIMIT_REACHED:")) {
+        triggerLimitError = true;
+        break;
+      }
       if (!error.message.toLowerCase().includes("duplicate")) {
         break;
       }
+    }
+
+    if (triggerLimitError) {
+      return NextResponse.json(
+        {
+          error:
+            sharePeriod === "monthly"
+              ? "Monthly share-link limit reached for your current plan."
+              : "Share limit reached for your current plan.",
+          code: "PLAN_LIMIT_REACHED",
+          resource: "shares",
+          currentPlan: plan.id,
+          limit: shareCheck.limit,
+          currentUsage: usage,
+          sharePeriod,
+        },
+        { status: 409 },
+      );
     }
 
     if (!shareRow) {

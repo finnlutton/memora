@@ -23,7 +23,13 @@ import {
   setHasSeenWelcome,
   setSelectedPlan,
 } from "@/lib/profile-state";
-import { canCreate, getMembershipPlan, type MembershipPlanId, type PlanResource } from "@/lib/plans";
+import {
+  canCreate,
+  getMembershipPlan,
+  translatePlanLimitError,
+  type MembershipPlanId,
+  type PlanResource,
+} from "@/lib/plans";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { createId } from "@/lib/utils";
 import type {
@@ -1399,7 +1405,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
               userId,
               error,
             });
-            throw error;
+            throw translatePlanLimitError(error) ?? error;
           }
 
           console.info("Memora: create gallery insert success", {
@@ -1727,7 +1733,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
               userId,
               error: subgalleryError,
             });
-            throw subgalleryError;
+            throw translatePlanLimitError(subgalleryError) ?? subgalleryError;
           }
 
           if (process.env.NODE_ENV !== "production") {
@@ -1765,7 +1771,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
                 userId,
                 error: photosError,
               });
-              throw photosError;
+              throw translatePlanLimitError(photosError) ?? photosError;
             }
 
             if (process.env.NODE_ENV !== "production") {
@@ -1943,7 +1949,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
                 taken_at: null,
               })),
             );
-            if (photosError) throw photosError;
+            if (photosError) throw translatePlanLimitError(photosError) ?? photosError;
           }
 
           const nextPhotoPaths: string[] = persistedPhotos.map((photo) =>
@@ -2207,7 +2213,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           );
           if (error) {
             console.error("Memora: addGalleryPhotos insert failed", { galleryId, error });
-            throw error;
+            throw translatePlanLimitError(error) ?? error;
           }
         }
 
