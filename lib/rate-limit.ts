@@ -45,11 +45,17 @@ let redisInitAttempted = false;
 function getRedis(): Redis | null {
   if (redisInitAttempted) return cachedRedis;
   redisInitAttempted = true;
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  // Accept the canonical Upstash names OR Vercel Marketplace's KV_*
+  // legacy names (a holdover from the discontinued Vercel KV product
+  // that's now backed by Upstash). Same value either way; the
+  // Marketplace integration always sets the KV_* pair.
+  const url =
+    process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+  const token =
+    process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
   if (!url || !token) {
     console.warn(
-      "Memora: rate limiter disabled — UPSTASH_REDIS_REST_URL/_TOKEN not set",
+      "Memora: rate limiter disabled — set UPSTASH_REDIS_REST_URL/_TOKEN (or the Vercel Marketplace's KV_REST_API_URL/_TOKEN)",
     );
     return null;
   }
