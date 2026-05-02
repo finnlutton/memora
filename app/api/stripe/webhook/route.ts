@@ -21,7 +21,43 @@ export const runtime = "nodejs";
  *  - Maps Stripe price IDs back to Memora plan IDs via the centralized
  *    config so price IDs never leak into the data model in plain form.
  *  - Failures return 5xx so Stripe retries; success returns 200 fast.
+ *  - Idempotent: claims event.id in stripe_processed_events before doing
+ *    any work, so retried/duplicate deliveries return 200 without
+ *    re-flipping subscription state. On handler failure, releases the
+ *    claim so the next retry can re-process.
  */
+
+const PG_UNIQUE_VIOLATION = "23505";
+
+async function claimStripeEvent(
+  eventId: string,
+  eventType: string,
+): Promise<"new" | "duplicate"> {
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin
+    .from("stripe_processed_events")
+    .insert({ event_id: eventId, event_type: eventType });
+  if (!error) return "new";
+  if ((error as { code?: string }).code === PG_UNIQUE_VIOLATION) return "duplicate";
+  throw error;
+}
+
+async function releaseStripeEvent(eventId: string): Promise<void> {
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin
+    .from("stripe_processed_events")
+    .delete()
+    .eq("event_id", eventId);
+  if (error) {
+    // Best-effort cleanup; the worst case is a single delivery being
+    // permanently marked processed even though it failed, which is
+    // recoverable manually.
+    console.error("Memora webhook: failed to release event claim", {
+      eventId,
+      error,
+    });
+  }
+}
 
 type ProfileBillingUpdate = {
   selected_plan?: MembershipPlanId;
@@ -199,6 +235,27 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  let claim: "new" | "duplicate";
+  try {
+    claim = await claimStripeEvent(event.id, event.type);
+  } catch (err) {
+    console.error("Memora webhook: failed to record event claim", {
+      eventId: event.id,
+      type: event.type,
+      err,
+    });
+    // Couldn't reach the idempotency table → tell Stripe to retry.
+    return NextResponse.json({ error: "Idempotency check failed." }, { status: 500 });
+  }
+
+  if (claim === "duplicate") {
+    console.info("Memora webhook: duplicate event ignored", {
+      eventId: event.id,
+      type: event.type,
+    });
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed": {
@@ -231,6 +288,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true });
   } catch (err) {
     console.error("Memora webhook: handler failed", { type: event.type, err });
+    // Release the claim so Stripe's next retry can re-process this event.
+    await releaseStripeEvent(event.id);
     // 5xx tells Stripe to retry.
     return NextResponse.json({ error: "Handler failed." }, { status: 500 });
   }
