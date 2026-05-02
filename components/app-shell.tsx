@@ -18,9 +18,16 @@ import memoraLogo from "../Logo/MemoraLogo.png";
 export function AppShell({
   children,
   accent = "default",
+  hideAboutLink = false,
 }: {
   children: React.ReactNode;
   accent?: "default" | "immersive";
+  /**
+   * Hide the public "About Us" nav link. Used on pages that already have
+   * their own back-to-home affordance (e.g. /pricing) so the header stays
+   * uncluttered.
+   */
+  hideAboutLink?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -128,7 +135,7 @@ export function AppShell({
           <nav className="flex shrink-0 items-center gap-1 md:gap-3">
             {showAuthenticatedNav ? (
               <NavLink href="/galleries">My Dashboard</NavLink>
-            ) : isHomePage ? (
+            ) : hideAboutLink ? null : isHomePage ? (
               <NavLink href="/#about-product">About Us</NavLink>
             ) : (
               <NavLink href="/">About Us</NavLink>

@@ -8,6 +8,7 @@ import { HomeHero } from "@/components/home-hero";
 import { HomeMemoryGlobe } from "@/components/home-memory-globe";
 import { HomeShareDemo } from "@/components/home-share-demo";
 import { HomeCloser } from "@/components/home-closer";
+import { SiteFooter } from "@/components/site-footer";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 
 const HERO_IMAGE = "/demo/winter-olympics-2026/New_Hero.JPG";
@@ -188,6 +189,8 @@ export default function HomePage() {
         imageSrc={CLOSER_IMAGE}
         imageCaption={CLOSER_CAPTION}
       />
+
+      <SiteFooter />
     </AppShell>
   );
 }
