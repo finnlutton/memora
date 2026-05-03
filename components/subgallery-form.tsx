@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, Check, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ChevronDown, Save } from "lucide-react";
 import { LocationAutocompleteInput } from "@/components/location-autocomplete-input";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { DateField } from "@/components/ui/date-field";
 import { useFormDraft } from "@/hooks/use-form-draft";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 import { filesToPhotos, readFileAsDataUrl } from "@/lib/file";
-import { createId, nextImageUnoptimizedForSrc, reorderList } from "@/lib/utils";
+import { cn, createId, nextImageUnoptimizedForSrc, reorderList } from "@/lib/utils";
 import type { MemoryPhoto, Subgallery, SubgalleryInput } from "@/types/memora";
 
 function fieldClassName() {
@@ -72,6 +72,11 @@ export function SubgalleryForm({
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
   const [coverError, setCoverError] = useState("");
   const [photosError, setPhotosError] = useState("");
+  // Mobile-only: which photo card has its full editor revealed. Only one
+  // is open at a time so the grid doesn't fragment with multiple
+  // expanded cards. On desktop the chrome is always visible regardless
+  // of this state, so the expand toggle is a no-op visually.
+  const [expandedPhotoId, setExpandedPhotoId] = useState<string | null>(null);
   const isPhotoLimitFinite = photoLimit != null && Number.isFinite(photoLimit);
   const reachedPhotoLimit = isPhotoLimitFinite && photos.length >= (photoLimit ?? 0);
   const remainingPhotoSlots = isPhotoLimitFinite ? Math.max(0, (photoLimit ?? 0) - photos.length) : null;
@@ -346,30 +351,92 @@ export function SubgalleryForm({
         </div>
 
         {photos.length > 0 ? (
-          <div className="grid gap-px bg-[color:var(--border-strong)]/40 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-2 gap-px bg-[color:var(--border-strong)]/40 md:grid-cols-2 xl:grid-cols-3">
             {photos.map((photo, index) => {
               const isCover = coverImage === photo.src;
+              const isExpanded = expandedPhotoId === photo.id;
+              const captionPreview = (photo.caption || "").trim();
               return (
                 <article
                   key={photo.id}
-                  className="relative flex flex-col bg-[color:var(--background)]"
+                  className={cn(
+                    "relative flex flex-col bg-[color:var(--background)]",
+                    // Expanded mobile card spans the full row so the editor
+                    // controls have room to breathe; on desktop the chrome
+                    // is always visible so we never need the col-span.
+                    isExpanded && "col-span-2 md:col-span-1",
+                  )}
                 >
-                  <div className="relative aspect-[4/3] overflow-hidden">
+                  {/* Photo doubles as the mobile expand toggle. On desktop
+                      the chrome below is always visible so the toggle is a
+                      no-op visually (the click still updates state but
+                      nothing changes at md+ widths). md:cursor-default
+                      keeps the desktop pointer from suggesting the tap
+                      affordance the desktop user doesn't need. */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpandedPhotoId(isExpanded ? null : photo.id)
+                    }
+                    aria-expanded={isExpanded}
+                    aria-label={
+                      isExpanded
+                        ? `Collapse photo ${index + 1}`
+                        : `Expand photo ${index + 1}`
+                    }
+                    className="relative block w-full overflow-hidden text-left aspect-square md:aspect-[4/3] md:cursor-default"
+                  >
                     <Image
                       src={photo.src}
                       alt={photo.caption || "Uploaded photo"}
                       fill
                       className="object-cover"
-                      sizes="(max-width: 1280px) 50vw, 33vw"
+                      sizes="(max-width: 768px) 50vw, (max-width: 1280px) 50vw, 33vw"
                       unoptimized={nextImageUnoptimizedForSrc(photo.src)}
                     />
                     {isCover ? (
-                      <span className="absolute left-3 top-3 bg-[color:var(--ink)] px-2 py-[3px] text-[10px] font-semibold uppercase tracking-[0.22em] text-white">
+                      <span className="absolute left-2 top-2 bg-[color:var(--ink)] px-1.5 py-[2px] text-[9px] font-semibold uppercase tracking-[0.18em] text-white md:left-3 md:top-3 md:px-2 md:py-[3px] md:text-[10px] md:tracking-[0.22em]">
                         Cover
                       </span>
                     ) : null}
-                  </div>
-                  <div className="flex flex-1 flex-col gap-2.5 px-3 py-3 md:gap-3 md:px-4 md:py-4">
+                    {/* Mobile-only chevron — signals this card is tappable
+                        to reveal the editor. Hidden once expanded so the
+                        photo isn't covered by an obsolete affordance. */}
+                    {!isExpanded ? (
+                      <span
+                        aria-hidden="true"
+                        className="absolute bottom-2 right-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(15,24,35,0.55)] text-white backdrop-blur md:hidden"
+                      >
+                        <ChevronDown className="h-3.5 w-3.5" strokeWidth={2.4} />
+                      </span>
+                    ) : null}
+                  </button>
+
+                  {/* Mobile caption preview — only when collapsed. Tells
+                      the user at a glance whether this photo has a
+                      caption without having to open the editor. */}
+                  {!isExpanded ? (
+                    <p
+                      className={cn(
+                        "line-clamp-1 px-2 py-2 text-[11px] md:hidden",
+                        captionPreview
+                          ? "text-[color:var(--ink-soft)]"
+                          : "italic text-[color:var(--ink-faint)]",
+                      )}
+                    >
+                      {captionPreview || "Add caption"}
+                    </p>
+                  ) : null}
+
+                  {/* Full chrome — always visible on desktop, mobile only
+                      when expanded. flex-1 keeps the footer aligned to
+                      the bottom of taller desktop cards. */}
+                  <div
+                    className={cn(
+                      "flex-1 flex-col gap-2.5 px-3 py-3 md:flex md:gap-3 md:px-4 md:py-4",
+                      isExpanded ? "flex" : "hidden md:flex",
+                    )}
+                  >
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
                         Photo {index + 1}
@@ -382,9 +449,9 @@ export function SubgalleryForm({
                           onClick={() =>
                             setPhotos((current) => reorderList(current, index, Math.max(0, index - 1)))
                           }
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-sm border border-[color:var(--border-strong)]/70 text-[color:var(--ink-soft)] transition hover:border-[color:var(--ink-soft)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-30 md:h-7 md:w-7"
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-sm border border-[color:var(--border-strong)]/70 text-[color:var(--ink-soft)] transition hover:border-[color:var(--ink-soft)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-30 md:h-7 md:w-7"
                         >
-                          <ArrowLeft className="h-3.5 w-3.5" />
+                          <ArrowLeft className="h-4 w-4 md:h-3.5 md:w-3.5" />
                         </button>
                         <button
                           type="button"
@@ -395,9 +462,9 @@ export function SubgalleryForm({
                               reorderList(current, index, Math.min(current.length - 1, index + 1)),
                             )
                           }
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-sm border border-[color:var(--border-strong)]/70 text-[color:var(--ink-soft)] transition hover:border-[color:var(--ink-soft)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-30 md:h-7 md:w-7"
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-sm border border-[color:var(--border-strong)]/70 text-[color:var(--ink-soft)] transition hover:border-[color:var(--ink-soft)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-30 md:h-7 md:w-7"
                         >
-                          <ArrowRight className="h-3.5 w-3.5" />
+                          <ArrowRight className="h-4 w-4 md:h-3.5 md:w-3.5" />
                         </button>
                       </div>
                     </div>
@@ -410,10 +477,10 @@ export function SubgalleryForm({
                           ),
                         )
                       }
-                      className={`${fieldClassName()} min-h-14 resize-none leading-6 md:min-h-20 md:text-[13.5px]`}
+                      className={`${fieldClassName()} min-h-20 resize-none leading-6 md:text-[13.5px]`}
                       placeholder="Add a caption or detail worth remembering."
                     />
-                    <div className="mt-auto flex items-center justify-between text-[13px]">
+                    <div className="mt-auto flex items-center justify-between gap-3 text-[13px]">
                       <button
                         type="button"
                         onClick={() => setCoverImage(photo.src)}
