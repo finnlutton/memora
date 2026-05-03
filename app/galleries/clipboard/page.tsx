@@ -169,7 +169,11 @@ export default function ClipboardPage() {
                 type="button"
                 onClick={() => setDialogOpen(true)}
                 aria-label="Add memory"
-                className="fixed bottom-5 right-5 z-30 inline-flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--ink)] text-white shadow-[0_12px_28px_-10px_rgba(14,22,34,0.45)] transition hover:bg-[color:var(--ink-soft)]"
+                style={{
+                  bottom:
+                    "calc(env(safe-area-inset-bottom, 0px) + var(--memora-bottom-banner, 0px) + 1.25rem)",
+                }}
+                className="fixed right-5 z-30 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[color:var(--ink)] text-white shadow-[0_12px_28px_-10px_rgba(14,22,34,0.45)] transition hover:bg-[color:var(--ink-soft)] md:h-12 md:w-12"
               >
                 <Plus className="h-4 w-4" strokeWidth={2} />
               </button>

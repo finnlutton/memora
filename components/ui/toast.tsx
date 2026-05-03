@@ -53,7 +53,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <div
         aria-live="polite"
         aria-label="Notifications"
-        className="pointer-events-none fixed bottom-5 right-4 z-[9999] flex flex-col items-end gap-2 md:bottom-7 md:right-7"
+        style={{
+          bottom:
+            "calc(env(safe-area-inset-bottom, 0px) + var(--memora-bottom-banner, 0px) + 1.25rem)",
+        }}
+        className="pointer-events-none fixed right-4 z-[9999] flex flex-col items-end gap-2 md:right-7"
       >
         <AnimatePresence initial={false}>
           {toasts.map((toast) => (

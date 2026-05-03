@@ -20,7 +20,10 @@ import type { Gallery, GalleryInput } from "@/types/memora";
  * hover state so users see the field is interactive.
  */
 function fieldClassName() {
-  return "w-full border-0 border-b-[1.5px] border-[color:var(--border-strong)] bg-transparent px-0 py-3 text-[15px] text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] hover:border-[color:var(--ink-soft)] focus:border-[color:var(--ink)]";
+  // text-base on mobile is 16px — anything smaller triggers iOS Safari's
+  // auto-zoom on focus, which jolts the viewport every time the user taps
+  // a field. Desktop keeps the editorial 15px rhythm.
+  return "w-full border-0 border-b-[1.5px] border-[color:var(--border-strong)] bg-transparent px-0 py-3 text-base text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] hover:border-[color:var(--ink-soft)] focus:border-[color:var(--ink)] md:text-[15px]";
 }
 
 function Label({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
@@ -315,14 +318,14 @@ export function GalleryForm({
               : "You can revise any field after the gallery is created."}
           </p>
           <div className="flex flex-wrap items-center gap-3">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               disabled={isSubmitting}
               onClick={() => router.back()}
-              className="text-[14px] font-medium text-[color:var(--ink-soft)] underline-offset-4 transition hover:text-[color:var(--ink)] hover:underline disabled:opacity-40"
             >
               Cancel
-            </button>
+            </Button>
             <Button type="submit" disabled={isSubmitting || isUploading || !coverImage}>
               <Save className="h-4 w-4" />
               {isSubmitting

@@ -159,7 +159,7 @@ export function AddMemoryDialog({
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder="What do you want to remember?"
-                  className="w-full resize-none border border-[color:var(--border-strong)] bg-white px-3 py-2.5 font-serif text-[15px] leading-7 text-[color:var(--ink)] outline-none transition focus:border-[color:var(--ink-soft)]"
+                  className="w-full resize-none border border-[color:var(--border-strong)] bg-white px-3 py-2.5 font-serif text-base leading-7 text-[color:var(--ink)] outline-none transition focus:border-[color:var(--ink-soft)] md:text-[15px]"
                 />
               ) : null}
 

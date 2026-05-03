@@ -16,7 +16,9 @@ import { createId, nextImageUnoptimizedForSrc, reorderList } from "@/lib/utils";
 import type { MemoryPhoto, Subgallery, SubgalleryInput } from "@/types/memora";
 
 function fieldClassName() {
-  return "w-full border-0 border-b-[1.5px] border-[color:var(--border-strong)] bg-transparent px-0 py-3 text-[15px] text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] hover:border-[color:var(--ink-soft)] focus:border-[color:var(--ink)]";
+  // text-base on mobile is 16px — anything smaller triggers iOS Safari's
+  // auto-zoom on focus. Desktop keeps the editorial 15px rhythm.
+  return "w-full border-0 border-b-[1.5px] border-[color:var(--border-strong)] bg-transparent px-0 py-3 text-base text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] hover:border-[color:var(--ink-soft)] focus:border-[color:var(--ink)] md:text-[15px]";
 }
 
 function Label({ children }: { children: React.ReactNode }) {
@@ -248,14 +250,14 @@ export function SubgalleryForm({
                 : "You can reorder and caption photos after saving."}
           </p>
           <div className="flex flex-wrap items-center gap-3">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               disabled={isSubmitting}
               onClick={() => router.back()}
-              className="text-[14px] font-medium text-[color:var(--ink-soft)] underline-offset-4 transition hover:text-[color:var(--ink)] hover:underline disabled:opacity-40"
             >
               Cancel
-            </button>
+            </Button>
             <Button
               type="submit"
               disabled={isSubmitting || isUploadingCover || isUploadingPhotos || !coverImage || photos.length === 0}
@@ -280,7 +282,7 @@ export function SubgalleryForm({
 
       {/* Photo collection */}
       <section className="relative overflow-hidden border border-[color:var(--border-strong)]/70 bg-[color:var(--background)] shadow-[0_6px_24px_rgba(14,22,34,0.06)]">
-        <header className="flex flex-col gap-3 px-5 py-6 md:flex-row md:items-end md:justify-between md:px-8 md:py-7">
+        <header className="flex flex-col gap-2 px-4 py-4 md:flex-row md:items-end md:justify-between md:gap-3 md:px-8 md:py-7">
           <div>
             <Label>Photo collection</Label>
             <h3 className="mt-2 font-serif text-[28px] leading-tight text-[color:var(--ink)] md:text-[32px]">
@@ -367,7 +369,7 @@ export function SubgalleryForm({
                       </span>
                     ) : null}
                   </div>
-                  <div className="flex flex-1 flex-col gap-3 px-4 py-4">
+                  <div className="flex flex-1 flex-col gap-2.5 px-3 py-3 md:gap-3 md:px-4 md:py-4">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
                         Photo {index + 1}
@@ -380,7 +382,7 @@ export function SubgalleryForm({
                           onClick={() =>
                             setPhotos((current) => reorderList(current, index, Math.max(0, index - 1)))
                           }
-                          className="rounded-sm border border-[color:var(--border-strong)]/70 p-1 text-[color:var(--ink-soft)] transition hover:border-[color:var(--ink-soft)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-30"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-sm border border-[color:var(--border-strong)]/70 text-[color:var(--ink-soft)] transition hover:border-[color:var(--ink-soft)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-30 md:h-7 md:w-7"
                         >
                           <ArrowLeft className="h-3.5 w-3.5" />
                         </button>
@@ -393,7 +395,7 @@ export function SubgalleryForm({
                               reorderList(current, index, Math.min(current.length - 1, index + 1)),
                             )
                           }
-                          className="rounded-sm border border-[color:var(--border-strong)]/70 p-1 text-[color:var(--ink-soft)] transition hover:border-[color:var(--ink-soft)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-30"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-sm border border-[color:var(--border-strong)]/70 text-[color:var(--ink-soft)] transition hover:border-[color:var(--ink-soft)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-30 md:h-7 md:w-7"
                         >
                           <ArrowRight className="h-3.5 w-3.5" />
                         </button>
@@ -408,7 +410,7 @@ export function SubgalleryForm({
                           ),
                         )
                       }
-                      className={`${fieldClassName()} min-h-20 resize-none text-[13.5px] leading-6`}
+                      className={`${fieldClassName()} min-h-14 resize-none leading-6 md:min-h-20 md:text-[13.5px]`}
                       placeholder="Add a caption or detail worth remembering."
                     />
                     <div className="mt-auto flex items-center justify-between text-[13px]">

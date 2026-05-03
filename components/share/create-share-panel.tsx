@@ -151,7 +151,7 @@ export function CreateSharePanel({
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[color:var(--ink-soft)] transition hover:bg-[rgba(22,35,56,0.06)] hover:text-[color:var(--ink)]"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-md text-[color:var(--ink-soft)] transition hover:bg-[rgba(22,35,56,0.06)] hover:text-[color:var(--ink)] md:h-8 md:w-8"
             aria-label="Close share panel"
           >
             <X className="h-4 w-4" />
@@ -284,13 +284,13 @@ export function CreateSharePanel({
                 value={newGroupName}
                 onChange={(event) => setNewGroupName(event.target.value)}
                 placeholder="Group name (e.g. Close Friends)"
-                className="mt-2 w-full border border-[rgba(26,42,67,0.12)] bg-white px-3 py-2 text-sm text-[color:var(--ink)] outline-none focus:border-[color:var(--accent)]"
+                className="mt-2 w-full border border-[rgba(26,42,67,0.12)] bg-white px-3 py-2 text-base text-[color:var(--ink)] outline-none focus:border-[color:var(--accent)] md:text-sm"
               />
               <input
                 value={newGroupMembers}
                 onChange={(event) => setNewGroupMembers(event.target.value)}
                 placeholder="Mom, Dad, Gigi"
-                className="mt-2 w-full border border-[rgba(26,42,67,0.12)] bg-white px-3 py-2 text-sm text-[color:var(--ink)] outline-none focus:border-[color:var(--accent)]"
+                className="mt-2 w-full border border-[rgba(26,42,67,0.12)] bg-white px-3 py-2 text-base text-[color:var(--ink)] outline-none focus:border-[color:var(--accent)] md:text-sm"
               />
               <p className="mt-1.5 text-[11.5px] leading-5 text-[color:var(--ink-soft)]">
                 Type one member per slot, separated by commas — e.g. <span className="text-[color:var(--ink)]">Mom, Dad, Gigi</span>.
@@ -355,7 +355,7 @@ export function CreateSharePanel({
                       ),
                     )
                   }
-                  className="mt-2 w-full border border-[rgba(26,42,67,0.12)] bg-white px-2.5 py-1.5 text-sm text-[color:var(--ink)] outline-none focus:border-[color:var(--accent)] md:px-3 md:py-2"
+                  className="mt-2 w-full border border-[rgba(26,42,67,0.12)] bg-white px-2.5 py-1.5 text-base text-[color:var(--ink)] outline-none focus:border-[color:var(--accent)] md:px-3 md:py-2 md:text-sm"
                 />
                 <textarea
                   value={editingGroup.members.map((member) => member.label).join(", ")}
@@ -373,7 +373,7 @@ export function CreateSharePanel({
                       ),
                     );
                   }}
-                  className="mt-2 min-h-20 w-full resize-none border border-[rgba(26,42,67,0.12)] bg-white px-2.5 py-1.5 text-sm text-[color:var(--ink)] outline-none focus:border-[color:var(--accent)] md:px-3 md:py-2"
+                  className="mt-2 min-h-20 w-full resize-none border border-[rgba(26,42,67,0.12)] bg-white px-2.5 py-1.5 text-base text-[color:var(--ink)] outline-none focus:border-[color:var(--accent)] md:px-3 md:py-2 md:text-sm"
                 />
                 <Button
                   type="button"
@@ -457,7 +457,7 @@ export function CreateSharePanel({
               value={customMessage}
               onChange={(event) => onCustomMessageChange(event.target.value)}
               placeholder="Optional. Example: We loved this trip and wanted to share highlights with you."
-              className="min-h-24 w-full resize-none border border-[rgba(26,42,67,0.12)] bg-white px-2.5 py-1.5 text-sm leading-6 text-[color:var(--ink)] outline-none transition focus:border-[color:var(--accent)] md:min-h-28 md:px-3 md:py-2"
+              className="min-h-24 w-full resize-none border border-[rgba(26,42,67,0.12)] bg-white px-2.5 py-1.5 text-base leading-6 text-[color:var(--ink)] outline-none transition focus:border-[color:var(--accent)] md:min-h-28 md:px-3 md:py-2 md:text-sm"
             />
           </section>
         </div>

@@ -81,34 +81,53 @@ export default function GalleryDetailPage() {
                 More
               </Button>
               {actionsOpen ? (
-                <div className="absolute right-0 top-[calc(100%+0.45rem)] z-20 w-[min(16rem,calc(100vw-2rem))] rounded-xl border border-[color:var(--border-strong)] bg-[color:var(--chrome-strong)] p-2 shadow-[0_14px_34px_rgba(0,0,0,0.18)] md:w-48">
-                  {gallery.subgalleries.length > 0 ? (
-                    <Link
-                      href={`/galleries/${gallery.id}/subgalleries/${gallery.subgalleries[activeSubgalleryIndex].id}/edit`}
-                      className="block rounded-lg px-3 py-2 text-sm text-[color:var(--ink)] transition hover:bg-[color:var(--paper)]"
-                    >
-                      Edit subgallery
-                    </Link>
-                  ) : null}
-                  <Link
-                    href={`/galleries/${gallery.id}/edit`}
-                    className="block rounded-lg px-3 py-2 text-sm text-[color:var(--ink)] transition hover:bg-[color:var(--paper)]"
+                <>
+                  {/* Mobile-only scrim — taps outside the sheet dismiss it.
+                      Desktop uses the existing inline-popover behavior. */}
+                  <div
+                    aria-hidden
+                    onClick={() => setActionsOpen(false)}
+                    className="fixed inset-0 z-30 bg-[rgba(9,14,22,0.32)] backdrop-blur-[1px] md:hidden"
+                  />
+                  <div
+                    role="menu"
+                    style={{
+                      paddingBottom:
+                        "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)",
+                    }}
+                    className="fixed inset-x-0 bottom-0 z-40 flex flex-col gap-1 border-t border-[color:var(--border-strong)] bg-[color:var(--chrome-strong)] p-3 shadow-[0_-14px_34px_rgba(0,0,0,0.18)] md:absolute md:inset-auto md:right-0 md:top-[calc(100%+0.45rem)] md:w-48 md:rounded-xl md:border md:p-2 md:pb-2"
                   >
-                    Edit gallery
-                  </Link>
-                  <div className="px-1 py-1.5">
-                    <ConfirmDeleteDialog
-                      title="Delete this gallery?"
-                      description="This removes the gallery and every subgallery inside it from local storage."
-                      triggerLabel="Delete gallery"
-                      onConfirm={() => {
-                        void deleteGallery(gallery.id).then(() => {
-                          router.push("/galleries");
-                        });
-                      }}
-                    />
+                    {gallery.subgalleries.length > 0 ? (
+                      <Link
+                        href={`/galleries/${gallery.id}/subgalleries/${gallery.subgalleries[activeSubgalleryIndex].id}/edit`}
+                        onClick={() => setActionsOpen(false)}
+                        className="flex h-12 items-center rounded-lg px-3 text-[14px] text-[color:var(--ink)] transition hover:bg-[color:var(--paper)] md:h-auto md:py-2 md:text-sm"
+                      >
+                        Edit subgallery
+                      </Link>
+                    ) : null}
+                    <Link
+                      href={`/galleries/${gallery.id}/edit`}
+                      onClick={() => setActionsOpen(false)}
+                      className="flex h-12 items-center rounded-lg px-3 text-[14px] text-[color:var(--ink)] transition hover:bg-[color:var(--paper)] md:h-auto md:py-2 md:text-sm"
+                    >
+                      Edit gallery
+                    </Link>
+                    <div className="px-1 py-1.5">
+                      <ConfirmDeleteDialog
+                        title="Delete this gallery?"
+                        description="This removes the gallery and every subgallery inside it from local storage."
+                        triggerLabel="Delete gallery"
+                        onConfirm={() => {
+                          setActionsOpen(false);
+                          void deleteGallery(gallery.id).then(() => {
+                            router.push("/galleries");
+                          });
+                        }}
+                      />
+                    </div>
                   </div>
-                </div>
+                </>
               ) : null}
             </div>
           </>

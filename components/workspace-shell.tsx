@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { LogOut, PanelLeft } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MemoraTour } from "@/components/memora-tour";
 import { ClipboardIcon } from "@/components/icons/ClipboardIcon";
 import { GlobeIcon } from "@/components/icons/GlobeIcon";
@@ -31,10 +31,25 @@ const DURATION_MS = 320;
 
 export function WorkspaceShell({ children, onSignOut, email: _email = "" }: WorkspaceShellProps) {
   const pathname = usePathname();
+  const mobileStripRef = useRef<HTMLDivElement | null>(null);
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "1";
   });
+
+  // Mobile nav strip is overflow-x-auto; on every route change it remounts
+  // with scrollLeft=0 — so tapping Help or Settings (off-screen right) snaps
+  // the strip back to Galleries. Auto-scroll the active item into view so
+  // the strip self-orients on each navigation.
+  useEffect(() => {
+    const strip = mobileStripRef.current;
+    if (!strip) return;
+    const active = strip.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!active) return;
+    const target =
+      active.offsetLeft - strip.clientWidth / 2 + active.clientWidth / 2;
+    strip.scrollTo({ left: Math.max(0, target), behavior: "auto" });
+  }, [pathname]);
 
   // Publish shell dimensions to :root so full-bleed pages (e.g. Memory Map)
   // can align to the sidebar/top-chrome without duplicating layout math.
@@ -270,9 +285,19 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
       </aside>
 
       <div className="min-w-0 flex-1">
-        {/* Mobile chrome — consistent height, rounded-md, matches desktop language */}
+        {/* Mobile chrome — consistent height, rounded-md, matches desktop language.
+            mask-image fades the right edge so users can see the strip is
+            scrollable; the strip auto-scrolls the active item into view on
+            route change (see useEffect above). */}
         <div
-          style={{ height: `${MOBILE_CHROME_HEIGHT}px` }}
+          ref={mobileStripRef}
+          style={{
+            height: `${MOBILE_CHROME_HEIGHT}px`,
+            maskImage:
+              "linear-gradient(to right, #000 0, #000 92%, transparent 100%)",
+            WebkitMaskImage:
+              "linear-gradient(to right, #000 0, #000 92%, transparent 100%)",
+          }}
           className="flex items-center gap-1.5 overflow-x-auto border-b border-[color:var(--border)] bg-[color:var(--chrome)] px-3 backdrop-blur-xl md:hidden"
         >
           {/* Primary destinations + utility links (Help, Settings)

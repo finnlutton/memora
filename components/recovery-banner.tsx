@@ -63,7 +63,11 @@ export function RecoveryBanner() {
     <div
       role="status"
       aria-live="polite"
-      className="pointer-events-none fixed bottom-4 right-4 z-[90] inline-flex items-center gap-2 rounded-full border border-[color:var(--border-strong)] bg-[color:var(--paper-strong)] px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)] shadow-[0_8px_22px_rgba(14,22,34,0.12)] backdrop-blur"
+      style={{
+        bottom:
+          "calc(env(safe-area-inset-bottom, 0px) + var(--memora-bottom-banner, 0px) + 1rem)",
+      }}
+      className="pointer-events-none fixed right-4 z-[90] inline-flex items-center gap-2 rounded-full border border-[color:var(--border-strong)] bg-[color:var(--paper-strong)] px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)] shadow-[0_8px_22px_rgba(14,22,34,0.12)] backdrop-blur"
     >
       <span
         aria-hidden

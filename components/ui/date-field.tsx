@@ -148,7 +148,7 @@ export function DateField({
           max={max}
           aria-label={ariaLabel}
           onChange={(event) => onChange(event.target.value)}
-          className="w-full border-0 border-b-[1.5px] border-[color:var(--border-strong)] bg-transparent px-0 py-3 text-[15px] text-[color:var(--ink)] outline-none transition focus:border-[color:var(--ink)]"
+          className="w-full border-0 border-b-[1.5px] border-[color:var(--border-strong)] bg-transparent px-0 py-3 text-base text-[color:var(--ink)] outline-none transition focus:border-[color:var(--ink)] md:text-[15px]"
         />
       </div>
     );
@@ -185,7 +185,7 @@ export function DateField({
             if (parsed !== null) onChange(parsed);
             setTyped(formatDisplay(parsed ?? value));
           }}
-          className="flex-1 bg-transparent text-[15px] text-[color:var(--ink)] outline-none placeholder:text-[color:var(--ink-faint)]"
+          className="flex-1 bg-transparent text-base text-[color:var(--ink)] outline-none placeholder:text-[color:var(--ink-faint)] md:text-[15px]"
         />
         <button
           type="button"

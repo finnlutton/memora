@@ -117,7 +117,7 @@ export function GalleryCard({
       {yearBadge ? (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute left-3 top-3 inline-flex items-center px-1 py-px font-[family-name:var(--font-mono)] text-[6.5px] tracking-[0.12em] text-[color:var(--ink)] bg-[color:var(--chrome)] md:left-5 md:top-5 md:px-1.5 md:py-0.5 md:text-[10px] md:tracking-[0.16em]"
+          className="pointer-events-none absolute left-3 top-3 inline-flex items-center px-1 py-px font-[family-name:var(--font-mono)] text-[8.5px] tracking-[0.12em] text-[color:var(--ink)] bg-[color:var(--chrome)] md:left-5 md:top-5 md:px-1.5 md:py-0.5 md:text-[10px] md:tracking-[0.16em]"
         >
           {yearBadge}
         </span>
@@ -125,7 +125,7 @@ export function GalleryCard({
       {durationBadge ? (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute right-3 top-3 inline-flex items-center px-1 py-px font-[family-name:var(--font-mono)] text-[6.5px] tracking-[0.12em] text-[color:var(--ink)] bg-[color:var(--chrome)] md:right-5 md:top-5 md:px-1.5 md:py-0.5 md:text-[10px] md:tracking-[0.16em]"
+          className="pointer-events-none absolute right-3 top-3 inline-flex items-center px-1 py-px font-[family-name:var(--font-mono)] text-[8.5px] tracking-[0.12em] text-[color:var(--ink)] bg-[color:var(--chrome)] md:right-5 md:top-5 md:px-1.5 md:py-0.5 md:text-[10px] md:tracking-[0.16em]"
         >
           {durationBadge}
         </span>
@@ -139,12 +139,12 @@ export function GalleryCard({
         updated-ago. If a gallery has neither location nor dates, the meta
         line just doesn't render — no empty placeholder slab.
       */}
-      <div className="mt-1.5 md:mt-6">
-        <h3 className="font-serif text-[10.5px] leading-[1.2] text-[color:var(--ink)] md:text-[24px] md:leading-[1.15]">
+      <div className="mt-2 md:mt-6">
+        <h3 className="font-serif text-[14px] leading-[1.22] text-[color:var(--ink)] md:text-[24px] md:leading-[1.15]">
           {gallery.title}
         </h3>
         {metaParts.length ? (
-          <p className="mt-0.5 font-[family-name:var(--font-mono)] text-[8px] uppercase leading-[1.4] tracking-[0.16em] text-[color:var(--ink-faint)] md:mt-2 md:text-[11px]">
+          <p className="mt-1 font-[family-name:var(--font-mono)] text-[10px] uppercase leading-[1.4] tracking-[0.12em] text-[color:var(--ink-faint)] md:mt-2 md:text-[11px] md:tracking-[0.16em]">
             {metaParts.join(" · ")}
           </p>
         ) : null}

@@ -152,7 +152,7 @@ export default function GalleriesPage() {
                   asChild
                   variant="secondary"
                   data-tour-id="gallery-create"
-                  className="h-8 gap-1 whitespace-nowrap px-2 py-1 text-[9px] tracking-[0.06em] md:h-auto md:gap-1.5 md:px-3 md:py-2 md:text-xs md:tracking-[0.14em]"
+                  className="h-10 gap-1.5 whitespace-nowrap px-3 text-[11px] tracking-[0.14em] md:h-auto md:px-3 md:py-2 md:text-xs"
                 >
                   <Link href="/galleries/settings/membership?source=gallery-limit">
                     <span className="md:hidden">Upgrade</span>
@@ -163,10 +163,10 @@ export default function GalleriesPage() {
                 <Button
                   asChild
                   data-tour-id="gallery-create"
-                  className="h-8 gap-1 whitespace-nowrap px-2 py-1 text-[9px] tracking-[0.06em] md:h-auto md:gap-1.5 md:px-3 md:py-2 md:text-xs md:tracking-[0.14em]"
+                  className="h-10 gap-1.5 whitespace-nowrap px-3 text-[11px] tracking-[0.14em] md:h-auto md:px-3 md:py-2 md:text-xs"
                 >
                   <Link href="/galleries/new">
-                    <Plus className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                    <Plus className="h-3 w-3 md:h-3 md:w-3" />
                     <span className="md:hidden">Create</span>
                     <span className="hidden md:inline">Create gallery</span>
                   </Link>
@@ -176,7 +176,7 @@ export default function GalleriesPage() {
                 type="button"
                 variant="ghost"
                 data-tour-id="gallery-share"
-                className="h-8 gap-1 whitespace-nowrap px-2 py-1 text-[9px] tracking-[0.06em] text-[color:var(--ink)] md:h-auto md:gap-1.5 md:px-3 md:py-2 md:text-xs md:tracking-[0.14em]"
+                className="h-10 gap-1.5 whitespace-nowrap px-3 text-[11px] tracking-[0.14em] text-[color:var(--ink)] md:h-auto md:px-3 md:py-2 md:text-xs"
                 disabled={shareLimitReached}
                 onClick={() => {
                   setShareMode(true);
@@ -196,7 +196,7 @@ export default function GalleriesPage() {
         />
       </div>
 
-      <section className="mb-3 grid grid-cols-3 gap-2 border-t border-b border-[color:var(--border)] py-3 md:mb-8 md:my-8 md:gap-6 md:py-5">
+      <section className="mb-3 grid grid-cols-3 gap-3 border-t border-b border-[color:var(--border)] py-4 md:mb-8 md:my-8 md:gap-6 md:py-5">
         {/*
           Membership stat doubles as the dashboard's plan affordance — a
           single small link to Settings → Membership. Keeps the dashboard
@@ -208,10 +208,10 @@ export default function GalleriesPage() {
           className="group block py-0.5"
           aria-label="Manage membership"
         >
-          <p className="text-[9px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)] md:text-[10px] md:tracking-[0.22em]">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)] md:text-[10px] md:tracking-[0.22em]">
             Membership
           </p>
-          <p className="mt-1 text-[12.5px] leading-[1.35] text-[color:var(--ink)] underline decoration-transparent underline-offset-[5px] transition group-hover:decoration-[color:var(--ink-faint)] md:mt-2 md:text-[15px] md:leading-6">
+          <p className="mt-1.5 truncate text-[13.5px] leading-[1.35] text-[color:var(--ink)] underline decoration-transparent underline-offset-[5px] transition group-hover:decoration-[color:var(--ink-faint)] md:mt-2 md:truncate-none md:text-[15px] md:leading-6">
             {selectedPlan?.name ?? "No plan selected"}
           </p>
         </Link>
@@ -373,7 +373,11 @@ export default function GalleriesPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8, transition: { duration: 0.15 } }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full border border-[color:var(--border-strong)] bg-[color:var(--chrome-strong)] p-2 shadow-[0_16px_40px_rgba(0,0,0,0.18)] md:bottom-7 md:right-7"
+            style={{
+              bottom:
+                "calc(env(safe-area-inset-bottom, 0px) + var(--memora-bottom-banner, 0px) + 1.25rem)",
+            }}
+            className="fixed right-5 z-40 flex items-center gap-2 rounded-full border border-[color:var(--border-strong)] bg-[color:var(--chrome-strong)] p-2 shadow-[0_16px_40px_rgba(0,0,0,0.18)] md:right-7"
           >
             <Button
               type="button"
@@ -427,10 +431,10 @@ function QuickStat({
   //   so the dashboard stats actually read at a glance.
   return (
     <div className="py-0.5">
-      <p className="text-[9px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)] md:text-[10px] md:tracking-[0.22em]">
+      <p className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)] md:text-[10px] md:tracking-[0.22em]">
         {label}
       </p>
-      <p className="mt-1 text-[12.5px] leading-[1.35] text-[color:var(--ink)] md:mt-2 md:text-[15px] md:leading-6">
+      <p className="mt-1.5 text-[13.5px] leading-[1.35] text-[color:var(--ink)] md:mt-2 md:text-[15px] md:leading-6">
         {mobileValue ? (
           <>
             <span className="md:hidden">{mobileValue}</span>

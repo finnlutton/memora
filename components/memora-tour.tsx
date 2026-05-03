@@ -46,6 +46,7 @@ const CAPTION_OFFSET = 18;
 const CAPTION_MARGIN = 16;
 const CURSOR_PARK_OFFSET = 22;
 const NAV_SETTLE_MS = 520;
+const MOBILE_BREAKPOINT = 768;
 
 export function MemoraTour() {
   const pathname = usePathname();
@@ -148,7 +149,17 @@ export function MemoraTour() {
       setAnchorBox(null);
       return;
     }
-    const rect = el.getBoundingClientRect();
+    let rect = el.getBoundingClientRect();
+    // If the anchor is off-screen vertically, scroll it into view before
+    // measuring. Without this, the spotlight can paint on an empty patch
+    // of viewport — common on mobile where steps land below the fold
+    // (e.g. settings appearance after navigating to /galleries/settings).
+    const offTop = rect.bottom < 24;
+    const offBottom = rect.top > window.innerHeight - 24;
+    if (offTop || offBottom) {
+      el.scrollIntoView({ block: "center", behavior: "auto" });
+      rect = el.getBoundingClientRect();
+    }
     setAnchorBox({
       top: rect.top,
       left: rect.left,
@@ -221,7 +232,29 @@ export function MemoraTour() {
 
   const captionVisible = pathname === step.route;
   const navigating = navTarget != null;
-  const captionPos = computeCaptionPos(step, anchorBox, viewport);
+  const isMobile = viewport.width < MOBILE_BREAKPOINT;
+  // 340px caption barely fits at 375px viewport and overflows below.
+  // Clamp to viewport on mobile so margins stay even on either side.
+  const captionWidth = isMobile
+    ? Math.min(CAPTION_WIDTH, viewport.width - CAPTION_MARGIN * 2)
+    : CAPTION_WIDTH;
+  // On mobile there's no horizontal room for a full caption beside an
+  // anchor, so authored "left"/"right" sides collapse to vertical
+  // placement — top if the anchor sits in the lower half of the viewport,
+  // bottom otherwise. Native top/bottom sides pass through unchanged.
+  const authoredSide = step.anchorSide ?? "bottom";
+  const effectiveSide: TourSide = (() => {
+    if (!isMobile) return authoredSide;
+    if (authoredSide === "top" || authoredSide === "bottom") return authoredSide;
+    if (anchorBox && anchorBox.centerY > viewport.height / 2) return "top";
+    return "bottom";
+  })();
+  const captionPos = computeCaptionPos(
+    effectiveSide,
+    anchorBox,
+    viewport,
+    captionWidth,
+  );
   const cursorPos = computeCursorPos({
     navigating,
     navTarget,
@@ -284,7 +317,7 @@ export function MemoraTour() {
             style={{
               top: captionPos.top,
               left: captionPos.left,
-              width: CAPTION_WIDTH,
+              width: captionWidth,
             }}
             className="pointer-events-auto absolute"
           >
@@ -293,7 +326,8 @@ export function MemoraTour() {
               <Connector
                 anchor={anchorBox}
                 caption={captionPos}
-                side={step.anchorSide ?? "bottom"}
+                side={effectiveSide}
+                captionWidth={captionWidth}
               />
             ) : null}
 
@@ -305,7 +339,7 @@ export function MemoraTour() {
                 <button
                   type="button"
                   onClick={handleSkip}
-                  className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)] transition hover:text-[color:var(--ink-soft)]"
+                  className="-mr-2 inline-flex h-9 items-center px-2 font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)] transition hover:text-[color:var(--ink-soft)] md:h-auto md:p-0"
                   aria-label="Skip the tour"
                 >
                   Skip
@@ -340,7 +374,7 @@ export function MemoraTour() {
                     <button
                       type="button"
                       onClick={handleBack}
-                      className="rounded-full px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink-soft)] transition hover:bg-[color:var(--hover-tint)] hover:text-[color:var(--ink)]"
+                      className="inline-flex h-11 items-center rounded-full px-3 text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink-soft)] transition hover:bg-[color:var(--hover-tint)] hover:text-[color:var(--ink)] md:h-auto md:py-1.5"
                     >
                       Back
                     </button>
@@ -348,7 +382,7 @@ export function MemoraTour() {
                   <button
                     type="button"
                     onClick={handleNext}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--ink)] px-4 py-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--background)] transition hover:bg-[color:var(--accent-strong-hover)]"
+                    className="inline-flex h-11 items-center gap-1.5 rounded-full bg-[color:var(--ink)] px-4 text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--background)] transition hover:bg-[color:var(--accent-strong-hover)] md:h-auto md:py-2"
                   >
                     {isLast ? "Begin" : isFirst ? "Start tour" : "Next"}
                   </button>
@@ -359,8 +393,11 @@ export function MemoraTour() {
         ) : null}
       </AnimatePresence>
 
-      {/* Animated cursor — drifts between nav items + anchors. */}
-      {!reduceMotion ? (
+      {/* Animated cursor — desktop-only metaphor (touch users don't see
+          a pointer in their normal interaction model). On mobile the
+          cursor would also need to chase off-screen mobile-strip nav
+          items, which produces a visible "drift to nowhere" jank. */}
+      {!reduceMotion && !isMobile ? (
         <TourCursor pos={cursorPos} clicking={navigating} />
       ) : null}
     </div>
@@ -444,10 +481,12 @@ function Connector({
   anchor,
   caption,
   side,
+  captionWidth,
 }: {
   anchor: AnchorBox;
   caption: { top: number; left: number; height: number };
   side: TourSide;
+  captionWidth: number;
 }) {
   // Pick a tail point on the anchor edge facing the caption, and a head
   // point on the caption edge facing the anchor. The line is a short
@@ -461,13 +500,13 @@ function Connector({
     case "top":
       tailX = anchor.centerX;
       tailY = anchor.top;
-      headX = caption.left + CAPTION_WIDTH / 2;
+      headX = caption.left + captionWidth / 2;
       headY = caption.top + caption.height;
       break;
     case "left":
       tailX = anchor.left;
       tailY = anchor.centerY;
-      headX = caption.left + CAPTION_WIDTH;
+      headX = caption.left + captionWidth;
       headY = caption.top + caption.height / 2;
       break;
     case "right":
@@ -480,7 +519,7 @@ function Connector({
     default:
       tailX = anchor.centerX;
       tailY = anchor.top + anchor.height;
-      headX = caption.left + CAPTION_WIDTH / 2;
+      headX = caption.left + captionWidth / 2;
       headY = caption.top;
       break;
   }
@@ -603,9 +642,10 @@ function CursorIcon() {
 // Geometry helpers
 // ---------------------------------------------------------------
 function computeCaptionPos(
-  step: TourStep,
+  side: TourSide,
   anchor: AnchorBox | null,
   viewport: { width: number; height: number },
+  captionWidth: number,
 ): { top: number; left: number; height: number } {
   // Approximate caption height for clamping. Real height is measured
   // by Framer Motion at paint, but we need a number for edge clamping.
@@ -613,21 +653,20 @@ function computeCaptionPos(
   if (!anchor) {
     return {
       top: Math.max(viewport.height / 2 - estHeight / 2, CAPTION_MARGIN),
-      left: Math.max(viewport.width / 2 - CAPTION_WIDTH / 2, CAPTION_MARGIN),
+      left: Math.max(viewport.width / 2 - captionWidth / 2, CAPTION_MARGIN),
       height: estHeight,
     };
   }
-  const side = step.anchorSide ?? "bottom";
   let top = 0;
   let left = 0;
   switch (side) {
     case "top":
       top = anchor.top - estHeight - CAPTION_OFFSET;
-      left = anchor.centerX - CAPTION_WIDTH / 2;
+      left = anchor.centerX - captionWidth / 2;
       break;
     case "left":
       top = anchor.centerY - estHeight / 2;
-      left = anchor.left - CAPTION_WIDTH - CAPTION_OFFSET;
+      left = anchor.left - captionWidth - CAPTION_OFFSET;
       break;
     case "right":
       top = anchor.centerY - estHeight / 2;
@@ -636,7 +675,7 @@ function computeCaptionPos(
     case "bottom":
     default:
       top = anchor.top + anchor.height + CAPTION_OFFSET;
-      left = anchor.centerX - CAPTION_WIDTH / 2;
+      left = anchor.centerX - captionWidth / 2;
       break;
   }
   top = Math.max(
@@ -645,7 +684,7 @@ function computeCaptionPos(
   );
   left = Math.max(
     CAPTION_MARGIN,
-    Math.min(left, viewport.width - CAPTION_WIDTH - CAPTION_MARGIN),
+    Math.min(left, viewport.width - captionWidth - CAPTION_MARGIN),
   );
   return { top, left, height: estHeight };
 }

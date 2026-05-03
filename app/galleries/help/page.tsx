@@ -97,7 +97,7 @@ export default function HelpPage() {
             <select
               value={category}
               onChange={(event) => setCategory(event.target.value)}
-              className="w-full border border-[color:var(--border)] bg-white/85 px-3 py-2 text-sm text-[color:var(--ink)] outline-none transition focus:border-[color:var(--accent)]"
+              className="w-full border border-[color:var(--border)] bg-white/85 px-3 py-2 text-base text-[color:var(--ink)] outline-none transition focus:border-[color:var(--accent)] md:text-sm"
             >
               {ISSUE_CATEGORIES.map((entry) => (
                 <option key={entry} value={entry}>
@@ -114,7 +114,7 @@ export default function HelpPage() {
               onChange={(event) => setMessage(event.target.value.slice(0, MESSAGE_LIMIT))}
               maxLength={MESSAGE_LIMIT}
               placeholder="Briefly describe what happened, what page you were on, and what you expected."
-              className="min-h-28 w-full resize-none border border-[color:var(--border)] bg-white/85 px-3 py-2 text-sm leading-6 text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--accent)]"
+              className="min-h-28 w-full resize-none border border-[color:var(--border)] bg-white/85 px-3 py-2 text-base leading-6 text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--accent)] md:text-sm"
             />
             <p className="text-xs text-[color:var(--ink-soft)]">{remainingCount} characters remaining</p>
           </label>
@@ -130,8 +130,13 @@ export default function HelpPage() {
           {error ? <p className="text-sm text-[#9a4545]">{error}</p> : null}
           {success ? <p className="text-sm text-[color:var(--ink)]">{success}</p> : null}
 
-          <div className="flex justify-end">
-            <Button type="submit" disabled={busy || message.trim().length === 0}>
+          <div className="flex md:justify-end">
+            <Button
+              type="submit"
+              size="touch"
+              disabled={busy || message.trim().length === 0}
+              className="w-full md:w-auto"
+            >
               {busy ? "Sending..." : "Send"}
             </Button>
           </div>

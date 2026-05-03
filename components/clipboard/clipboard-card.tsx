@@ -147,7 +147,7 @@ export function ClipboardCard({
               onPointerDown={(e) => e.stopPropagation()}
               onMouseDown={(e) => e.stopPropagation()}
               rows={Math.max(3, draft.split("\n").length + 1)}
-              className="w-full resize-none border-none bg-transparent font-serif text-[14.5px] leading-7 text-[color:var(--ink)] outline-none"
+              className="w-full resize-none border-none bg-transparent font-serif text-base leading-7 text-[color:var(--ink)] outline-none md:text-[14.5px]"
               placeholder="…"
             />
           ) : (

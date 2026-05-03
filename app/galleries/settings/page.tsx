@@ -403,7 +403,7 @@ function DisplayNameRow() {
           }}
           maxLength={DISPLAY_NAME_MAX_LENGTH}
           placeholder="First name or nickname"
-          className="flex-1 border-0 border-b-[1.5px] border-[color:var(--border-strong)] bg-transparent px-0 py-1.5 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] hover:border-[color:var(--ink-soft)] focus:border-[color:var(--ink)]"
+          className="flex-1 border-0 border-b-[1.5px] border-[color:var(--border-strong)] bg-transparent px-0 py-1.5 text-base text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] hover:border-[color:var(--ink-soft)] focus:border-[color:var(--ink)] md:text-sm"
         />
         <button
           type="button"
