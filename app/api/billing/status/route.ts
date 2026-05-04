@@ -16,7 +16,7 @@ export type BillingStatusResponse = {
   subscriptionStatus: string | null;
   /**
    * For monthly subs: next renewal date.
-   * For an active Founder Plan: when 5-year access ends.
+   * For an active Founder Plan: when 3-year access ends.
    * Null for Free, internal, or expired Founder.
    */
   currentPeriodEnd: string | null;

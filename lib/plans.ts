@@ -156,9 +156,9 @@ export const membershipPlans: MembershipPlan[] = [
     directPhotosPerGallery: UNLIMITED,
     activeShareLinks: null,
     summary:
-      "Pay once and get 5 years of premium Memora access. No monthly billing during the 5-year term.",
+      "Pay once and get 3 years of premium Memora access. No monthly billing during the 3-year term.",
     features: [
-      "Everything in Max for 5 years",
+      "Everything in Max for 3 years",
       "One payment, no monthly billing",
       "Limited early-adopter pricing",
     ],
@@ -221,16 +221,16 @@ export function isInternalPlan(planId: MembershipPlanId): boolean {
 }
 
 /**
- * Founder Plan term, in milliseconds (5 years). Used by the Stripe
+ * Founder Plan term, in milliseconds (3 years). Used by the Stripe
  * webhook to stamp `subscription_current_period_end` at purchase time
  * and by the runtime resolver below to check whether that stamp is in
  * the past.
  *
- * 5 calendar years is approximated as 5 × 365.25 days. Drift over a
- * 5-year window from leap-day rounding is < 1 day, which is acceptable
+ * 3 calendar years is approximated as 3 × 365.25 days. Drift over a
+ * 3-year window from leap-day rounding is < 1 day, which is acceptable
  * for an access-window check that's already enforced loosely.
  */
-export const FOUNDER_TERM_MS = 5 * 365.25 * 24 * 60 * 60 * 1000;
+export const FOUNDER_TERM_MS = 3 * 365.25 * 24 * 60 * 60 * 1000;
 
 /**
  * Compute when a Founder Plan purchase made now will expire. Returns an
@@ -248,7 +248,7 @@ export type ProfilePlanFields = {
 
 /**
  * Resolves the *effective* plan id for a profile, accounting for
- * Founder Plan expiry. The Founder Plan ($59.99 / 5 yrs) is stored
+ * Founder Plan expiry. The Founder Plan ($59.99 / 3 yrs) is stored
  * internally as `selected_plan = "lifetime"` with the access end
  * stamped in `subscription_current_period_end`. Once that timestamp is
  * in the past, the user silently drops to Free for any limit check or

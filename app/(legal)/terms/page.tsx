@@ -167,7 +167,7 @@ export default function TermsOfServicePage() {
           </p>
           <p>
             The Founder Plan, if offered, is a one-time purchase that
-            grants premium access for five years from the date of
+            grants premium access for three years from the date of
             purchase, with no monthly billing during that term and no
             automatic renewal at the end of it. Founder access does not
             guarantee that any specific feature will remain unchanged for

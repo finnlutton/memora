@@ -14,7 +14,7 @@ import { getPlan, type MembershipPlanId } from "@/lib/plans";
  *
  * Note: still keyed on the `lifetime` plan id internally (DB rows,
  * Stripe webhook, env vars all reference it). Public-facing branding is
- * the Founder Plan: $59.99 for 5 years, no renewal.
+ * the Founder Plan: $59.99 for 3 years, no renewal.
  */
 
 export function LifetimeSection({
@@ -47,9 +47,9 @@ export function LifetimeSection({
             Memora Founder.
           </h3>
           <p className="mt-3 max-w-md text-[14px] leading-7 text-[color:var(--ink-soft)] md:text-[15px]">
-            For early supporters who want the best long-term value. Five
-            years of premium Memora for one upfront payment — less than
-            $1/month, no monthly billing during the term.
+            For early supporters who want the best long-term value. Three
+            years of premium Memora for one upfront payment — no monthly
+            billing during the term.
           </p>
         </div>
 
@@ -74,7 +74,7 @@ export function LifetimeSection({
             <p className="font-serif text-[32px] leading-none text-[color:var(--ink)] md:text-[36px]">
               {plan.priceMonthlyLabel}
               <span className="ml-1.5 text-[12px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">
-                / 5 yrs
+                / 3 yrs
               </span>
             </p>
             <button

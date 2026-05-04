@@ -187,7 +187,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   //
   // Internally the plan id is still `lifetime` (column values, env
   // vars, status string all carry the legacy name). What changed: the
-  // public Founder Plan grants 5 years of access, not life. We stamp
+  // public Founder Plan grants 3 years of access, not life. We stamp
   // the access end date in `subscription_current_period_end` — the
   // resolver in @/lib/plans (resolveEffectivePlanId) treats anything
   // past that timestamp as Free.

@@ -14,7 +14,7 @@ Settings → Environment Variables** for preview/production.
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | client | reserved for future client-side use; not currently read by any route |
 | `STRIPE_PRICE_PLUS_MONTHLY` | server | recurring price for the Plus plan |
 | `STRIPE_PRICE_MAX_MONTHLY` | server | recurring price for the Max plan |
-| `STRIPE_PRICE_LIFETIME` | server | one-time price for the Founder Plan ($59.99 / 5 yrs). Env var keeps the legacy `LIFETIME` name; the Stripe price object behind it is now the Founder price. |
+| `STRIPE_PRICE_LIFETIME` | server | one-time price for the Founder Plan ($59.99 / 3 yrs). Env var keeps the legacy `LIFETIME` name; the Stripe price object behind it is now the Founder price. |
 | `STRIPE_WEBHOOK_SECRET` | server | `whsec_…` from Stripe Dashboard or CLI |
 | `NEXT_PUBLIC_SITE_URL` | client | canonical site origin (e.g. `https://memoragallery.com`) |
 | `SUPABASE_SERVICE_ROLE_KEY` | server | already required for admin Supabase writes |

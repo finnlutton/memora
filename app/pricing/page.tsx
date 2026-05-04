@@ -92,7 +92,7 @@ export default function PricingPage() {
                 ) : null}
                 {isFounder ? (
                   <p className="absolute -top-2.5 left-6 bg-[#efe2c8] px-2 text-[9.5px] uppercase tracking-[0.28em] text-[#5a4628]">
-                    5-year
+                    3-year
                   </p>
                 ) : null}
 
@@ -114,7 +114,7 @@ export default function PricingPage() {
                   {plan.priceMonthlyLabel}
                   {plan.id === "lifetime" ? (
                     <span className="ml-1 text-[12px] uppercase tracking-[0.18em] text-[#9c805a]">
-                      / 5 yrs
+                      / 3 yrs
                     </span>
                   ) : plan.id !== "free" ? (
                     <span className="ml-1 text-[12px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">
@@ -135,7 +135,7 @@ export default function PricingPage() {
 
                 {plan.id === "lifetime" ? (
                   <p className="mt-6 text-[12.5px] leading-5 text-[#5a4628]">
-                    Same limits as Max — locked in for five years, no renewal.
+                    Same limits as Max — locked in for three years, no renewal.
                   </p>
                 ) : (
                   <dl className="mt-6 space-y-2.5 text-[12.5px] leading-5 text-[color:var(--ink)]">

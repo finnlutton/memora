@@ -146,7 +146,7 @@ export function BillingStatusCard() {
         </p>
         {expiredFounder ? (
           <p className="mt-2 text-[13px] leading-6 text-[color:var(--ink-soft)]">
-            Your 5-year Founder term has ended. Your archive is safe and
+            Your 3-year Founder term has ended. Your archive is safe and
             still viewable; new uploads and shares now follow Free-plan
             limits.
           </p>
@@ -189,7 +189,7 @@ export function BillingStatusCard() {
   }
 
   // ── State 1: Active paid plan, not canceled ─────────────────────────
-  // Founder is a one-time purchase — no renewal during the 5-year term.
+  // Founder is a one-time purchase — no renewal during the 3-year term.
   if (status.planId === "lifetime") {
     return (
       <div className="border border-[color:var(--border)] bg-white px-4 py-4">
@@ -200,7 +200,7 @@ export function BillingStatusCard() {
           Current plan: Founder
         </p>
         <p className="mt-2 text-[13px] leading-6 text-[color:var(--ink-soft)]">
-          Paid once. Five years of premium access, no monthly billing.
+          Paid once. Three years of premium access, no monthly billing.
         </p>
         {renewDate ? (
           <p className="mt-1 text-[12.5px] leading-6 text-[color:var(--ink-soft)]">
