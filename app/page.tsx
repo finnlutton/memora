@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
-import { HomeGalleryReveal } from "@/components/home-gallery-reveal";
+import { HomeGalleryBuild } from "@/components/home-gallery-build";
 import { HomeHero } from "@/components/home-hero";
 import { HomeMemoryGlobe } from "@/components/home-memory-globe";
 import { HomeShareDemo } from "@/components/home-share-demo";
@@ -25,7 +25,7 @@ const REVEAL_TARGET_ID = "home-gallery-demo";
  * Reading sequence (intentional, each beat answers a different question):
  *   1. Hero photograph       — what does a memory in Memora feel like?
  *   2. Editorial promise     — what makes it different from a camera roll?
- *   3. Live gallery reveal   — what does it actually do?
+ *   3. Live gallery build    — what does it actually do?
  *   4. Creator's note        — why does it exist?
  *   5. Closer photograph     — invitation.
  *
@@ -94,7 +94,7 @@ export default function HomePage() {
         id={REVEAL_TARGET_ID}
         className="mx-auto w-full max-w-7xl px-4 py-24 md:px-6 md:py-32"
       >
-        <HomeGalleryReveal />
+        <HomeGalleryBuild />
       </section>
 
       {/*

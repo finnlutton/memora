@@ -43,11 +43,11 @@ export type DemoGallery = {
 const DIR = "/demo/home-gallery";
 
 export const HOME_GALLERY_DEMO: DemoGallery = {
-  title: "Semester in Andalusia",
+  title: "Semester Abroad in Granada",
   location: "Granada, Spain",
   dates: "Jan 2026 – May 2026",
   description:
-    "While I was based in Granada, I spent a lot of time exploring southern Spain, and wanted to dedicate a gallery to the region. Some of these trips include Sevilla, Córdoba, Málaga, Cádiz, and Gibraltar. Click on the gallery to see more!",
+    "While I was based in Granada, I spent a lot of time exploring southern Spain, and wanted to dedicate a gallery to the region. Some of these trips include Sevilla, Córdoba, Málaga, Cádiz, and Gibraltar.",
   coverImage: `${DIR}/gallery-cover.jpg`,
   subgalleries: [
     {
