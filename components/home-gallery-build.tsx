@@ -440,9 +440,15 @@ function BuildView({
   showFinalCaret: boolean;
 }) {
   const gallery = HOME_GALLERY_DEMO;
-  // Subgallery whose scenes are surfaced at the end. Mountain biking is the
-  // first and most visually establishing of the three.
-  const openSub = gallery.subgalleries[0];
+  // Subgallery whose scenes are surfaced. Mountain biking is the default —
+  // the most visually establishing of the three — and the build animation
+  // populates its scenes. After settle, all three are clickable to swap.
+  const [openSubId, setOpenSubId] = useState<string>(
+    gallery.subgalleries[0].id,
+  );
+  const openSub =
+    gallery.subgalleries.find((s) => s.id === openSubId) ??
+    gallery.subgalleries[0];
 
   const past = (ms: number) => elapsed >= ms;
   const between = (start: number, end: number) =>
@@ -491,7 +497,16 @@ function BuildView({
           <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
             Gallery
           </p>
-          <div className="mt-3 block w-full text-left">
+          <h3 className="mt-3 min-h-[1.35em] font-serif text-[26px] leading-[1.08] text-[color:var(--ink)] md:mt-4 md:text-[34px]">
+            {settled ? gallery.title : titleText}
+            {!settled && !titleDone && titleProgress > 0 ? (
+              <Caret
+                blink
+                className="ml-[2px] inline-block h-[0.85em] w-[2px] translate-y-[1px] bg-[color:var(--ink)]"
+              />
+            ) : null}
+          </h3>
+          <div className="mt-4 block w-full text-left md:mt-5">
             <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-2 md:p-[14px]">
               <div className="relative aspect-[16/10] overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)]">
                 {coverShown ? (
@@ -523,15 +538,6 @@ function BuildView({
                 ) : null}
               </div>
             </div>
-            <h3 className="mt-2 min-h-[1.35em] font-serif text-[26px] leading-[1.08] text-[color:var(--ink)] md:mt-3 md:text-[34px]">
-              {settled ? gallery.title : titleText}
-              {!settled && !titleDone && titleProgress > 0 ? (
-                <Caret
-                  blink
-                  className="ml-[2px] inline-block h-[0.85em] w-[2px] translate-y-[1px] bg-[color:var(--ink)]"
-                />
-              ) : null}
-            </h3>
           </div>
           <div className="mt-2 min-h-[14px]">
             <motion.p
@@ -569,6 +575,10 @@ function BuildView({
                   sub={sub}
                   visibleAt={BUILD.subgalleryStart + i * 180}
                   elapsed={elapsed}
+                  open={sub.id === openSubId}
+                  // Wait until the build is settled to allow toggling — clicks
+                  // mid-animation would fight the staged scene reveal.
+                  onSelect={settled ? () => setOpenSubId(sub.id) : undefined}
                 />
               ))}
             </div>
@@ -586,16 +596,28 @@ function BuildView({
                 <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
                   Scenes
                 </p>
-                <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-7 md:gap-x-6 md:gap-y-10">
-                  {openSub.scenes.map((scene, i) => (
-                    <SceneCard
-                      key={scene.id}
-                      scene={scene}
-                      visibleAt={BUILD.scenesStart + 80 + i * 110}
-                      elapsed={elapsed}
-                    />
-                  ))}
-                </div>
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={openSub.id}
+                    initial={settled ? { opacity: 0, y: 4 } : false}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.32, ease: EASE }}
+                    className="mt-4 grid grid-cols-2 gap-x-3 gap-y-7 md:gap-x-6 md:gap-y-10"
+                  >
+                    {openSub.scenes.map((scene, i) => (
+                      <SceneCard
+                        key={scene.id}
+                        scene={scene}
+                        visibleAt={BUILD.scenesStart + 80 + i * 110}
+                        elapsed={elapsed}
+                        // After settle, render scenes immediately on swap —
+                        // the staggered reveal is for the first build only.
+                        instant={settled}
+                      />
+                    ))}
+                  </motion.div>
+                </AnimatePresence>
               </motion.div>
             </div>
           </div>
@@ -609,13 +631,18 @@ function SubgalleryCard({
   sub,
   visibleAt,
   elapsed,
+  open,
+  onSelect,
 }: {
   sub: DemoSubgallery;
   visibleAt: number;
   elapsed: number;
+  open: boolean;
+  onSelect?: () => void;
 }) {
   const meta = [sub.location, sub.dates].filter(Boolean).join(" · ");
   const visible = elapsed >= visibleAt;
+  const interactive = !!onSelect;
   return (
     <motion.div
       initial={false}
@@ -626,7 +653,14 @@ function SubgalleryCard({
       <p className="font-[family-name:var(--font-mono)] text-[9.5px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
         Subgallery
       </p>
-      <div className="mt-3 block w-full text-left">
+      <button
+        type="button"
+        onClick={onSelect}
+        disabled={!interactive}
+        aria-pressed={open}
+        aria-label={open ? `${sub.title} — showing scenes` : `Show scenes for ${sub.title}`}
+        className={`group mt-3 block w-full text-left transition-opacity ${interactive ? "cursor-pointer" : "cursor-default"} ${interactive && !open ? "opacity-90 hover:opacity-100" : "opacity-100"}`}
+      >
         <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-2 md:p-[12px]">
           <div className="relative aspect-[5/3] overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)]">
             <Image
@@ -635,14 +669,14 @@ function SubgalleryCard({
               fill
               sizes="(max-width: 640px) 100vw, 50vw"
               quality={80}
-              className="object-cover"
+              className={`object-cover transition duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${interactive ? "group-hover:scale-[1.015]" : ""}`}
             />
           </div>
         </div>
         <h4 className="mt-2 font-serif text-[22px] leading-[1.12] text-[color:var(--ink)] md:mt-3 md:text-[28px]">
           {sub.title}
         </h4>
-      </div>
+      </button>
       {meta ? (
         <p className="mt-2 font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)]">
           {meta}
@@ -659,17 +693,19 @@ function SceneCard({
   scene,
   visibleAt,
   elapsed,
+  instant = false,
 }: {
   scene: DemoScene;
   visibleAt: number;
   elapsed: number;
+  instant?: boolean;
 }) {
-  const visible = elapsed >= visibleAt;
+  const visible = instant || elapsed >= visibleAt;
   return (
     <motion.article
       initial={false}
       animate={{ opacity: visible ? 1 : 0, y: visible ? 0 : 6 }}
-      transition={{ duration: 0.45, ease: EASE }}
+      transition={{ duration: instant ? 0 : 0.45, ease: EASE }}
       className="flex flex-col"
     >
       <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-1.5 md:p-2.5">
