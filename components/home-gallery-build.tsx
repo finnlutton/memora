@@ -68,8 +68,17 @@ const BUILD = {
   metaStart: 2000,
   descStart: 2280,
   subgalleryStart: 6200,
-  scenesStart: 6900,
-  settled: 7800,
+  // Subgalleries reveal one-by-one with a deliberate cadence: image
+  // settles first, then the writing fills in below it. The long stagger
+  // (1.3s) gives each card its own beat — feels considered, not loaded.
+  subgalleryStagger: 1300,
+  // Within each card, the title + meta + description follow the cover
+  // by this offset so the card visibly assembles from picture to text.
+  subgalleryTextOffsetMs: 380,
+  // ~850ms reveal + 380ms internal stagger ⇒ a card is "fully in" ~1.2s
+  // after its visibleAt; shift the hint in just after the last one settles.
+  hintShow: 6200 + 2 * 1300 + 1300,
+  settled: 6200 + 2 * 1300 + 1600,
 } as const;
 
 const TITLE_TYPE_MS = 55;
@@ -276,10 +285,6 @@ function IntroView({
       <h2 className="font-serif text-[32px] leading-[1.04] text-[color:var(--ink)] md:text-[44px]">
         Start with a title. Build the memory yourself.
       </h2>
-      <p className="mx-auto mt-5 max-w-xl text-[14px] leading-7 text-[color:var(--ink-soft)] md:text-[15px]">
-        Memora gives you beautiful structure for the trips, seasons, and
-        chapters you want to remember.
-      </p>
 
       <div className="mx-auto mt-12 max-w-xl text-left md:mt-14">
         <p className="font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
@@ -309,15 +314,20 @@ function IntroView({
       </div>
 
       <div className="relative mt-10 flex items-center justify-center md:mt-12">
-        <button
-          ref={buttonRef}
-          type="button"
-          aria-hidden
-          tabIndex={-1}
-          className={`pointer-events-none inline-flex h-12 items-center justify-center rounded-full border border-[color:var(--accent-strong)] bg-[color:var(--accent-strong)] px-8 text-[13.5px] font-medium tracking-[0.04em] text-white transition-all duration-300 ${cursorPhase === "pressed" ? "scale-[0.97]" : "scale-100"} ${playing ? "opacity-100" : "opacity-40"}`}
-        >
-          Start a gallery
-        </button>
+        {playing ? (
+          <motion.button
+            ref={buttonRef}
+            type="button"
+            aria-hidden
+            tabIndex={-1}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.28, ease: EASE }}
+            className={`pointer-events-none inline-flex h-12 items-center justify-center rounded-full border border-[color:var(--accent-strong)] bg-[color:var(--accent-strong)] px-8 text-[13.5px] font-medium tracking-[0.04em] text-white transition-transform duration-300 ${cursorPhase === "pressed" ? "scale-[0.97]" : "scale-100"}`}
+          >
+            Start a gallery
+          </motion.button>
+        ) : null}
       </div>
 
       {/* Play affordance — visible only at idle. The user opts in to the
@@ -440,15 +450,13 @@ function BuildView({
   showFinalCaret: boolean;
 }) {
   const gallery = HOME_GALLERY_DEMO;
-  // Subgallery whose scenes are surfaced. Mountain biking is the default —
-  // the most visually establishing of the three — and the build animation
-  // populates its scenes. After settle, all three are clickable to swap.
-  const [openSubId, setOpenSubId] = useState<string>(
-    gallery.subgalleries[0].id,
-  );
-  const openSub =
-    gallery.subgalleries.find((s) => s.id === openSubId) ??
-    gallery.subgalleries[0];
+  // No subgallery is open by default — once the build settles, an
+  // italic hint nudges the visitor to click. Picking which one to open
+  // is the user's first interaction with the demo, not ours.
+  const [openSubId, setOpenSubId] = useState<string | null>(null);
+  const openSub = openSubId
+    ? gallery.subgalleries.find((s) => s.id === openSubId) ?? null
+    : null;
 
   const past = (ms: number) => elapsed >= ms;
   const between = (start: number, end: number) =>
@@ -485,10 +493,6 @@ function BuildView({
         <h2 className="font-serif text-[32px] leading-[1.02] text-[color:var(--ink)] md:text-[44px]">
           A time period, broken into its adventures.
         </h2>
-        <p className="mx-auto mt-5 max-w-xl text-[14px] leading-7 text-[color:var(--ink-soft)] md:text-[15px]">
-          A gallery in Memora becomes the place where a season — its trips,
-          rides, weekends — settles into something you can return to.
-        </p>
       </div>
 
       <div className="mx-auto mt-12 flex w-full max-w-7xl flex-col items-center">
@@ -569,57 +573,129 @@ function BuildView({
             />
 
             <div className="mt-0 grid gap-x-6 gap-y-12 sm:grid-cols-2 md:grid-cols-3 md:gap-x-8 md:gap-y-16">
-              {gallery.subgalleries.map((sub, i) => (
-                <SubgalleryCard
-                  key={sub.id}
-                  sub={sub}
-                  visibleAt={BUILD.subgalleryStart + i * 180}
-                  elapsed={elapsed}
-                  open={sub.id === openSubId}
-                  // Wait until the build is settled to allow toggling — clicks
-                  // mid-animation would fight the staged scene reveal.
-                  onSelect={settled ? () => setOpenSubId(sub.id) : undefined}
-                />
-              ))}
+              {gallery.subgalleries.map((sub, i) => {
+                const visibleAt =
+                  BUILD.subgalleryStart + i * BUILD.subgalleryStagger;
+                // Allow clicking any subgallery as soon as it has finished
+                // its reveal — no need to wait for the entire build to
+                // settle for interaction to come online.
+                const ready = elapsed >= visibleAt + 950;
+                return (
+                  <SubgalleryCard
+                    key={sub.id}
+                    sub={sub}
+                    visibleAt={visibleAt}
+                    elapsed={elapsed}
+                    open={sub.id === openSubId}
+                    onSelect={ready ? () => setOpenSubId(sub.id) : undefined}
+                  />
+                );
+              })}
             </div>
 
-            <div className="overflow-hidden">
-              <motion.div
-                initial={false}
-                animate={{
-                  opacity: past(BUILD.scenesStart) ? 1 : 0,
-                  y: past(BUILD.scenesStart) ? 0 : 6,
-                }}
-                transition={{ duration: 0.5, ease: EASE }}
-                className="pt-10 md:pt-14"
-              >
-                <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
-                  Scenes
-                </p>
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.div
-                    key={openSub.id}
-                    initial={settled ? { opacity: 0, y: 4 } : false}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.32, ease: EASE }}
-                    className="mt-4 grid grid-cols-2 gap-x-3 gap-y-7 md:gap-x-6 md:gap-y-10"
-                  >
-                    {openSub.scenes.map((scene, i) => (
-                      <SceneCard
-                        key={scene.id}
-                        scene={scene}
-                        visibleAt={BUILD.scenesStart + 80 + i * 110}
-                        elapsed={elapsed}
-                        // After settle, render scenes immediately on swap —
-                        // the staggered reveal is for the first build only.
-                        instant={settled}
+            {/* Hint annotation — appears after the subgalleries finish their
+                reveal and dismisses the moment the user opens one. Anchored
+                to the middle subgallery card so the line lands on it. */}
+            <AnimatePresence>
+              {past(BUILD.hintShow) && openSubId === null ? (
+                <motion.div
+                  key="hint"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.45, ease: EASE }}
+                  className="pointer-events-none mt-10 hidden md:block"
+                  aria-hidden
+                >
+                  <div className="relative mx-auto flex max-w-[44rem] flex-col items-center">
+                    <svg
+                      width="100%"
+                      height="46"
+                      viewBox="0 0 200 46"
+                      preserveAspectRatio="none"
+                      className="mb-1 block h-[42px] w-[180px] text-[color:var(--ink-soft)]/60"
+                      aria-hidden
+                    >
+                      {/* Arrow head at the top, pointing up at the middle
+                          subgallery card; curve flows down toward the
+                          italic note below. */}
+                      <path
+                        d="M100 44 C 100 28, 104 18, 100 2"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.1"
+                        strokeLinecap="round"
                       />
-                    ))}
-                  </motion.div>
-                </AnimatePresence>
-              </motion.div>
-            </div>
+                      <path
+                        d="M96 8 L100 0 L104 8"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.1"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    <p className="text-center font-serif text-[15px] italic leading-snug text-[color:var(--ink-soft)] md:text-[16px]">
+                      Click on a subgallery to reveal its scenes
+                    </p>
+                  </div>
+                </motion.div>
+              ) : null}
+              {/* Mobile fallback — same copy without the curved line. */}
+              {past(BUILD.hintShow) && openSubId === null ? (
+                <motion.p
+                  key="hint-mobile"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.4, ease: EASE }}
+                  className="mt-8 text-center font-serif text-[14px] italic leading-snug text-[color:var(--ink-soft)] md:hidden"
+                  aria-hidden
+                >
+                  Tap a subgallery to reveal its scenes
+                </motion.p>
+              ) : null}
+            </AnimatePresence>
+
+            {/* Scenes — only mounted once the user has chosen a subgallery. */}
+            <AnimatePresence initial={false}>
+              {openSub ? (
+                <motion.div
+                  key="scenes-wrap"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.42, ease: EASE }}
+                  className="overflow-hidden"
+                >
+                  <div className="pt-10 md:pt-14">
+                    <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
+                      Scenes
+                    </p>
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.div
+                        key={openSub.id}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.32, ease: EASE }}
+                        className="mx-auto mt-4 grid max-w-5xl grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 md:grid-cols-4 md:gap-x-5 md:gap-y-8"
+                      >
+                        {openSub.scenes.map((scene) => (
+                          <SceneCard
+                            key={scene.id}
+                            scene={scene}
+                            // Once the user has opened a subgallery we render
+                            // scenes immediately — no per-card stagger.
+                            instant
+                          />
+                        ))}
+                      </motion.div>
+                    </AnimatePresence>
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
           </div>
         </div>
       </div>
@@ -641,24 +717,34 @@ function SubgalleryCard({
   onSelect?: () => void;
 }) {
   const meta = [sub.location, sub.dates].filter(Boolean).join(" · ");
-  const visible = elapsed >= visibleAt;
+  const coverVisible = elapsed >= visibleAt;
+  // Title + meta + description settle in shortly after the cover so each
+  // card visibly assembles from picture to text — not just one fade.
+  const textVisible = elapsed >= visibleAt + BUILD.subgalleryTextOffsetMs;
   const interactive = !!onSelect;
   return (
-    <motion.div
-      initial={false}
-      animate={{ opacity: visible ? 1 : 0, y: visible ? 0 : 8 }}
-      transition={{ duration: 0.5, ease: EASE }}
-      className="flex flex-col"
-    >
-      <p className="font-[family-name:var(--font-mono)] text-[9.5px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]">
+    <div className="flex flex-col">
+      <motion.p
+        initial={false}
+        animate={{ opacity: coverVisible ? 1 : 0 }}
+        transition={{ duration: 0.5, ease: EASE }}
+        className="font-[family-name:var(--font-mono)] text-[9.5px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]"
+      >
         Subgallery
-      </p>
-      <button
+      </motion.p>
+      <motion.button
         type="button"
         onClick={onSelect}
         disabled={!interactive}
         aria-pressed={open}
         aria-label={open ? `${sub.title} — showing scenes` : `Show scenes for ${sub.title}`}
+        initial={false}
+        animate={{
+          opacity: coverVisible ? 1 : 0,
+          y: coverVisible ? 0 : 14,
+          scale: coverVisible ? 1 : 0.985,
+        }}
+        transition={{ duration: 0.85, ease: EASE }}
         className={`group mt-3 block w-full text-left transition-opacity ${interactive ? "cursor-pointer" : "cursor-default"} ${interactive && !open ? "opacity-90 hover:opacity-100" : "opacity-100"}`}
       >
         <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-2 md:p-[12px]">
@@ -673,19 +759,34 @@ function SubgalleryCard({
             />
           </div>
         </div>
-        <h4 className="mt-2 font-serif text-[22px] leading-[1.12] text-[color:var(--ink)] md:mt-3 md:text-[28px]">
+        <motion.h4
+          initial={false}
+          animate={{ opacity: textVisible ? 1 : 0, y: textVisible ? 0 : 6 }}
+          transition={{ duration: 0.55, ease: EASE }}
+          className="mt-2 font-serif text-[22px] leading-[1.12] text-[color:var(--ink)] md:mt-3 md:text-[28px]"
+        >
           {sub.title}
-        </h4>
-      </button>
+        </motion.h4>
+      </motion.button>
       {meta ? (
-        <p className="mt-2 font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)]">
+        <motion.p
+          initial={false}
+          animate={{ opacity: textVisible ? 1 : 0, y: textVisible ? 0 : 6 }}
+          transition={{ duration: 0.55, delay: 0.06, ease: EASE }}
+          className="mt-2 font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)]"
+        >
           {meta}
-        </p>
+        </motion.p>
       ) : null}
-      <p className="mt-3 text-[14px] leading-[1.65] text-[color:var(--ink-soft)] md:text-[15px]">
+      <motion.p
+        initial={false}
+        animate={{ opacity: textVisible ? 1 : 0, y: textVisible ? 0 : 6 }}
+        transition={{ duration: 0.6, delay: 0.12, ease: EASE }}
+        className="mt-3 text-[14px] leading-[1.65] text-[color:var(--ink-soft)] md:text-[15px]"
+      >
         {sub.description}
-      </p>
-    </motion.div>
+      </motion.p>
+    </div>
   );
 }
 
@@ -696,11 +797,15 @@ function SceneCard({
   instant = false,
 }: {
   scene: DemoScene;
-  visibleAt: number;
-  elapsed: number;
+  visibleAt?: number;
+  elapsed?: number;
   instant?: boolean;
 }) {
-  const visible = instant || elapsed >= visibleAt;
+  const visible =
+    instant ||
+    (typeof visibleAt === "number" &&
+      typeof elapsed === "number" &&
+      elapsed >= visibleAt);
   return (
     <motion.article
       initial={false}

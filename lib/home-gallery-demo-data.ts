@@ -55,7 +55,7 @@ export const HOME_GALLERY_DEMO: DemoGallery = {
       title: "Mountain biking in Granada",
       location: "Granada",
       description:
-        "I rented a mountain bike soon after arriving in Granada to get a better chance to explore the area. Luckily, I ran into some spaniards on my first ride that became some of my best friends. This completely changed the rest of my abroad experience!",
+        "Take a look at some of my mountain biking adventures around Granada!",
       coverImage: `${DIR}/subgallery-1-cover.jpg`,
       scenes: [
         {
@@ -89,7 +89,7 @@ export const HOME_GALLERY_DEMO: DemoGallery = {
       location: "Gibraltar",
       dates: "Sat, Apr 18, 2026",
       description:
-        "Eli and I had an amazing weekend road trip along the southern coast of Spain, stopping in Gibraltar on Saturday. While she was excited for the monkeys, we soon realized they were aggressive bandits that taxed us along our route to the top. Check out one of these encounters below!",
+        "While we were excited to see the monkeys, they were just excited to steal our stuff. See below!",
       coverImage: `${DIR}/subgallery-2-cover.jpg`,
       scenes: [
         {
@@ -117,11 +117,11 @@ export const HOME_GALLERY_DEMO: DemoGallery = {
     },
     {
       id: "sub-3",
-      title: "Weekend trip to Sevilla!",
+      title: "Weekend trip to Sevilla",
       location: "Sevilla",
       dates: "Feb 2026",
       description:
-        "I had a great time with my program walking around Sevilla and seeing amazing buildings like the Cathedral and Giralda. We also saw the royal tobacco factory, which has become an academic building for the University of Sevilla, one of my favorite parts of the tour! Eli and I spent day 2 walking around and getting a coffee and cheesecake. Check it out below!",
+        "Had a great weekend with my program in Sevilla.",
       coverImage: `${DIR}/subgallery-3-cover.jpg`,
       scenes: [
         {
@@ -134,15 +134,13 @@ export const HOME_GALLERY_DEMO: DemoGallery = {
           caption: "Our first luxury dessert in Spain. Worth it.",
         },
         {
-          id: "s3-3",
-          image: `${DIR}/scene-3-3.jpg`,
-          caption:
-            "We got to sit in the sun by the Guadalquivir river right before leaving. Felt great after a few weeks of rain.",
-        },
-        {
           id: "s3-4",
           image: `${DIR}/scene-3-4.jpg`,
-          caption: "Thought this was cool...",
+        },
+        {
+          id: "s3-3",
+          image: `${DIR}/scene-3-3.jpg`,
+          caption: "Got to sit by the Guadalquivir before heading home",
         },
       ],
     },
