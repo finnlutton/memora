@@ -4,7 +4,17 @@ import { Pencil, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
+import { cn } from "@/lib/utils";
 import type { ClipboardItem } from "@/hooks/use-clipboard-items";
+
+/**
+ * Threshold below which a text-only scrap shows its content inline (line
+ * clamp 3) instead of collapsing to a "{N} words · {date}" face-down
+ * scrap. Tuned so common short notes ("call mom", "Granada window light")
+ * stay visible at a glance and longer journal-style entries stay tucked
+ * behind a tap.
+ */
+const SHORT_TEXT_THRESHOLD = 60;
 
 /**
  * One memory card.
@@ -39,6 +49,9 @@ export function ClipboardCard({
   onRemove,
   draggable = false,
   priority = false,
+  variant = "default",
+  tilt = 0,
+  onOpenDetail,
 }: {
   item: ClipboardItem;
   onUpdateContent: (id: string, content: string) => Promise<void>;
@@ -51,7 +64,37 @@ export function ClipboardCard({
    * the page's resources.
    */
   priority?: boolean;
+  /**
+   * "default" — the desktop drag-canvas tile (full-size, hover
+   * affordances, inline editing). "compact" — mobile scrap-on-a-board
+   * variant: small, content-driven sizing, tap-to-open-detail. Edit and
+   * delete on compact lives in the detail sheet (the in-card hover
+   * affordances aren't reachable on touch).
+   */
+  variant?: "default" | "compact";
+  /**
+   * Tilt angle in degrees applied as a transform — gives the compact
+   * mobile cards their "pinned scrap" character. Ignored on default.
+   */
+  tilt?: number;
+  /**
+   * Compact-only callback fired when the card is tapped. Wires the
+   * card up to the parent's detail sheet so editing and deleting stay
+   * possible without on-card hover.
+   */
+  onOpenDetail?: (id: string) => void;
 }) {
+  if (variant === "compact") {
+    return (
+      <CompactClipboardCard
+        item={item}
+        tilt={tilt}
+        priority={priority}
+        onOpenDetail={onOpenDetail}
+      />
+    );
+  }
+
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(item.content ?? "");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -205,5 +248,116 @@ export function ClipboardCard({
         />
       </div>
     </article>
+  );
+}
+
+/**
+ * Compact ("scrap on a clipboard") variant used on mobile only. Sized
+ * to the content type:
+ *  - photo only: small portrait thumbnail
+ *  - photo + text: square thumbnail + 1-line caption
+ *  - short text: serif paragraph clamped to 3 lines
+ *  - long text: face-down "{N} words · {date}" tile
+ *
+ * The card is a single button — tap opens the detail sheet, where
+ * editing and deleting live (the default-variant hover affordances
+ * aren't reachable on touch).
+ */
+function CompactClipboardCard({
+  item,
+  tilt,
+  priority,
+  onOpenDetail,
+}: {
+  item: ClipboardItem;
+  tilt: number;
+  priority: boolean;
+  onOpenDetail?: (id: string) => void;
+}) {
+  const dateLabel = formatDate(item.createdAt);
+  const text = (item.content ?? "").trim();
+  const hasText = text.length > 0;
+  const hasPhoto = Boolean(item.photoUrl);
+  const isShortText = hasText && text.length <= SHORT_TEXT_THRESHOLD;
+  const wordCount = hasText
+    ? text.split(/\s+/).filter(Boolean).length
+    : 0;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onOpenDetail?.(item.id)}
+      style={{ transform: `rotate(${tilt}deg)` }}
+      aria-label={
+        text
+          ? `Open memory: ${text.slice(0, 40)}${text.length > 40 ? "…" : ""}`
+          : "Open memory"
+      }
+      className="group relative block w-full overflow-hidden border border-[color:var(--border)] bg-[#fdf9f1] text-left shadow-[0_8px_22px_-14px_rgba(60,46,30,0.32)] transition-transform active:translate-y-[1px] active:scale-[0.99]"
+    >
+      {/* Pin / thumbtack — small dot at the top-center of each card.
+          Subtle inset highlight gives a hint of dimension without
+          pretending to be a full skeuomorphic illustration. */}
+      <span
+        aria-hidden="true"
+        className="absolute left-1/2 top-1 z-10 block h-2 w-2 -translate-x-1/2 rounded-full bg-[color:var(--ink-soft)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.18),0_1px_2px_rgba(14,22,34,0.32)]"
+      />
+
+      {hasPhoto && item.photoUrl ? (
+        <div
+          className={cn(
+            "relative w-full overflow-hidden bg-[color:var(--paper-strong)]",
+            // Square when paired with text so the caption has room
+            // beneath; portrait when photo is the whole scrap so the
+            // image gets a touch more vertical presence.
+            hasText ? "aspect-square" : "aspect-[3/4]",
+          )}
+        >
+          <Image
+            src={item.photoUrl}
+            alt={text || "Clipboard memory"}
+            fill
+            // Compact column is ~165-180px wide on a 375 viewport (2-col
+            // gap-3, px-3). 200px sizes hint stops the optimizer from
+            // pulling a full-screen variant.
+            sizes="200px"
+            quality={75}
+            priority={priority}
+            draggable={false}
+            className="object-cover"
+          />
+        </div>
+      ) : null}
+
+      {/* Inline body — short text gets serif prose; long text gets a
+          word-count + date face-down tile. Photo+text pairs show the
+          caption clamped to a single line below the image. */}
+      {hasText ? (
+        isShortText ? (
+          <p
+            className={cn(
+              "px-3 font-serif text-[13px] leading-[1.45] text-[color:var(--ink)]",
+              hasPhoto ? "line-clamp-1 pt-2" : "line-clamp-3 pt-3",
+            )}
+          >
+            {text}
+          </p>
+        ) : !hasPhoto ? (
+          <p className="px-3 pt-4 text-[10.5px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
+            {wordCount} {wordCount === 1 ? "word" : "words"}
+          </p>
+        ) : (
+          // Photo + long text: still keep a single hint line so the user
+          // sees there IS text behind the image, just rendered tightly.
+          <p className="line-clamp-1 px-3 pt-2 text-[10.5px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
+            {wordCount} {wordCount === 1 ? "word" : "words"}
+          </p>
+        )
+      ) : null}
+
+      <p className="px-3 pb-2 pt-2 text-[9.5px] font-medium uppercase tracking-[0.2em] text-[color:var(--ink-faint)]">
+        {dateLabel}
+      </p>
+    </button>
   );
 }

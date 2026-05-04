@@ -6,8 +6,27 @@ import { AppShell } from "@/components/app-shell";
 import { AddMemoryDialog } from "@/components/clipboard/add-memory-dialog";
 import { ClipboardCanvas } from "@/components/clipboard/clipboard-canvas";
 import { ClipboardCard } from "@/components/clipboard/clipboard-card";
+import { ClipboardDetailSheet } from "@/components/clipboard/clipboard-detail-sheet";
 import { pickPromptForToday } from "@/components/clipboard/clipboard-prompts";
-import { useClipboardItems } from "@/hooks/use-clipboard-items";
+import {
+  useClipboardItems,
+  type ClipboardItem,
+} from "@/hooks/use-clipboard-items";
+
+// Five-step tilt cycle keyed off the item id — gives the mobile scrap
+// stack its "pinned at slightly different angles" character without
+// forcing each card to track its own random angle. Stable across
+// renders for the same id so a memory doesn't twitch when the list
+// re-orders or refetches.
+const TILT_ANGLES = [-1.6, -0.9, 0, 1, 1.7];
+
+function tiltFor(id: string): number {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash * 31 + id.charCodeAt(i)) | 0;
+  }
+  return TILT_ANGLES[Math.abs(hash) % TILT_ANGLES.length];
+}
 
 /**
  * Clipboard page — full-bleed paper surface that fills the workspace
@@ -35,6 +54,14 @@ export default function ClipboardPage() {
   const [seedPosition, setSeedPosition] = useState<{ x: number; y: number } | null>(
     null,
   );
+  // Mobile-only: which scrap is open in the detail sheet. We hold the
+  // ID rather than the item itself so a re-fetched list (e.g. after an
+  // edit) keeps the sheet bound to fresh data.
+  const [detailItemId, setDetailItemId] = useState<string | null>(null);
+  const detailItem: ClipboardItem | null =
+    detailItemId == null
+      ? null
+      : items.find((entry) => entry.id === detailItemId) ?? null;
 
   const prompt = pickPromptForToday();
 
@@ -84,20 +111,22 @@ export default function ClipboardPage() {
         */}
         <header
           data-tour-id="clipboard-prompt"
-          className="pointer-events-none absolute left-5 right-5 top-6 z-20 max-w-2xl md:left-12 md:top-12"
+          className="pointer-events-none absolute left-4 right-4 top-3 z-20 max-w-2xl md:left-12 md:top-12"
         >
-          <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-[color:var(--ink-soft)]">
+          <p className="text-[9px] font-medium uppercase tracking-[0.22em] text-[color:var(--ink-soft)] md:text-[10px] md:tracking-[0.24em]">
             Your scraps are worth keeping
           </p>
           {/*
             Title IS the rotating prompt. Today's prompt is picked
             deterministically by date in pickPromptForToday() so the
             user sees the same heading all day, then a fresh one
-            tomorrow.
+            tomorrow. Mobile keeps the serif but drops the editorial
+            scale so the prompt doesn't dominate above-the-fold real
+            estate that should belong to the scraps themselves.
           */}
           <h1
             id="clipboard-title"
-            className="mt-2 font-serif text-[34px] leading-[0.96] text-[color:var(--ink)] md:mt-3 md:text-[58px] md:leading-[0.94]"
+            className="mt-1.5 font-serif text-[19px] leading-[1.15] text-[color:var(--ink)] md:mt-3 md:text-[58px] md:leading-[0.94]"
           >
             {prompt}
           </h1>
@@ -107,7 +136,7 @@ export default function ClipboardPage() {
             the user never sees a mismatched gray "Loading…" panel.
           */}
           {loading ? (
-            <p className="mt-3 text-[10.5px] font-medium uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+            <p className="mt-2 text-[9.5px] font-medium uppercase tracking-[0.2em] text-[color:var(--ink-faint)] md:mt-3 md:text-[10.5px] md:tracking-[0.22em]">
               Loading…
             </p>
           ) : null}
@@ -135,10 +164,15 @@ export default function ClipboardPage() {
               />
             </div>
 
-            {/* Mobile: stacked column. Hidden on desktop. */}
+            {/* Mobile: 2-col masonry of compact "scrap on a clipboard"
+                cards. Each card is content-driven (small thumbnail,
+                short serif text, or face-down word-count tile) and
+                gently tilted to feel pinned. Tapping opens the detail
+                sheet for full content + edit + delete. Hidden on
+                desktop where the drag-canvas takes over. */}
             <div className="md:hidden">
               {items.length === 0 ? (
-                <div className="flex min-h-full flex-col items-center justify-center px-6 pb-24 pt-48 text-center">
+                <div className="flex min-h-full flex-col items-center justify-center px-6 pb-24 pt-32 text-center">
                   <p className="font-serif text-[18px] italic leading-7 text-[color:var(--ink-soft)]">
                     Drop your first memory.
                   </p>
@@ -148,19 +182,22 @@ export default function ClipboardPage() {
                   </p>
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-4 px-3 pb-24 pt-44">
+                <div className="columns-2 gap-3 px-3 pb-28 pt-24 [column-fill:_balance]">
                   {items.map((item, index) => (
-                    <ClipboardCard
-                      key={item.id}
-                      item={item}
-                      onUpdateContent={updateContent}
-                      onRemove={removeItem}
-                      // First few cards in the mobile stack are
-                      // above-the-fold or just below; preload them
-                      // eagerly so the first paint isn't a stack of
-                      // empty paper tiles.
-                      priority={index < 3}
-                    />
+                    <div key={item.id} className="mb-3 break-inside-avoid">
+                      <ClipboardCard
+                        item={item}
+                        onUpdateContent={updateContent}
+                        onRemove={removeItem}
+                        variant="compact"
+                        tilt={tiltFor(item.id)}
+                        onOpenDetail={(id) => setDetailItemId(id)}
+                        // First few thumbnails are above-the-fold or
+                        // just below; preload them eagerly so the
+                        // initial paint isn't a stack of empty paper.
+                        priority={index < 4}
+                      />
+                    </div>
                   ))}
                 </div>
               )}
@@ -177,6 +214,13 @@ export default function ClipboardPage() {
               >
                 <Plus className="h-4 w-4" strokeWidth={2} />
               </button>
+
+              <ClipboardDetailSheet
+                item={detailItem}
+                onClose={() => setDetailItemId(null)}
+                onUpdateContent={updateContent}
+                onRemove={removeItem}
+              />
             </div>
           </>
         )}
