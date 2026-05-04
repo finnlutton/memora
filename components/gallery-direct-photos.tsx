@@ -256,7 +256,7 @@ function DividerRow({
 
   return (
     <div className="group flex items-center gap-2 pt-3">
-      <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-[color:var(--ink-faint)] opacity-0 transition group-hover:opacity-100" />
+      <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-[color:var(--ink-faint)] transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100" />
       <div className="flex flex-col">
         <input
           ref={inputRef}
@@ -285,7 +285,7 @@ function DividerRow({
         type="button"
         onClick={() => void onRemove()}
         aria-label="Remove divider"
-        className="ml-1 rounded-sm p-1 text-[color:var(--ink-faint)] opacity-0 transition hover:text-[color:var(--accent-strong)] group-hover:opacity-100"
+        className="ml-1 rounded-sm p-1 text-[color:var(--ink-faint)] transition hover:text-[color:var(--accent-strong)] [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
       >
         <Trash2 className="h-3 w-3" />
       </button>
@@ -346,14 +346,18 @@ function PhotoCard({
         </div>
       ) : null}
 
-      {/* Hover affordances — top-right edit + delete */}
+      {/* Edit + delete affordances — always visible on touch devices,
+          hover-revealed on devices with a real pointer. The arbitrary
+          [@media(hover:hover)] variant scopes the fade to mouse-driven
+          UAs so the simple desktop design survives while phones/tablets
+          get the same controls without the hover trap. */}
       {!editing ? (
-        <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition group-hover:opacity-100">
+        <div className="absolute right-1.5 top-1.5 flex gap-1 transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100">
           <button
             type="button"
             onClick={onStartEdit}
             aria-label="Edit details"
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-[color:var(--ink)] shadow-[0_3px_8px_rgba(14,22,34,0.18)] transition hover:bg-white"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-[color:var(--ink)] shadow-[0_3px_8px_rgba(14,22,34,0.18)] transition hover:bg-white sm:h-6 sm:w-6"
           >
             <Pencil className="h-3 w-3" strokeWidth={1.8} />
           </button>
@@ -361,7 +365,7 @@ function PhotoCard({
             type="button"
             onClick={() => void onRemove()}
             aria-label="Remove photo"
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-[color:var(--ink)] shadow-[0_3px_8px_rgba(14,22,34,0.18)] transition hover:bg-white hover:text-[color:var(--accent-strong)]"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-[color:var(--ink)] shadow-[0_3px_8px_rgba(14,22,34,0.18)] transition hover:bg-white hover:text-[color:var(--accent-strong)] sm:h-6 sm:w-6"
           >
             <Trash2 className="h-3 w-3" strokeWidth={1.8} />
           </button>
