@@ -12,7 +12,7 @@ import Link from "next/link";
 export function SiteFooter() {
   const year = new Date().getFullYear();
   return (
-    <footer className="border-t border-[color:var(--border)] bg-[color:var(--background)] px-4 py-8 md:py-10">
+    <footer className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen border-t border-[color:var(--border)] bg-[color:var(--background)] px-4 py-8 md:py-10">
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-3 text-center md:flex-row md:justify-between md:gap-0 md:text-left">
         <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
           © {year} Memora
