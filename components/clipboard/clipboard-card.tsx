@@ -169,8 +169,13 @@ export function ClipboardCard({
   };
 
   const dateLabel = formatDate(item.createdAt);
-  const hasText = Boolean(item.content?.trim()) || editing;
+  const text = (item.content ?? "").trim();
+  const hasText = Boolean(text) || editing;
   const hasPhoto = Boolean(item.photoUrl);
+  // Short notes (no photo, ≤60 chars) get a smaller card so a 3-word
+  // memory doesn't claim the same canvas real estate as a paragraph.
+  // Photos always get the full 320px so the image has room to breathe.
+  const isShortTextOnly = !hasPhoto && hasText && text.length <= SHORT_TEXT_THRESHOLD;
 
   const cardTilt = cardTiltFor(item.id);
   const photoTilt = photoTiltFor(item.id);
@@ -179,9 +184,14 @@ export function ClipboardCard({
     <article
       // group + transition for the hover affordances; don't use motion.div
       // here to keep the drag transform simple and predictable.
-      className={`group relative flex h-full w-full max-w-[20rem] flex-col overflow-hidden border border-[color:var(--border)] bg-[#fdf9f1] shadow-[0_8px_22px_-14px_rgba(60,46,30,0.28)] transition ${
-        draggable ? "cursor-grab active:cursor-grabbing" : ""
-      }`}
+      className={cn(
+        "group relative flex flex-col overflow-hidden border border-[color:var(--border)] bg-[#fdf9f1] shadow-[0_8px_22px_-14px_rgba(60,46,30,0.28)] transition",
+        // Width is content-driven: short text fits its content (capped
+        // at ~14rem); everything else takes the full 20rem so photos
+        // and long prose stay legible.
+        isShortTextOnly ? "w-fit min-w-[10rem] max-w-[14rem]" : "w-[20rem]",
+        draggable ? "cursor-grab active:cursor-grabbing" : "",
+      )}
       style={{
         // Card tilt — gives every scrap on the desktop canvas (and the
         // mobile compact stack uses its own copy of this) a slightly
@@ -197,14 +207,16 @@ export function ClipboardCard({
     >
       <PinDot />
       {hasPhoto ? (
-        // Stop drag on the image so the user can long-press / right-click
-        // it without it grabbing the card. Pointer events too — the
-        // canvas listens for pointerdown.
+        // The photo was previously stopping pointer/mouse events to
+        // protect long-press + right-click affordances, but that broke
+        // the most natural drag target on the card. Right-click still
+        // works (handlePointerDown bails on `e.button !== 0`) and
+        // long-press only fires after a stationary delay that the 4px
+        // drag threshold won't trigger — so we let the canvas's drag
+        // listener see the event again.
         <div
           className="relative aspect-[4/3] w-full overflow-hidden bg-[color:var(--paper-strong)]"
           style={{ transform: `rotate(${photoTilt}deg)` }}
-          onPointerDown={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
         >
           {item.photoUrl ? (
             <Image
@@ -228,7 +240,17 @@ export function ClipboardCard({
         </div>
       ) : null}
 
-      <div className={`flex flex-1 flex-col px-4 py-3.5 ${hasPhoto ? "" : "min-h-[8rem]"}`}>
+      {/* Body padding tightens slightly when the card is in short-text
+          mode so a 3-word note doesn't drown in whitespace. min-h is
+          gone — the card is content-driven now (the date sits below
+          the prose naturally instead of being pushed to a fixed
+          floor by mt-auto + min-h-[8rem]). */}
+      <div
+        className={cn(
+          "flex flex-1 flex-col",
+          isShortTextOnly ? "px-3.5 py-3" : "px-4 py-3.5",
+        )}
+      >
         {hasText ? (
           editing ? (
             <textarea

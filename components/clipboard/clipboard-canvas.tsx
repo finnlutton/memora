@@ -235,7 +235,11 @@ export function ClipboardCanvas({
             style={{
               left: x,
               top: y,
-              width: CARD_WIDTH,
+              // No explicit width — the card sizes itself based on its
+              // content (short text-only notes shrink, photos and long
+              // prose stay at the 20rem max). Drag clamping below still
+              // uses CARD_WIDTH as a safe upper bound so a card never
+              // spawns clipped at the right edge.
               transform: isDragging ? "scale(1.02)" : undefined,
               transition: isDragging
                 ? undefined
