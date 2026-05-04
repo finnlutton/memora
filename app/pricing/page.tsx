@@ -70,13 +70,19 @@ export default function PricingPage() {
         >
           {plans.map((plan) => {
             const featured = !!plan.featured;
+            // Founder is a one-time, multi-year plan — give it a warm
+            // tan treatment so it visibly steps out of the monthly tier
+            // grid without shouting.
+            const isFounder = plan.id === "lifetime";
             return (
               <article
                 key={plan.id}
-                className={`relative flex h-full flex-col border bg-[color:var(--paper)] p-6 transition md:p-7 ${
-                  featured
-                    ? "border-[color:var(--ink)]"
-                    : "border-[color:var(--border)]"
+                className={`relative flex h-full flex-col border p-6 transition md:p-7 ${
+                  isFounder
+                    ? "border-[#c8aa75] bg-[#efe2c8]"
+                    : featured
+                    ? "border-[color:var(--ink)] bg-[color:var(--paper)]"
+                    : "border-[color:var(--border)] bg-[color:var(--paper)]"
                 }`}
               >
                 {featured ? (
@@ -84,15 +90,30 @@ export default function PricingPage() {
                     Most chosen
                   </p>
                 ) : null}
+                {isFounder ? (
+                  <p className="absolute -top-2.5 left-6 bg-[#efe2c8] px-2 text-[9.5px] uppercase tracking-[0.28em] text-[#5a4628]">
+                    5-year
+                  </p>
+                ) : null}
 
-                <p className="text-[10.5px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+                <p
+                  className={`text-[10.5px] uppercase tracking-[0.22em] ${
+                    isFounder
+                      ? "text-[#9c805a]"
+                      : "text-[color:var(--ink-faint)]"
+                  }`}
+                >
                   {plan.name}
                 </p>
 
-                <p className="mt-3 font-serif text-[28px] leading-none text-[color:var(--ink)] md:text-[32px]">
+                <p
+                  className={`mt-3 font-serif text-[28px] leading-none md:text-[32px] ${
+                    isFounder ? "text-[#3e2f1a]" : "text-[color:var(--ink)]"
+                  }`}
+                >
                   {plan.priceMonthlyLabel}
                   {plan.id === "lifetime" ? (
-                    <span className="ml-1 text-[12px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">
+                    <span className="ml-1 text-[12px] uppercase tracking-[0.18em] text-[#9c805a]">
                       / 5 yrs
                     </span>
                   ) : plan.id !== "free" ? (
@@ -102,12 +123,18 @@ export default function PricingPage() {
                   ) : null}
                 </p>
 
-                <p className="mt-3 text-[13.5px] leading-6 text-[color:var(--ink-soft)]">
+                <p
+                  className={`mt-3 text-[13.5px] leading-6 ${
+                    isFounder
+                      ? "text-[#5a4628]"
+                      : "text-[color:var(--ink-soft)]"
+                  }`}
+                >
                   {plan.summary}
                 </p>
 
                 {plan.id === "lifetime" ? (
-                  <p className="mt-6 text-[12.5px] leading-5 text-[color:var(--ink-soft)]">
+                  <p className="mt-6 text-[12.5px] leading-5 text-[#5a4628]">
                     Same limits as Max — locked in for five years, no renewal.
                   </p>
                 ) : (
@@ -139,7 +166,9 @@ export default function PricingPage() {
                   <Link
                     href="/auth?mode=signup"
                     className={`inline-flex h-10 w-full items-center justify-center px-4 text-[11px] uppercase tracking-[0.2em] transition md:h-11 ${
-                      featured
+                      isFounder
+                        ? "bg-[#3e2f1a] text-[#efe2c8] hover:bg-[#564028]"
+                        : featured
                         ? "bg-[color:var(--ink)] text-[color:var(--background)] hover:opacity-90"
                         : "border border-[color:var(--border-strong)] text-[color:var(--ink)] hover:bg-[color:var(--paper-strong)]"
                     }`}
