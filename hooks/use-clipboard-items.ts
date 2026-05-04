@@ -23,6 +23,16 @@ const SIGNED_URL_TTL_SECONDS = 60 * 60; // 1 hour
 
 export type ClipboardLayout = "text" | "photo" | "text_photo";
 
+/**
+ * How prominent the photo on a clipboard memory should be. Drives card
+ * width on the desktop drag canvas and photo aspect ratio on the mobile
+ * masonry — the same value scales differently depending on the
+ * environment so each viewport feels right. Items without photos
+ * persist a value too (defaults to "medium") so the column stays
+ * non-null and a future text-only sizing knob can reuse it.
+ */
+export type ClipboardPhotoSize = "small" | "medium" | "large";
+
 export type ClipboardItem = {
   id: string;
   content: string | null;
@@ -33,6 +43,7 @@ export type ClipboardItem = {
   xPosition: number | null;
   yPosition: number | null;
   layoutType: ClipboardLayout;
+  photoSize: ClipboardPhotoSize;
   createdAt: string;
   updatedAt: string;
 };
@@ -45,6 +56,7 @@ type ClipboardItemRow = {
   x_position: number | null;
   y_position: number | null;
   layout_type: ClipboardLayout;
+  photo_size: ClipboardPhotoSize | null;
   created_at: string;
   updated_at: string;
 };
@@ -83,6 +95,10 @@ function rowToItem(
     xPosition: row.x_position,
     yPosition: row.y_position,
     layoutType: row.layout_type,
+    // Older rows inserted before the photo_size column existed return
+    // null on a fresh fetch — fall back to medium so the cards render
+    // at the historical default without crashing on a missing value.
+    photoSize: row.photo_size ?? "medium",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -262,6 +278,34 @@ export function useClipboardItems() {
     [supabase, userId],
   );
 
+  const updatePhotoSize = useCallback(
+    async (id: string, size: ClipboardPhotoSize) => {
+      // Optimistic local update — UI snaps to the new size immediately
+      // and we lazily reconcile any error by reverting on failure.
+      const previous = itemsRef.current.find((entry) => entry.id === id);
+      setItems((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, photoSize: size } : item)),
+      );
+      if (!userId) return;
+      const { error: updateError } = await supabase
+        .from("clipboard_items")
+        .update({ photo_size: size })
+        .eq("id", id)
+        .eq("user_id", userId);
+      if (updateError) {
+        console.error("Memora clipboard: size write failed", updateError);
+        if (previous) {
+          setItems((prev) =>
+            prev.map((item) =>
+              item.id === id ? { ...item, photoSize: previous.photoSize } : item,
+            ),
+          );
+        }
+      }
+    },
+    [supabase, userId],
+  );
+
   const updatePosition = useCallback(
     async (id: string, x: number, y: number) => {
       // Optimistic local update — position dragging fires often, we don't
@@ -321,6 +365,7 @@ export function useClipboardItems() {
     error,
     addItem,
     updateContent,
+    updatePhotoSize,
     updatePosition,
     removeItem,
   };

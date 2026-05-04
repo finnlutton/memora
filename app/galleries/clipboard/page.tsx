@@ -36,6 +36,7 @@ export default function ClipboardPage() {
     error,
     addItem,
     updateContent,
+    updatePhotoSize,
     updatePosition,
     removeItem,
   } = useClipboardItems();
@@ -146,6 +147,7 @@ export default function ClipboardPage() {
                 items={items}
                 onUpdatePosition={updatePosition}
                 onUpdateContent={updateContent}
+                onUpdatePhotoSize={updatePhotoSize}
                 onRemove={removeItem}
                 onAddAtPosition={(x, y) => {
                   setSeedPosition({ x, y });
@@ -208,6 +210,7 @@ export default function ClipboardPage() {
                 item={detailItem}
                 onClose={() => setDetailItemId(null)}
                 onUpdateContent={updateContent}
+                onUpdatePhotoSize={updatePhotoSize}
                 onRemove={removeItem}
               />
             </div>

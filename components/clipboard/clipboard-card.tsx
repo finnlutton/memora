@@ -5,7 +5,94 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { cn } from "@/lib/utils";
-import type { ClipboardItem } from "@/hooks/use-clipboard-items";
+import type {
+  ClipboardItem,
+  ClipboardPhotoSize,
+} from "@/hooks/use-clipboard-items";
+
+const PHOTO_SIZES: ClipboardPhotoSize[] = ["small", "medium", "large"];
+
+const PHOTO_SIZE_LABEL: Record<ClipboardPhotoSize, string> = {
+  small: "Small photo",
+  medium: "Medium photo",
+  large: "Large photo",
+};
+
+/**
+ * Three-dot photo-size picker. Each dot grows for the next size up so
+ * the visual control reads as "small/medium/large" without needing
+ * letters or a popover. Active size gets a darker fill; the rest stay
+ * faint so the row is still discreet on the card.
+ */
+export function PhotoSizePicker({
+  current,
+  onSelect,
+  className,
+  size = "default",
+}: {
+  current: ClipboardPhotoSize;
+  onSelect: (size: ClipboardPhotoSize) => void;
+  className?: string;
+  /**
+   * "default" — the desktop hover-revealed pill on the card.
+   * "sheet"   — the mobile detail-sheet row, slightly larger so it
+   *             sits comfortably in a 44px touch row.
+   */
+  size?: "default" | "sheet";
+}) {
+  const sheet = size === "sheet";
+  const dotSizes: Record<ClipboardPhotoSize, string> = sheet
+    ? { small: "h-1.5 w-1.5", medium: "h-2 w-2", large: "h-2.5 w-2.5" }
+    : { small: "h-1 w-1", medium: "h-1.5 w-1.5", large: "h-2 w-2" };
+
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Photo size"
+      onPointerDown={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+      className={cn(
+        "inline-flex items-center gap-0.5 rounded-full bg-white/95 shadow-[0_3px_8px_rgba(14,22,34,0.18)] transition",
+        sheet ? "gap-1.5 px-3 py-2" : "gap-0.5 px-1.5 py-1",
+        className,
+      )}
+    >
+      {PHOTO_SIZES.map((option) => {
+        const active = option === current;
+        return (
+          <button
+            key={option}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            aria-label={PHOTO_SIZE_LABEL[option]}
+            title={PHOTO_SIZE_LABEL[option]}
+            onClick={(event) => {
+              event.stopPropagation();
+              onSelect(option);
+            }}
+            className={cn(
+              "flex shrink-0 items-center justify-center rounded-full transition",
+              sheet ? "h-7 w-7" : "h-5 w-5",
+              active ? "bg-[color:var(--ink)]/8" : "hover:bg-[color:var(--ink)]/5",
+            )}
+          >
+            <span
+              aria-hidden="true"
+              className={cn(
+                "block rounded-full transition",
+                dotSizes[option],
+                active
+                  ? "bg-[color:var(--ink)]"
+                  : "bg-[color:var(--ink-faint)]",
+              )}
+            />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 /**
  * Threshold below which a text-only scrap shows its content inline (line
@@ -91,6 +178,7 @@ function formatDate(iso: string) {
 export function ClipboardCard({
   item,
   onUpdateContent,
+  onUpdatePhotoSize,
   onRemove,
   draggable = false,
   priority = false,
@@ -100,6 +188,13 @@ export function ClipboardCard({
 }: {
   item: ClipboardItem;
   onUpdateContent: (id: string, content: string) => Promise<void>;
+  /**
+   * Optional. Default-variant cards expose a hover-revealed size
+   * picker; compact cards don't (the picker lives in the detail
+   * sheet on mobile). Both render fine without this callback — they
+   * simply read item.photoSize and skip the editing affordance.
+   */
+  onUpdatePhotoSize?: (id: string, size: ClipboardPhotoSize) => Promise<void>;
   onRemove: (id: string) => Promise<void>;
   draggable?: boolean;
   /**
@@ -142,6 +237,11 @@ export function ClipboardCard({
       />
     );
   }
+
+  // Photo-card width is driven by the user's chosen photo size — small
+  // shrinks to a calling-card width, large blows up to half-page. Text-
+  // only cards keep their content-driven sizing rules.
+  const photoSize: ClipboardPhotoSize = item.photoSize ?? "medium";
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(item.content ?? "");
@@ -186,10 +286,20 @@ export function ClipboardCard({
       // here to keep the drag transform simple and predictable.
       className={cn(
         "group relative flex flex-col overflow-hidden border border-[color:var(--border)] bg-[#fdf9f1] shadow-[0_8px_22px_-14px_rgba(60,46,30,0.28)] transition",
-        // Width is content-driven: short text fits its content (capped
-        // at ~14rem); everything else takes the full 20rem so photos
-        // and long prose stay legible.
-        isShortTextOnly ? "w-fit min-w-[10rem] max-w-[14rem]" : "w-[20rem]",
+        // Width logic:
+        //   - Photo cards scale by the user-selected photo size
+        //     (small ≈ 13rem, medium ≈ 20rem, large ≈ 28rem).
+        //   - Short text-only cards fit their content.
+        //   - Long text-only cards take the standard 20rem.
+        hasPhoto
+          ? photoSize === "small"
+            ? "w-[13rem]"
+            : photoSize === "large"
+              ? "w-[28rem]"
+              : "w-[20rem]"
+          : isShortTextOnly
+            ? "w-fit min-w-[10rem] max-w-[14rem]"
+            : "w-[20rem]",
         draggable ? "cursor-grab active:cursor-grabbing" : "",
       )}
       style={{
@@ -223,11 +333,16 @@ export function ClipboardCard({
               src={item.photoUrl}
               alt={item.content ?? "Clipboard memory"}
               fill
-              // Card is hard-bounded to max-w-[20rem] (320px) on every
-              // breakpoint, so a tighter sizes hint stops the optimizer
-              // from fetching a 90vw-sized variant on phones for an
-              // image we'll only ever paint at 320 CSS pixels.
-              sizes="320px"
+              // Sizes hint matches the rendered width band per size so
+              // the optimizer doesn't overfetch — small cards never
+              // render bigger than ~208 CSS pixels, large at ~448.
+              sizes={
+                photoSize === "small"
+                  ? "208px"
+                  : photoSize === "large"
+                    ? "448px"
+                    : "320px"
+              }
               // 75 is Next.js 16's default-allowed quality bucket and
               // produces ~30% smaller AVIF/WebP than 82 with no
               // perceptible difference at thumbnail size.
@@ -307,6 +422,19 @@ export function ClipboardCard({
           {dateLabel}
         </p>
       </div>
+
+      {/* Photo-size picker — top-left of photo cards on hover. Sits
+          opposite the edit/delete cluster so the controls don't crowd.
+          Only renders when there's a photo and a callback to handle
+          updates (text-only cards have nothing to size). */}
+      {hasPhoto && onUpdatePhotoSize ? (
+        <div className="absolute left-2 top-2 opacity-0 transition group-hover:opacity-100">
+          <PhotoSizePicker
+            current={photoSize}
+            onSelect={(size) => void onUpdatePhotoSize(item.id, size)}
+          />
+        </div>
+      ) : null}
 
       {/*
         Hover affordances. We stop pointerdown (not just mousedown) so
@@ -408,10 +536,19 @@ function CompactClipboardCard({
         <div
           className={cn(
             "relative w-full overflow-hidden bg-[color:var(--paper-strong)]",
-            // Square when paired with text so the caption has room
-            // beneath; portrait when photo is the whole scrap so the
-            // image gets a touch more vertical presence.
-            hasText ? "aspect-square" : "aspect-[3/4]",
+            // Aspect varies by user-chosen size so the same column
+            // width still produces a recognisable hierarchy:
+            //   small  → wide-but-short (less presence)
+            //   medium → square / portrait (the historical default)
+            //   large  → strong portrait (claims more board height)
+            // Photo + text and photo-only stacks each get their own
+            // medium baseline so an existing scrap looks unchanged.
+            (() => {
+              const size = item.photoSize ?? "medium";
+              if (size === "small") return "aspect-[4/3]";
+              if (size === "large") return hasText ? "aspect-[2/3]" : "aspect-[1/2]";
+              return hasText ? "aspect-square" : "aspect-[3/4]";
+            })(),
           )}
           style={{ transform: `rotate(${photoTilt}deg)` }}
         >

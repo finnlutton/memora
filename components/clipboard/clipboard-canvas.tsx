@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ClipboardCard } from "@/components/clipboard/clipboard-card";
-import type { ClipboardItem } from "@/hooks/use-clipboard-items";
+import type {
+  ClipboardItem,
+  ClipboardPhotoSize,
+} from "@/hooks/use-clipboard-items";
 
 /**
  * Desktop canvas for clipboard memories.
@@ -55,12 +58,14 @@ export function ClipboardCanvas({
   items,
   onUpdatePosition,
   onUpdateContent,
+  onUpdatePhotoSize,
   onRemove,
   onAddAtPosition,
 }: {
   items: ClipboardItem[];
   onUpdatePosition: (id: string, x: number, y: number) => Promise<void>;
   onUpdateContent: (id: string, content: string) => Promise<void>;
+  onUpdatePhotoSize: (id: string, size: ClipboardPhotoSize) => Promise<void>;
   onRemove: (id: string) => Promise<void>;
   /** Click on empty canvas → open the add dialog seeded with that point. */
   onAddAtPosition: (x: number, y: number) => void;
@@ -251,6 +256,7 @@ export function ClipboardCanvas({
             <ClipboardCard
               item={item}
               onUpdateContent={onUpdateContent}
+              onUpdatePhotoSize={onUpdatePhotoSize}
               onRemove={onRemove}
               draggable
               priority={priorityIds.has(item.id)}

@@ -4,8 +4,12 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { Pencil, Trash2, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { PhotoSizePicker } from "@/components/clipboard/clipboard-card";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
-import type { ClipboardItem } from "@/hooks/use-clipboard-items";
+import type {
+  ClipboardItem,
+  ClipboardPhotoSize,
+} from "@/hooks/use-clipboard-items";
 
 /**
  * Bottom sheet that surfaces a single clipboard memory in full on mobile,
@@ -32,11 +36,18 @@ export function ClipboardDetailSheet({
   item,
   onClose,
   onUpdateContent,
+  onUpdatePhotoSize,
   onRemove,
 }: {
   item: ClipboardItem | null;
   onClose: () => void;
   onUpdateContent: (id: string, content: string) => Promise<void>;
+  /**
+   * Optional. When omitted, the size picker is hidden — the sheet is
+   * still useful for editing captions and deleting on items that
+   * don't expose a sizing knob (callers without a hook).
+   */
+  onUpdatePhotoSize?: (id: string, size: ClipboardPhotoSize) => Promise<void>;
   onRemove: (id: string) => Promise<void>;
 }) {
   const [editing, setEditing] = useState(false);
@@ -123,6 +134,23 @@ export function ClipboardDetailSheet({
                 sizes="100vw"
                 quality={75}
                 className="object-cover"
+              />
+            </div>
+          ) : null}
+
+          {/* Photo size row — quiet label + the same three-dot picker
+              the desktop hover affordance uses. Only renders when the
+              memory has a photo and the parent passes in a size
+              callback. */}
+          {hasPhoto && onUpdatePhotoSize ? (
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
+                Photo size
+              </p>
+              <PhotoSizePicker
+                size="sheet"
+                current={item.photoSize ?? "medium"}
+                onSelect={(next) => void onUpdatePhotoSize(item.id, next)}
               />
             </div>
           ) : null}
