@@ -711,19 +711,21 @@ function BuildView({
 
             {/* Hint annotation — appears after the subgalleries finish their
                 reveal and dismisses the moment the user opens one. Anchored
-                to the middle subgallery card so the line lands on it. */}
-            <AnimatePresence>
+                to the middle subgallery card so the line lands on it. The
+                exit animates height to 0 so it doesn't pop out of layout
+                and let the scenes section snap upward. */}
+            <AnimatePresence initial={false}>
               {past(BUILD.hintShow) && openSubId === null ? (
                 <motion.div
                   key="hint"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.45, ease: EASE }}
-                  className="pointer-events-none mt-6 md:mt-10"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.42, ease: EASE }}
+                  className="pointer-events-none overflow-hidden"
                   aria-hidden
                 >
-                  <div className="relative mx-auto flex max-w-[44rem] flex-col items-center">
+                  <div className="relative mx-auto flex max-w-[44rem] flex-col items-center pt-6 md:pt-10">
                     <svg
                       width="100%"
                       height="46"
@@ -771,7 +773,7 @@ function BuildView({
                   className="overflow-hidden"
                 >
                   <div className="pt-10 md:pt-14">
-                    <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
+                    <p className="font-[family-name:var(--font-mono)] text-[7px] uppercase tracking-[0.14em] text-[color:var(--ink-faint)] sm:text-[9px] sm:tracking-[0.18em] md:text-[10px] md:tracking-[0.24em]">
                       Scenes
                     </p>
                     <AnimatePresence mode="wait" initial={false}>
@@ -830,7 +832,7 @@ function SubgalleryCard({
         initial={false}
         animate={{ opacity: coverVisible ? 1 : 0 }}
         transition={{ duration: 0.5, ease: EASE }}
-        className="font-[family-name:var(--font-mono)] text-[7.5px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)] sm:text-[8.5px] sm:tracking-[0.22em] md:text-[9.5px] md:tracking-[0.28em]"
+        className="font-[family-name:var(--font-mono)] text-[6.5px] uppercase tracking-[0.14em] text-[color:var(--ink-faint)] sm:text-[8.5px] sm:tracking-[0.22em] md:text-[9.5px] md:tracking-[0.28em]"
       >
         Subgallery
       </motion.p>
@@ -847,9 +849,9 @@ function SubgalleryCard({
           scale: coverVisible ? 1 : 0.985,
         }}
         transition={{ duration: 0.85, ease: EASE }}
-        className={`group mt-2 block w-full text-left transition-opacity sm:mt-3 ${interactive ? "cursor-pointer" : "cursor-default"} ${interactive && !open ? "opacity-90 hover:opacity-100" : "opacity-100"}`}
+        className={`group mt-1.5 block w-full text-left transition-opacity sm:mt-3 ${interactive ? "cursor-pointer" : "cursor-default"} ${interactive && !open ? "opacity-90 hover:opacity-100" : "opacity-100"}`}
       >
-        <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-1 sm:p-[6px] md:p-[12px]">
+        <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-[2px] sm:p-[6px] md:p-[12px]">
           <div className="relative aspect-[5/3] overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)]">
             <Image
               src={sub.coverImage}
@@ -865,7 +867,7 @@ function SubgalleryCard({
           initial={false}
           animate={{ opacity: textVisible ? 1 : 0, y: textVisible ? 0 : 6 }}
           transition={{ duration: 0.55, ease: EASE }}
-          className="mt-1.5 font-serif text-[12px] leading-[1.2] text-[color:var(--ink)] sm:mt-2 sm:text-[15px] md:mt-2.5 md:text-[20px]"
+          className="mt-1 font-serif text-[9.5px] leading-[1.18] text-[color:var(--ink)] sm:mt-2 sm:text-[15px] md:mt-2.5 md:text-[20px]"
         >
           {sub.title}
         </motion.h4>
@@ -875,7 +877,7 @@ function SubgalleryCard({
           initial={false}
           animate={{ opacity: textVisible ? 1 : 0, y: textVisible ? 0 : 6 }}
           transition={{ duration: 0.55, delay: 0.06, ease: EASE }}
-          className="mt-1.5 font-[family-name:var(--font-mono)] text-[8px] uppercase tracking-[0.1em] text-[color:var(--ink-faint)] sm:mt-2 sm:text-[9px] sm:tracking-[0.13em] md:text-[10px] md:tracking-[0.16em]"
+          className="mt-1 font-[family-name:var(--font-mono)] text-[6.5px] uppercase tracking-[0.06em] text-[color:var(--ink-faint)] sm:mt-2 sm:text-[9px] sm:tracking-[0.13em] md:text-[10px] md:tracking-[0.16em]"
         >
           {meta}
         </motion.p>
@@ -907,7 +909,7 @@ function SceneCard({
       transition={{ duration: instant ? 0 : 0.45, ease: EASE }}
       className="flex flex-col"
     >
-      <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-[3px] sm:p-1.5 md:p-2.5">
+      <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-[2px] sm:p-1.5 md:p-2.5">
         <div className="relative aspect-[4/3] overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)]">
           <Image
             src={scene.image}
@@ -920,7 +922,7 @@ function SceneCard({
         </div>
       </div>
       {scene.caption ? (
-        <p className="mt-1.5 font-serif text-[9px] italic leading-snug text-[color:var(--ink-soft)] sm:mt-2 sm:text-[11px] md:mt-2.5 md:text-[14px]">
+        <p className="mt-2 hidden font-serif italic leading-snug text-[color:var(--ink-soft)] sm:mt-2 sm:block sm:text-[11px] md:mt-2.5 md:text-[14px]">
           {scene.caption}
         </p>
       ) : null}
