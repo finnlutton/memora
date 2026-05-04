@@ -359,13 +359,10 @@ export function PublicProfileSettings() {
         </p>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div>
         <Button type="submit" disabled={busy}>
           {busy ? "Saving..." : "Save changes"}
         </Button>
-        <p className="text-[11px] text-[color:var(--ink-faint)]">
-          Choose which galleries to show on the gallery page itself.
-        </p>
       </div>
     </form>
   );

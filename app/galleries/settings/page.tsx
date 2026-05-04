@@ -11,6 +11,7 @@ import { DeleteAccountDialog } from "@/components/delete-account-dialog";
 import { WorkspaceTopbar } from "@/components/workspace-topbar";
 import { BillingStatusCard } from "@/components/membership/billing-status-card";
 import { LegalLinks } from "@/components/legal-links";
+import { PublicProfileGalleriesPicker } from "@/components/public-profile/public-profile-galleries-picker";
 import { PublicProfileSettings } from "@/components/public-profile/public-profile-settings";
 import { Button } from "@/components/ui/button";
 import { useMemoraStore } from "@/hooks/use-memora-store";
@@ -78,6 +79,7 @@ export default function WorkspaceSettingsPage() {
           </p>
         </div>
         <PublicProfileSettings />
+        <PublicProfileGalleriesPicker />
       </section>
 
       <section className="mx-auto grid w-full max-w-5xl gap-5 md:grid-cols-2 md:gap-x-8 md:gap-y-6">
