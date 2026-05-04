@@ -281,6 +281,28 @@ export function ClipboardCard({
           )
         ) : null}
 
+        {/* Photo-only memories show a quiet "+ Add caption" affordance
+            in the body. Visible without hover so a user who never
+            mouses over the card still discovers they can write
+            against the moment later. Click goes straight into edit
+            mode; stopPropagation guards keep the drag handler from
+            stealing the tap. */}
+        {hasPhoto && !hasText ? (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setDraft("");
+              setEditing(true);
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="mt-1 self-start text-[11px] italic text-[color:var(--ink-faint)] transition hover:text-[color:var(--ink-soft)] hover:underline underline-offset-4"
+          >
+            + Add caption
+          </button>
+        ) : null}
+
         <p className="mt-auto pt-3 text-[10px] font-medium uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
           {dateLabel}
         </p>
@@ -297,22 +319,25 @@ export function ClipboardCard({
         onPointerDown={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        {item.layoutType !== "photo" ? (
-          <button
-            type="button"
-            onClick={() => {
-              // Seed the draft from the latest prop at the moment we
-              // switch into edit mode — keeps the editor in sync without
-              // a state-syncing effect.
-              setDraft(item.content ?? "");
-              setEditing(true);
-            }}
-            aria-label="Edit memory"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-[color:var(--ink)] shadow-[0_3px_8px_rgba(14,22,34,0.18)] transition hover:bg-white"
-          >
-            <Pencil className="h-3.5 w-3.5" strokeWidth={1.8} />
-          </button>
-        ) : null}
+        {/* Pencil is now ungated — even photo-only memories can be
+            edited so the user can backfill a caption later. The aria
+            label flips to "Add caption" when there's no text yet so
+            screen readers (and tooltip) describe the actual action. */}
+        <button
+          type="button"
+          onClick={() => {
+            // Seed the draft from the latest prop at the moment we
+            // switch into edit mode — keeps the editor in sync without
+            // a state-syncing effect.
+            setDraft(item.content ?? "");
+            setEditing(true);
+          }}
+          aria-label={hasText ? "Edit memory" : "Add caption"}
+          title={hasText ? "Edit memory" : "Add caption"}
+          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-[color:var(--ink)] shadow-[0_3px_8px_rgba(14,22,34,0.18)] transition hover:bg-white"
+        >
+          <Pencil className="h-3.5 w-3.5" strokeWidth={1.8} />
+        </button>
         <ConfirmDeleteDialog
           title="Delete this memory?"
           description="This memory will be removed from your clipboard. This can't be undone."
@@ -432,7 +457,20 @@ function CompactClipboardCard({
         )
       ) : null}
 
-      <p className="px-3 pb-2 pt-2 text-[9.5px] font-medium uppercase tracking-[0.2em] text-[color:var(--ink-faint)]">
+      {/* Bottom strip — photo-only memories without a caption surface
+          a quiet "+ Add caption" hint so the user knows the option
+          exists. Tapping anywhere on the card still opens the detail
+          sheet; the sheet's Edit button (now ungated) commits the
+          actual caption. */}
+      <p className="flex items-center gap-1.5 px-3 pb-2 pt-2 text-[9.5px] font-medium uppercase tracking-[0.2em] text-[color:var(--ink-faint)]">
+        {hasPhoto && !hasText ? (
+          <>
+            <span className="italic normal-case tracking-[0.04em] text-[10.5px] text-[color:var(--ink-soft)]">
+              + Add caption
+            </span>
+            <span aria-hidden="true">·</span>
+          </>
+        ) : null}
         {dateLabel}
       </p>
     </button>

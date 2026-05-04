@@ -69,7 +69,7 @@ export function ClipboardDetailSheet({
 
   const dateLabel = formatDate(item.createdAt);
   const hasPhoto = Boolean(item.photoUrl);
-  const isPhotoOnly = item.layoutType === "photo";
+  const hasText = Boolean(item.content?.trim());
 
   const commitEdit = async () => {
     setEditing(false);
@@ -127,58 +127,60 @@ export function ClipboardDetailSheet({
             </div>
           ) : null}
 
-          {!isPhotoOnly ? (
-            <div className="mt-3">
-              {editing ? (
-                <textarea
-                  ref={textareaRef}
-                  value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
-                  onBlur={() => void commitEdit()}
-                  onKeyDown={(event) => {
-                    if (event.key === "Escape") {
-                      setDraft(item.content ?? "");
-                      setEditing(false);
-                    }
-                    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-                      event.preventDefault();
-                      void commitEdit();
-                    }
-                  }}
-                  rows={Math.max(4, draft.split("\n").length + 1)}
-                  className="w-full resize-none border-none bg-transparent font-serif text-base leading-7 text-[color:var(--ink)] outline-none"
-                  placeholder="…"
-                />
-              ) : item.content?.trim() ? (
-                <p className="whitespace-pre-wrap font-serif text-base leading-7 text-[color:var(--ink)]">
-                  {item.content}
-                </p>
-              ) : (
-                <p className="font-serif text-base italic leading-7 text-[color:var(--ink-faint)]">
-                  No note yet — tap edit to add one.
-                </p>
-              )}
-            </div>
-          ) : null}
-
-          <div className="mt-5 flex items-center justify-end gap-2">
-            {!isPhotoOnly ? (
-              <button
-                type="button"
-                onClick={() => {
-                  if (editing) {
-                    void commitEdit();
-                  } else {
+          {/* Note body — always rendered. Photo-only items can now
+              receive a caption later, so we surface the same edit
+              affordance for every memory shape (the action button
+              below renames itself based on whether text exists). */}
+          <div className="mt-3">
+            {editing ? (
+              <textarea
+                ref={textareaRef}
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                onBlur={() => void commitEdit()}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
                     setDraft(item.content ?? "");
-                    setEditing(true);
+                    setEditing(false);
+                  }
+                  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+                    event.preventDefault();
+                    void commitEdit();
                   }
                 }}
-                className="inline-flex h-10 items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] bg-transparent px-3.5 text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--paper)]"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                {editing ? "Save" : "Edit"}
-              </button>
-            ) : null}
+                rows={Math.max(4, draft.split("\n").length + 1)}
+                className="w-full resize-none border-none bg-transparent font-serif text-base leading-7 text-[color:var(--ink)] outline-none"
+                placeholder={hasText ? "…" : "Write a caption for this photo…"}
+              />
+            ) : hasText ? (
+              <p className="whitespace-pre-wrap font-serif text-base leading-7 text-[color:var(--ink)]">
+                {item.content}
+              </p>
+            ) : (
+              <p className="font-serif text-base italic leading-7 text-[color:var(--ink-faint)]">
+                {hasPhoto
+                  ? "No caption yet — tap Add caption to write one."
+                  : "No note yet — tap Edit to add one."}
+              </p>
+            )}
+          </div>
+
+          <div className="mt-5 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (editing) {
+                  void commitEdit();
+                } else {
+                  setDraft(item.content ?? "");
+                  setEditing(true);
+                }
+              }}
+              className="inline-flex h-10 items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] bg-transparent px-3.5 text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink)] transition hover:bg-[color:var(--paper)]"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              {editing ? "Save" : hasText ? "Edit" : "Add caption"}
+            </button>
             <ConfirmDeleteDialog
               title="Delete this memory?"
               description="This memory will be removed from your clipboard. This can't be undone."

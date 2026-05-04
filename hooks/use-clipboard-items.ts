@@ -225,14 +225,38 @@ export function useClipboardItems() {
     async (id: string, content: string) => {
       if (!userId) return;
       const next = content.trim() || null;
+      // Photo memories can now receive a caption after the fact. When
+      // text shows up on what used to be a photo-only row, promote the
+      // layout to text_photo so the data shape matches what the cards
+      // render. Mirror going the other way: clearing all text on a
+      // text_photo with a photo collapses back to "photo".
+      const target = itemsRef.current.find((entry) => entry.id === id);
+      const update: { content: string | null; layout_type?: ClipboardLayout } =
+        { content: next };
+      let nextLayout: ClipboardLayout | undefined;
+      if (target && target.photoPath) {
+        const wantedLayout: ClipboardLayout = next ? "text_photo" : "photo";
+        if (target.layoutType !== wantedLayout) {
+          update.layout_type = wantedLayout;
+          nextLayout = wantedLayout;
+        }
+      }
       const { error: updateError } = await supabase
         .from("clipboard_items")
-        .update({ content: next })
+        .update(update)
         .eq("id", id)
         .eq("user_id", userId);
       if (updateError) throw updateError;
       setItems((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, content: next } : item)),
+        prev.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                content: next,
+                ...(nextLayout ? { layoutType: nextLayout } : {}),
+              }
+            : item,
+        ),
       );
     },
     [supabase, userId],
