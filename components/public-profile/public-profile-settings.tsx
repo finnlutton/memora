@@ -12,12 +12,14 @@ import {
   normalizeHandleInput,
   validateHandle,
 } from "@/lib/public-profile";
+import { DEFAULT_THEME, THEME_IDS, THEMES, isThemeId, type ThemeId } from "@/lib/theme";
 
 type ProfilePayload = {
   handle: string | null;
   displayName: string | null;
   bio: string | null;
   enabled: boolean;
+  themeId: ThemeId | null;
 };
 
 type HandleStatus =
@@ -42,11 +44,15 @@ export function PublicProfileSettings({
     displayName: null,
     bio: null,
     enabled: false,
+    themeId: null,
   });
 
   const [handleDraft, setHandleDraft] = useState("");
   const [displayNameDraft, setDisplayNameDraft] = useState("");
   const [bioDraft, setBioDraft] = useState("");
+  // Theme draft is committed on every click — no separate Save action — so
+  // the user can preview palette options without burying it behind a button.
+  const [themeDraft, setThemeDraft] = useState<ThemeId>(DEFAULT_THEME);
   const [handleStatus, setHandleStatus] = useState<HandleStatus>({ kind: "idle" });
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +74,7 @@ export function PublicProfileSettings({
         setHandleDraft(data.handle ?? "");
         setDisplayNameDraft(data.displayName ?? "");
         setBioDraft(data.bio ?? "");
+        setThemeDraft(isThemeId(data.themeId) ? data.themeId : DEFAULT_THEME);
       } catch (caught) {
         if (!cancelled) {
           setError(
@@ -157,6 +164,7 @@ export function PublicProfileSettings({
         setHandleDraft(fresh.handle ?? "");
         setDisplayNameDraft(fresh.displayName ?? "");
         setBioDraft(fresh.bio ?? "");
+        setThemeDraft(isThemeId(fresh.themeId) ? fresh.themeId : DEFAULT_THEME);
         setHandleStatus({ kind: "idle" });
         addToast(successMessage, "success");
         onProfileChange?.();
@@ -187,9 +195,18 @@ export function PublicProfileSettings({
         handle: normalizedHandle || null,
         displayName: displayNameDraft.trim() || null,
         bio: bioDraft.trim() || null,
+        themeId: themeDraft,
       },
       "Public page updated.",
     );
+  };
+
+  // Theme is committed immediately on click so it doubles as a preview
+  // when the user later opens their /@handle page. Falls through to the
+  // shared persistPatch flow so a save error still surfaces inline.
+  const setTheme = (next: ThemeId) => {
+    setThemeDraft(next);
+    void persistPatch({ themeId: next }, "Theme updated.");
   };
 
   const toggleEnabled = async (next: boolean) => {
@@ -360,6 +377,64 @@ export function PublicProfileSettings({
           className="mt-1 w-full resize-none border border-[color:var(--border)] bg-[color:var(--paper)] px-3 py-2 text-base leading-6 text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--ink)] md:text-sm"
         />
       </label>
+
+      {/* Theme picker. Mirrors the per-share theme picker so the visual
+          language stays consistent across share types. Saves immediately
+          on click — separate from the form's Save changes flow. */}
+      <fieldset className="space-y-2">
+        <legend className="block text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
+          Theme
+        </legend>
+        <p className="text-[11px] leading-5 text-[color:var(--ink-faint)]">
+          The palette your /@handle page renders in. Independent of your
+          in-app theme.
+        </p>
+        <div
+          role="radiogroup"
+          aria-label="Public page theme"
+          className="grid grid-cols-3 gap-2"
+        >
+          {THEME_IDS.map((id) => {
+            const definition = THEMES[id];
+            const selected = themeDraft === id;
+            const [bg, paper, paperStrong, accent, ink] = definition.swatch;
+            return (
+              <button
+                key={id}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                disabled={busy}
+                onClick={() => setTheme(id)}
+                className={`group flex flex-col items-stretch gap-2 rounded-lg border p-2 text-left transition ${
+                  selected
+                    ? "border-[color:var(--accent-strong)] bg-[rgba(22,35,56,0.04)]"
+                    : "border-[color:var(--border)] bg-transparent hover:border-[color:var(--border-strong)]"
+                } disabled:opacity-60`}
+              >
+                <span
+                  aria-hidden
+                  className="flex h-6 overflow-hidden rounded-[4px] border border-[color:var(--border)]"
+                >
+                  <span style={{ backgroundColor: bg }} className="flex-1" />
+                  <span style={{ backgroundColor: paper }} className="flex-1" />
+                  <span style={{ backgroundColor: paperStrong }} className="flex-1" />
+                  <span style={{ backgroundColor: accent }} className="flex-1" />
+                  <span style={{ backgroundColor: ink }} className="flex-1" />
+                </span>
+                <span className="flex items-center justify-between gap-1">
+                  <span className="text-sm text-[color:var(--ink)]">
+                    {definition.name}
+                  </span>
+                  {selected ? (
+                    <Check className="h-3.5 w-3.5 text-[color:var(--accent-strong)]" />
+                  ) : null}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
 
       {error ? (
         <p className="rounded-sm border border-[color:var(--error-border)] bg-[color:var(--error-bg)] px-3 py-2 text-sm text-[color:var(--error-text)]">

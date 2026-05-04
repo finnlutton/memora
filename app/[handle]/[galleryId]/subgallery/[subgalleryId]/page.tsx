@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { CollapsibleEntry } from "@/components/collapsible-entry";
 import { LegalLinks } from "@/components/legal-links";
 import { PhotoGrid } from "@/components/photo-grid";
+import { ShareThemeFrame } from "@/components/share/share-theme-frame";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   extractHandleFromSegment,
@@ -133,6 +134,7 @@ export default async function PublicSubgalleryPage({
     formatDateRange(subgallery.start_date, subgallery.end_date);
 
   return (
+    <ShareThemeFrame themeId={profile.themeId}>
     <main className="min-h-screen bg-[color:var(--background)] px-4 py-6 text-[color:var(--ink)] md:px-8 md:py-8">
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 border-b border-[color:var(--border)] pb-4 md:mb-8 md:pb-5">
@@ -217,5 +219,6 @@ export default async function PublicSubgalleryPage({
         </footer>
       </div>
     </main>
+    </ShareThemeFrame>
   );
 }

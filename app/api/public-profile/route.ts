@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   sanitizePublicBio,
   sanitizePublicDisplayName,
+  sanitizePublicTheme,
   validateHandle,
 } from "@/lib/public-profile";
 
@@ -11,10 +12,11 @@ type ProfileRow = {
   public_display_name: string | null;
   public_bio: string | null;
   is_public_profile_enabled: boolean | null;
+  public_profile_theme_id: string | null;
 };
 
 const PROFILE_COLUMNS =
-  "public_handle, public_display_name, public_bio, is_public_profile_enabled";
+  "public_handle, public_display_name, public_bio, is_public_profile_enabled, public_profile_theme_id";
 
 function publicProfilePayload(row: ProfileRow | null) {
   return {
@@ -22,6 +24,7 @@ function publicProfilePayload(row: ProfileRow | null) {
     displayName: row?.public_display_name ?? null,
     bio: row?.public_bio ?? null,
     enabled: Boolean(row?.is_public_profile_enabled),
+    themeId: row?.public_profile_theme_id ?? null,
   };
 }
 
@@ -106,6 +109,12 @@ export async function PATCH(request: Request) {
 
   if ("bio" in input) {
     update.public_bio = sanitizePublicBio(input.bio);
+  }
+
+  if ("themeId" in input) {
+    // null/invalid both fall through to NULL = "use app default" — no
+    // need to surface a separate error to the user.
+    update.public_profile_theme_id = sanitizePublicTheme(input.themeId);
   }
 
   if ("enabled" in input) {

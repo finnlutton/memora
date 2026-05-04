@@ -14,12 +14,14 @@
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { RESERVED_HANDLES, validateHandle } from "@/lib/public-profile";
+import { isThemeId, type ThemeId } from "@/lib/theme";
 
 export type PublicProfile = {
   id: string;
   handle: string;
   displayName: string | null;
   bio: string | null;
+  themeId: ThemeId | null;
 };
 
 export type PublicGalleryRow = {
@@ -82,7 +84,7 @@ export async function loadEnabledProfileForHandle(
   const { data } = await admin
     .from("profiles")
     .select(
-      "id, public_handle, public_display_name, public_bio, is_public_profile_enabled",
+      "id, public_handle, public_display_name, public_bio, is_public_profile_enabled, public_profile_theme_id",
     )
     .eq("public_handle", handle)
     .eq("is_public_profile_enabled", true)
@@ -92,6 +94,7 @@ export async function loadEnabledProfileForHandle(
       public_display_name: string | null;
       public_bio: string | null;
       is_public_profile_enabled: boolean;
+      public_profile_theme_id: string | null;
     }>();
 
   if (!data) return null;
@@ -100,6 +103,9 @@ export async function loadEnabledProfileForHandle(
     handle: data.public_handle,
     displayName: data.public_display_name,
     bio: data.public_bio,
+    themeId: isThemeId(data.public_profile_theme_id)
+      ? data.public_profile_theme_id
+      : null,
   };
 }
 
@@ -111,7 +117,7 @@ export async function loadProfileForHandle(handle: string) {
   const { data } = await admin
     .from("profiles")
     .select(
-      "id, public_handle, public_display_name, public_bio, is_public_profile_enabled",
+      "id, public_handle, public_display_name, public_bio, is_public_profile_enabled, public_profile_theme_id",
     )
     .eq("public_handle", handle)
     .maybeSingle<{
@@ -120,6 +126,7 @@ export async function loadProfileForHandle(handle: string) {
       public_display_name: string | null;
       public_bio: string | null;
       is_public_profile_enabled: boolean;
+      public_profile_theme_id: string | null;
     }>();
 
   if (!data) return null;
@@ -129,6 +136,9 @@ export async function loadProfileForHandle(handle: string) {
     displayName: data.public_display_name,
     bio: data.public_bio,
     enabled: data.is_public_profile_enabled,
+    themeId: isThemeId(data.public_profile_theme_id)
+      ? data.public_profile_theme_id
+      : null,
   };
 }
 

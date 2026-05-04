@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LegalLinks } from "@/components/legal-links";
+import { ShareThemeFrame } from "@/components/share/share-theme-frame";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   extractHandleFromSegment,
@@ -76,19 +77,21 @@ export default async function PublicProfilePage({
 
   if (!profile.enabled) {
     return (
-      <PublicShell>
-        <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
-          Memora
-        </p>
-        <h1 className="mt-2 font-serif text-3xl leading-tight md:text-4xl">
-          This Memora page is not public.
-        </h1>
-        <p className="mt-3 max-w-md text-sm leading-7 text-[color:var(--ink-soft)]">
-          The owner hasn&apos;t turned this page on. If they shared this link
-          with you, ask them to enable their public Memora page in Settings.
-        </p>
-        <PublicFooter />
-      </PublicShell>
+      <ShareThemeFrame themeId={profile.themeId}>
+        <PublicShell>
+          <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
+            Memora
+          </p>
+          <h1 className="mt-2 font-serif text-3xl leading-tight md:text-4xl">
+            This Memora page is not public.
+          </h1>
+          <p className="mt-3 max-w-md text-sm leading-7 text-[color:var(--ink-soft)]">
+            The owner hasn&apos;t turned this page on. If they shared this link
+            with you, ask them to enable their public Memora page in Settings.
+          </p>
+          <PublicFooter />
+        </PublicShell>
+      </ShareThemeFrame>
     );
   }
 
@@ -112,8 +115,9 @@ export default async function PublicProfilePage({
   const displayName = profile.displayName?.trim() || `@${profile.handle}`;
 
   return (
-    <PublicShell>
-      <header className="text-center">
+    <ShareThemeFrame themeId={profile.themeId}>
+      <PublicShell>
+        <header className="text-center">
         <p className="font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
           @{profile.handle}
         </p>
@@ -192,8 +196,9 @@ export default async function PublicProfilePage({
         </section>
       )}
 
-      <PublicFooter />
-    </PublicShell>
+        <PublicFooter />
+      </PublicShell>
+    </ShareThemeFrame>
   );
 }
 

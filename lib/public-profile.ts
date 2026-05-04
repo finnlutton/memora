@@ -6,10 +6,19 @@
 // keep this file in sync with those CHECK constraints when adding new
 // reserved names or changing the handle pattern.
 
+import { isThemeId, type ThemeId } from "@/lib/theme";
+
 export const PUBLIC_HANDLE_MIN_LENGTH = 3;
 export const PUBLIC_HANDLE_MAX_LENGTH = 30;
 export const PUBLIC_DISPLAY_NAME_MAX_LENGTH = 60;
 export const PUBLIC_BIO_MAX_LENGTH = 280;
+
+// Pass-through validator so the API layer can reuse it without
+// importing lib/theme directly. NULL = "use the app default" — we
+// don't write a value, the page renders in Harbor.
+export function sanitizePublicTheme(input: unknown): ThemeId | null {
+  return isThemeId(input) ? input : null;
+}
 
 const HANDLE_PATTERN = /^[a-z0-9_-]+$/;
 
