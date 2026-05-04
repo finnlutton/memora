@@ -132,20 +132,31 @@ export function BillingStatusCard() {
 
   // ── State 3: Free plan ───────────────────────────────────────────────
   if (status.planId === "free") {
+    // Distinguish a never-paid Free account from one that lapsed out of
+    // the Founder Plan, so the user understands why their limits
+    // dropped.
+    const expiredFounder = status.founderExpired;
     return (
       <div className="border border-[color:var(--border)] bg-white px-4 py-4">
         <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-[color:var(--ink-soft)]">
           Billing
         </p>
         <p className="mt-3 font-serif text-[20px] leading-tight text-[color:var(--ink)]">
-          Current plan: Free
+          {expiredFounder ? "Founder access ended" : "Current plan: Free"}
         </p>
+        {expiredFounder ? (
+          <p className="mt-2 text-[13px] leading-6 text-[color:var(--ink-soft)]">
+            Your 5-year Founder term has ended. Your archive is safe and
+            still viewable; new uploads and shares now follow Free-plan
+            limits.
+          </p>
+        ) : null}
         <div className="mt-4">
           <Link
             href="/galleries/settings/membership"
             className="inline-flex items-center justify-center bg-[color:var(--ink)] px-3.5 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-[color:var(--ink-soft)]"
           >
-            Upgrade plan
+            {expiredFounder ? "Choose a new plan" : "Upgrade plan"}
           </Link>
         </div>
       </div>
@@ -178,7 +189,7 @@ export function BillingStatusCard() {
   }
 
   // ── State 1: Active paid plan, not canceled ─────────────────────────
-  // Lifetime is a one-time purchase — no renewal date, no cancel.
+  // Founder is a one-time purchase — no renewal during the 5-year term.
   if (status.planId === "lifetime") {
     return (
       <div className="border border-[color:var(--border)] bg-white px-4 py-4">
@@ -186,11 +197,16 @@ export function BillingStatusCard() {
           Billing
         </p>
         <p className="mt-3 font-serif text-[20px] leading-tight text-[color:var(--ink)]">
-          Current plan: Lifetime
+          Current plan: Founder
         </p>
         <p className="mt-2 text-[13px] leading-6 text-[color:var(--ink-soft)]">
-          Paid once. Full access for life.
+          Paid once. Five years of premium access, no monthly billing.
         </p>
+        {renewDate ? (
+          <p className="mt-1 text-[12.5px] leading-6 text-[color:var(--ink-soft)]">
+            Founder access until {renewDate}.
+          </p>
+        ) : null}
         {status.hasStripeCustomer ? (
           <div className="mt-4">
             <ManageBillingInline />

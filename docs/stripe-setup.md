@@ -14,16 +14,17 @@ Settings → Environment Variables** for preview/production.
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | client | reserved for future client-side use; not currently read by any route |
 | `STRIPE_PRICE_PLUS_MONTHLY` | server | recurring price for the Plus plan |
 | `STRIPE_PRICE_MAX_MONTHLY` | server | recurring price for the Max plan |
-| `STRIPE_PRICE_LIFETIME` | server | one-time price for Lifetime |
+| `STRIPE_PRICE_LIFETIME` | server | one-time price for the Founder Plan ($59.99 / 5 yrs). Env var keeps the legacy `LIFETIME` name; the Stripe price object behind it is now the Founder price. |
 | `STRIPE_WEBHOOK_SECRET` | server | `whsec_…` from Stripe Dashboard or CLI |
 | `NEXT_PUBLIC_SITE_URL` | client | canonical site origin (e.g. `https://memoragallery.com`) |
 | `SUPABASE_SERVICE_ROLE_KEY` | server | already required for admin Supabase writes |
 
 The price IDs are intentionally **not** prefixed `NEXT_PUBLIC_*` — the
 client only ever sends a `planId` (`plus` / `max` / `lifetime`) and the
-server resolves the price ID from env vars.
+server resolves the price ID from env vars. The `lifetime` plan id is
+the internal key for what's branded publicly as the Founder Plan.
 
-The free and internal/founder plans never touch Stripe.
+The free and internal full-access plans never touch Stripe.
 
 ## Database migration
 
@@ -74,7 +75,7 @@ In test mode, use Stripe's [test card](https://stripe.com/docs/testing)
 
 1. Sign in.
 2. Go to **Settings → Choose membership**.
-3. Click a paid plan (Plus, Max, or Lifetime).
+3. Click a paid plan (Plus, Max, or Founder).
 4. Complete checkout in the hosted Stripe page.
 5. You'll land on `/galleries?checkout=success`.
 6. The webhook updates the profile's `selected_plan`,
@@ -104,9 +105,11 @@ For a user with an active subscription:
 
 Test mode env vars stay on **Preview** so previews don't charge real cards.
 
-## Internal/founder accounts
+## Internal full-access accounts
 
 The `internal` plan is full-access, never billed, never shown publicly.
+(Distinct from the public Founder Plan, which is a paid one-time
+purchase backed by Stripe.)
 After running the migration, mark accounts as internal with:
 
 ```sql

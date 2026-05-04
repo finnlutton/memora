@@ -147,27 +147,28 @@ export const membershipPlans: MembershipPlan[] = [
   },
   {
     id: "lifetime",
-    name: "Lifetime",
-    priceMonthlyLabel: "$49.99",
-    price: 49.99,
+    name: "Founder",
+    priceMonthlyLabel: "$59.99",
+    price: 59.99,
     galleryCount: UNLIMITED,
     subgalleriesPerGallery: UNLIMITED,
     photosPerSubgallery: UNLIMITED,
     directPhotosPerGallery: UNLIMITED,
     activeShareLinks: null,
-    summary: "Pay once. Keep Max-level access for life.",
+    summary:
+      "Pay once and get 5 years of premium Memora access. No monthly billing during the 5-year term.",
     features: [
-      "Everything in Max — forever",
-      "One payment, no renewals",
-      "Founding-supporter pricing",
+      "Everything in Max for 5 years",
+      "One payment, no monthly billing",
+      "Limited early-adopter pricing",
     ],
     featured: false,
-    effectiveCost: "Lifetime",
+    effectiveCost: "Founder",
     stripeMode: "payment",
   },
   {
     id: "internal",
-    name: "Founder",
+    name: "Full Access",
     priceMonthlyLabel: "Comped",
     price: 0,
     galleryCount: UNLIMITED,
@@ -217,6 +218,74 @@ export function isPaidPlan(planId: MembershipPlanId): boolean {
 
 export function isInternalPlan(planId: MembershipPlanId): boolean {
   return planId === "internal";
+}
+
+/**
+ * Founder Plan term, in milliseconds (5 years). Used by the Stripe
+ * webhook to stamp `subscription_current_period_end` at purchase time
+ * and by the runtime resolver below to check whether that stamp is in
+ * the past.
+ *
+ * 5 calendar years is approximated as 5 × 365.25 days. Drift over a
+ * 5-year window from leap-day rounding is < 1 day, which is acceptable
+ * for an access-window check that's already enforced loosely.
+ */
+export const FOUNDER_TERM_MS = 5 * 365.25 * 24 * 60 * 60 * 1000;
+
+/**
+ * Compute when a Founder Plan purchase made now will expire. Returns an
+ * ISO string suitable for the `subscription_current_period_end` column.
+ */
+export function computeFounderExpiry(purchasedAt: Date = new Date()): string {
+  return new Date(purchasedAt.getTime() + FOUNDER_TERM_MS).toISOString();
+}
+
+export type ProfilePlanFields = {
+  selected_plan: string | null;
+  is_internal_account: boolean | null;
+  subscription_current_period_end: string | null;
+};
+
+/**
+ * Resolves the *effective* plan id for a profile, accounting for
+ * Founder Plan expiry. The Founder Plan ($59.99 / 5 yrs) is stored
+ * internally as `selected_plan = "lifetime"` with the access end
+ * stamped in `subscription_current_period_end`. Once that timestamp is
+ * in the past, the user silently drops to Free for any limit check or
+ * UI gate — the row is left intact so an audit trail survives.
+ *
+ * Internal/comped accounts always resolve to `internal` regardless of
+ * the stored plan. Recurring subscriptions (plus, max) ignore the
+ * end-date check; their lifecycle is governed by Stripe events.
+ */
+export function resolveEffectivePlanId(
+  profile: ProfilePlanFields | null | undefined,
+): MembershipPlanId {
+  if (profile?.is_internal_account) return "internal";
+  const planId = normalizePlanId(profile?.selected_plan ?? null);
+  if (planId !== "lifetime") return planId;
+  const endsAt = profile?.subscription_current_period_end;
+  if (!endsAt) return planId;
+  const expiresAt = new Date(endsAt);
+  if (Number.isNaN(expiresAt.getTime())) return planId;
+  return expiresAt.getTime() < Date.now() ? "free" : planId;
+}
+
+/**
+ * True when the profile is an expired Founder Plan account — useful for
+ * surfacing a "Founder access ended" UI state without losing the
+ * historical fact that the account was once a Founder.
+ */
+export function isFounderExpired(
+  profile: ProfilePlanFields | null | undefined,
+): boolean {
+  if (profile?.is_internal_account) return false;
+  if (normalizePlanId(profile?.selected_plan ?? null) !== "lifetime") return false;
+  const endsAt = profile?.subscription_current_period_end;
+  if (!endsAt) return false;
+  const expiresAt = new Date(endsAt);
+  if (Number.isNaN(expiresAt.getTime())) return false;
+  return expiresAt.getTime() < Date.now();
 }
 
 export function getPlan(planId: MembershipPlanId): MembershipPlan {

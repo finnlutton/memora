@@ -150,7 +150,7 @@ export default function TermsOfServicePage() {
           </p>
         </Section>
 
-        <Section heading="8. Subscriptions, Paid Plans, and Lifetime Access">
+        <Section heading="8. Subscriptions, Paid Plans, and the Founder Plan">
           <p>
             Memora may offer free plans, paid subscriptions, and one-time
             purchase options.
@@ -166,16 +166,18 @@ export default function TermsOfServicePage() {
             resubscribe.
           </p>
           <p>
-            Lifetime access, if offered, means access to the applicable
-            paid tier for the life of the Memora service, subject to these
-            Terms. Lifetime access does not guarantee that any specific
-            feature will remain unchanged forever, and it does not apply if
-            your account is terminated for violating these Terms.
+            The Founder Plan, if offered, is a one-time purchase that
+            grants premium access for five years from the date of
+            purchase, with no monthly billing during that term and no
+            automatic renewal at the end of it. Founder access does not
+            guarantee that any specific feature will remain unchanged for
+            the full term, and it does not apply if your account is
+            terminated for violating these Terms.
           </p>
           <p>
             Plan limits, features, and pricing may change over time.
             Changes will not reduce access already purchased for the
-            then-current billing period.
+            then-current billing period or Founder term.
           </p>
         </Section>
 
@@ -203,9 +205,9 @@ export default function TermsOfServicePage() {
             will not receive a prorated refund.
           </p>
           <p>
-            For one-time Lifetime purchases, refunds are generally not
-            provided after purchase unless required by law or approved by
-            us in our discretion.
+            For one-time Founder Plan purchases, refunds are generally
+            not provided after purchase unless required by law or
+            approved by us in our discretion.
           </p>
           <p>
             We may issue refunds or credits at our discretion, but doing so

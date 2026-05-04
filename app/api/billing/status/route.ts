@@ -1,16 +1,33 @@
 import { NextResponse } from "next/server";
-import { normalizePlanId, type MembershipPlanId } from "@/lib/plans";
+import {
+  isFounderExpired,
+  resolveEffectivePlanId,
+  type MembershipPlanId,
+} from "@/lib/plans";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
 export type BillingStatusResponse = {
+  /** Effective plan after Founder Plan expiry resolution. */
   planId: MembershipPlanId;
   isInternal: boolean;
   hasStripeCustomer: boolean;
   subscriptionStatus: string | null;
+  /**
+   * For monthly subs: next renewal date.
+   * For an active Founder Plan: when 5-year access ends.
+   * Null for Free, internal, or expired Founder.
+   */
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
+  /**
+   * True when the stored plan is `lifetime` (Founder) but the access
+   * window has elapsed. The `planId` above is downgraded to `"free"` in
+   * that case; this flag lets the UI surface a "Founder access ended"
+   * state instead of a generic Free state.
+   */
+  founderExpired: boolean;
 };
 
 /**
@@ -52,17 +69,27 @@ export async function GET() {
     );
   }
 
-  const planId: MembershipPlanId = profile?.is_internal_account
-    ? "internal"
-    : normalizePlanId(profile?.selected_plan ?? null);
+  const planFields = {
+    selected_plan: profile?.selected_plan ?? null,
+    is_internal_account: profile?.is_internal_account ?? null,
+    subscription_current_period_end:
+      profile?.subscription_current_period_end ?? null,
+  };
+  const planId = resolveEffectivePlanId(planFields);
+  const founderExpired = isFounderExpired(planFields);
 
   const body: BillingStatusResponse = {
     planId,
     isInternal: Boolean(profile?.is_internal_account),
     hasStripeCustomer: Boolean(profile?.stripe_customer_id),
     subscriptionStatus: profile?.subscription_status ?? null,
-    currentPeriodEnd: profile?.subscription_current_period_end ?? null,
+    // Hide the stale end-date once the Founder term has lapsed — the UI
+    // shouldn't render "ends on (yesterday)".
+    currentPeriodEnd: founderExpired
+      ? null
+      : profile?.subscription_current_period_end ?? null,
     cancelAtPeriodEnd: Boolean(profile?.subscription_cancel_at_period_end),
+    founderExpired,
   };
   return NextResponse.json(body);
 }

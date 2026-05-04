@@ -11,11 +11,11 @@ import {
 export const metadata: Metadata = {
   title: "Pricing · Memora",
   description:
-    "Plans for the Memora archive — Free, Plus, Max, and Lifetime. Pick the size that fits how much you want to remember.",
+    "Plans for the Memora archive — Free, Plus, Max, and the Founder Plan. Pick the size that fits how much you want to remember.",
   openGraph: {
     title: "Pricing · Memora",
     description:
-      "Plans for the Memora archive — Free, Plus, Max, and Lifetime.",
+      "Plans for the Memora archive — Free, Plus, Max, and the Founder Plan.",
   },
 };
 
@@ -32,7 +32,7 @@ function shareLine(plan: MembershipPlan) {
 
 function ctaLabel(planId: MembershipPlan["id"]) {
   if (planId === "free") return "Start free";
-  if (planId === "lifetime") return "Get Lifetime";
+  if (planId === "lifetime") return "Get Founder access";
   return `Start with ${planId === "plus" ? "Plus" : "Max"}`;
 }
 
@@ -93,7 +93,7 @@ export default function PricingPage() {
                   {plan.priceMonthlyLabel}
                   {plan.id === "lifetime" ? (
                     <span className="ml-1 text-[12px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">
-                      once
+                      / 5 yrs
                     </span>
                   ) : plan.id !== "free" ? (
                     <span className="ml-1 text-[12px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">

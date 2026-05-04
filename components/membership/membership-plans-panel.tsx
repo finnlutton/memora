@@ -114,7 +114,7 @@ export function MembershipPlansPanel() {
   const lifetimeLabel = (busy: boolean) => {
     if (busy) return "Redirecting…";
     if (effectivePlanId === "lifetime") return "Current plan";
-    return "Get Lifetime";
+    return "Get Founder access";
   };
 
   const handleSelect = async (selectedPlan: MembershipPlan) => {

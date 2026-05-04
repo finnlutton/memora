@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type Stripe from "stripe";
 import {
+  computeFounderExpiry,
   isPaidPlan,
   mapStripePriceIdToPlan,
   normalizePlanId,
@@ -181,22 +182,33 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // and carry the canonical state — skip the redundant write.
   if (session.mode === "subscription") return;
 
-  // For one-time payment (Lifetime) sessions, this is where we activate
-  // the plan. The plan id is on the session metadata.
+  // For one-time payment (Founder Plan) sessions, this is where we
+  // activate the plan. Plan id rides on the session metadata.
+  //
+  // Internally the plan id is still `lifetime` (column values, env
+  // vars, status string all carry the legacy name). What changed: the
+  // public Founder Plan grants 5 years of access, not life. We stamp
+  // the access end date in `subscription_current_period_end` — the
+  // resolver in @/lib/plans (resolveEffectivePlanId) treats anything
+  // past that timestamp as Free.
   if (session.mode === "payment") {
     const planId = normalizePlanId(session.metadata?.plan_id ?? null);
     if (!isPaidPlan(planId)) return;
+    const purchasedAt = session.created
+      ? new Date(session.created * 1000)
+      : new Date();
     await applyProfileUpdate(customerId, {
       selected_plan: planId,
       stripe_customer_id: customerId,
-      // Lifetime has no subscription; leave subscription fields null.
+      // No Stripe subscription — one-time payment.
       stripe_subscription_id: null,
       stripe_price_id:
         typeof session.line_items?.data[0]?.price?.id === "string"
           ? session.line_items.data[0].price.id
           : null,
       subscription_status: "lifetime",
-      subscription_current_period_end: null,
+      subscription_current_period_end:
+        planId === "lifetime" ? computeFounderExpiry(purchasedAt) : null,
       subscription_cancel_at_period_end: false,
     });
   }

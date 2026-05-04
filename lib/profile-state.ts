@@ -1,5 +1,9 @@
 import type { PostgrestError } from "@supabase/supabase-js";
-import { normalizePlanId, type MembershipPlanId } from "@/lib/plans";
+import {
+  normalizePlanId,
+  resolveEffectivePlanId,
+  type MembershipPlanId,
+} from "@/lib/plans";
 
 export type ProfileStateRow = {
   id: string;
@@ -7,6 +11,8 @@ export type ProfileStateRow = {
   selected_plan?: string | null;
   has_seen_welcome?: boolean | null;
   display_name?: string | null;
+  is_internal_account?: boolean | null;
+  subscription_current_period_end?: string | null;
 } | null;
 
 type ProfileQueryClient = {
@@ -144,7 +150,9 @@ export async function loadProfileState(
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, selected_plan, has_seen_welcome, display_name")
+    .select(
+      "id, selected_plan, has_seen_welcome, display_name, is_internal_account, subscription_current_period_end",
+    )
     .eq("id", user.id)
     .maybeSingle();
 
@@ -183,10 +191,22 @@ export async function loadProfileState(
     }
   }
 
+  // Resolve to the effective plan so an expired Founder account is
+  // treated as Free everywhere the client uses `selectedPlanId` —
+  // gallery counts, subgallery counts, share gating, etc. The DB row
+  // is intentionally not mutated; the runtime check is the source of
+  // truth and a future cron can clean up stale rows if we add one.
+  const effectivePlanId = resolveEffectivePlanId({
+    selected_plan: normalizedPlan,
+    is_internal_account: data.is_internal_account ?? null,
+    subscription_current_period_end:
+      data.subscription_current_period_end ?? null,
+  });
+
   return {
     exists: true,
     hasSeenWelcome: Boolean(data.has_seen_welcome),
-    selectedPlanId: normalizedPlan,
+    selectedPlanId: effectivePlanId,
     displayName: sanitizeDisplayName(data.display_name),
   } satisfies ResolvedProfileState;
 }

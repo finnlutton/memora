@@ -3,8 +3,8 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   canCreate,
-  getMembershipPlan,
-  normalizePlanId,
+  getPlan,
+  resolveEffectivePlanId,
   startOfCurrentMonthUtcIso,
   type PlanResource,
 } from "@/lib/plans";
@@ -48,15 +48,17 @@ export async function POST(request: NextRequest) {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("selected_plan, is_internal_account")
+      .select(
+        "selected_plan, is_internal_account, subscription_current_period_end",
+      )
       .eq("id", user.id)
       .maybeSingle<{
         selected_plan: string | null;
         is_internal_account: boolean | null;
+        subscription_current_period_end: string | null;
       }>();
 
-    // Internal/founder accounts bypass plan limits entirely. Return early
-    // with a permissive response so callers proceed without further work.
+    // Internal full-access accounts bypass plan limits entirely.
     if (profile?.is_internal_account) {
       return NextResponse.json({
         ok: true,
@@ -67,7 +69,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const plan = getMembershipPlan(normalizePlanId(profile?.selected_plan ?? null));
+    // Resolves expired Founder accounts down to Free here, so an
+    // expired customer hits the same gallery/share caps as anyone else.
+    const plan = getPlan(resolveEffectivePlanId(profile ?? null));
     if (!plan) {
       return NextResponse.json({ error: "No plan configuration available." }, { status: 500 });
     }

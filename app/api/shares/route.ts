@@ -2,8 +2,8 @@ import { randomBytes } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import {
   canCreate,
-  getMembershipPlan,
-  normalizePlanId,
+  getPlan,
+  resolveEffectivePlanId,
   startOfCurrentMonthUtcIso,
 } from "@/lib/plans";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -103,10 +103,16 @@ export async function POST(request: NextRequest) {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("selected_plan")
+      .select(
+        "selected_plan, is_internal_account, subscription_current_period_end",
+      )
       .eq("id", user.id)
-      .maybeSingle<{ selected_plan: string | null }>();
-    const plan = getMembershipPlan(normalizePlanId(profile?.selected_plan ?? null));
+      .maybeSingle<{
+        selected_plan: string | null;
+        is_internal_account: boolean | null;
+        subscription_current_period_end: string | null;
+      }>();
+    const plan = getPlan(resolveEffectivePlanId(profile ?? null));
     if (!plan) {
       return NextResponse.json({ error: "No plan selected." }, { status: 500 });
     }
