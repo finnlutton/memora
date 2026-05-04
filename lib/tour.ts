@@ -52,7 +52,7 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     route: "/galleries",
-    title: "Share with someone you love.",
+    title: "Share with people you care about.",
     body: "Generate a private link in seconds. Pick the galleries, choose who they go to, and Memora delivers them safely.",
     anchor: "[data-tour-id='gallery-share']",
     anchorSide: "left",
@@ -75,7 +75,7 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     route: "/galleries/map",
-    title: "Travel by year, or by season.",
+    title: "See what you did and when using filters",
     body: "Narrow the map to a single year or a custom date range — useful for revisiting one trip, one chapter, one summer.",
     anchor: "[data-tour-id='map-date-filter']",
     anchorSide: "bottom",
