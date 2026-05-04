@@ -38,7 +38,7 @@ export function AppShell({
   // Settings dropdown flash for one render between sign-in success and the
   // hard navigation to /galleries or /welcome.
   const isAuthRoute = pathname.startsWith("/auth");
-  const { onboarding, getNextOnboardingRoute, signOut } = useMemoraStore();
+  const { hydrated, onboarding, getNextOnboardingRoute, signOut } = useMemoraStore();
   const showAuthenticatedNav = onboarding.isAuthenticated && !isAuthRoute;
   const createHref = onboarding.isAuthenticated
     ? onboarding.onboardingComplete
@@ -72,14 +72,24 @@ export function AppShell({
   };
 
   useEffect(() => {
+    // Wait for the store to hydrate before deciding to bounce — pre-hydration
+    // `isAuthenticated` is the default `false`, so a freshly mounted product
+    // route would otherwise redirect to "/" for one render. In dev that
+    // navigation can fail its RSC fetch and fall back to a hard browser
+    // nav, which remounts the tree and re-runs this effect → infinite loop.
+    if (!hydrated) return;
     if (!isProductRoute || onboarding.isAuthenticated) {
       return;
     }
 
     router.replace("/");
-  }, [isProductRoute, onboarding.isAuthenticated, router]);
+  }, [hydrated, isProductRoute, onboarding.isAuthenticated, router]);
 
-  if (isProductRoute && !onboarding.isAuthenticated) {
+  // Don't paint the public-route header on a product page while we're still
+  // figuring out auth state — render nothing until hydration resolves, then
+  // either show the workspace (authenticated) or briefly nothing while the
+  // redirect-to-home effect above runs.
+  if (isProductRoute && (!hydrated || !onboarding.isAuthenticated)) {
     return null;
   }
 
