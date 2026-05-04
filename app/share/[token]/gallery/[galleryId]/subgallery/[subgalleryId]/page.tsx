@@ -5,6 +5,7 @@ import { PhotoGrid } from "@/components/photo-grid";
 import { ShareThemeFrame } from "@/components/share/share-theme-frame";
 import {
   buildShareMetadata,
+  formatShareDate,
   getShareMetaContext,
   INVALID_SHARE_METADATA,
   signCoverUrlForOg,
@@ -19,6 +20,7 @@ type ShareRow = {
   id: string;
   revoked_at: string | null;
   theme_id: string | null;
+  created_at: string;
 };
 
 type ShareGalleryRow = { gallery_id: string };
@@ -147,7 +149,7 @@ export default async function PublicSharedSubgalleryPage({
 
   const { data: share } = await admin
     .from("shares")
-    .select("id, revoked_at, theme_id")
+    .select("id, revoked_at, theme_id, created_at")
     .eq("token", token)
     .maybeSingle<ShareRow>();
 
@@ -207,12 +209,23 @@ export default async function PublicSharedSubgalleryPage({
     );
   }
 
-  const { data: photoRows } = await admin
-    .from("photos")
-    .select("id, storage_path, caption, display_order, created_at")
-    .eq("subgallery_id", subgalleryId)
-    .order("display_order", { ascending: true })
-    .returns<PhotoRow[]>();
+  const [{ data: photoRows }, { count: totalGalleryCount }, senderCtx] = await Promise.all([
+    admin
+      .from("photos")
+      .select("id, storage_path, caption, display_order, created_at")
+      .eq("subgallery_id", subgalleryId)
+      .order("display_order", { ascending: true })
+      .returns<PhotoRow[]>(),
+    admin
+      .from("share_galleries")
+      .select("gallery_id", { count: "exact", head: true })
+      .eq("share_id", share.id),
+    getShareMetaContext(token),
+  ]);
+
+  const isSingleGalleryShare = totalGalleryCount === 1;
+  const senderName = senderCtx?.senderName ?? "Someone";
+  const sharedDate = formatShareDate(share.created_at);
 
   const imagePaths = (photoRows ?? []).map((photo) => photo.storage_path).filter((path) => path && isLikelyStoragePath(path));
 
@@ -251,6 +264,10 @@ export default async function PublicSharedSubgalleryPage({
               Mobile breadcrumb: collapse middle segments to a single
               "← Gallery title" so a long subgallery title doesn't push
               the row into a multi-line wrap. Full ladder returns at md+.
+
+              Single-gallery shares skip the "All shared galleries" rung
+              since the landing page redirects straight to the gallery —
+              following that link would just bounce the viewer back here.
             */}
             <Link
               href={`/share/${token}/gallery/${gallery.id}`}
@@ -260,13 +277,17 @@ export default async function PublicSharedSubgalleryPage({
               <span aria-hidden>←</span>
               <span className="truncate">{gallery.title}</span>
             </Link>
-            <Link
-              href={`/share/${token}`}
-              className="hidden underline underline-offset-4 md:inline"
-            >
-              All shared galleries
-            </Link>
-            <span aria-hidden className="hidden md:inline">/</span>
+            {!isSingleGalleryShare ? (
+              <>
+                <Link
+                  href={`/share/${token}`}
+                  className="hidden underline underline-offset-4 md:inline"
+                >
+                  All shared galleries
+                </Link>
+                <span aria-hidden className="hidden md:inline">/</span>
+              </>
+            ) : null}
             <Link
               href={`/share/${token}/gallery/${gallery.id}`}
               className="hidden underline underline-offset-4 md:inline"
@@ -277,6 +298,10 @@ export default async function PublicSharedSubgalleryPage({
             <span className="hidden min-w-0 truncate md:inline">{subgallery.title}</span>
           </div>
           <h1 className="mt-2 font-serif text-3xl leading-tight md:text-5xl">{subgallery.title}</h1>
+          <p className="mt-2 font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)] md:mt-3 md:text-[11px]">
+            From {senderName}
+            {sharedDate ? ` · ${sharedDate}` : ""}
+          </p>
           {(() => {
             const formattedLocation = formatLocationForCard(subgallery.location);
             const dateText = subgallery.date_label || formatDateRange(subgallery.start_date, subgallery.end_date);

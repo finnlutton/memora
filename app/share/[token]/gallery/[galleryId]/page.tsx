@@ -5,6 +5,7 @@ import { PhotoGrid } from "@/components/photo-grid";
 import { ShareThemeFrame } from "@/components/share/share-theme-frame";
 import {
   buildShareMetadata,
+  formatShareDate,
   getShareMetaContext,
   INVALID_SHARE_METADATA,
   signCoverUrlForOg,
@@ -20,6 +21,8 @@ type ShareRow = {
   message: string | null;
   revoked_at: string | null;
   theme_id: string | null;
+  created_at: string;
+  recipient_member_labels: string[] | null;
 };
 
 type ShareGalleryRow = { gallery_id: string };
@@ -153,7 +156,7 @@ export default async function PublicSharedGalleryPage({
 
   const { data: share } = await admin
     .from("shares")
-    .select("id, message, revoked_at, theme_id")
+    .select("id, message, revoked_at, theme_id, created_at, recipient_member_labels")
     .eq("token", token)
     .maybeSingle<ShareRow>();
 
@@ -209,7 +212,7 @@ export default async function PublicSharedGalleryPage({
     );
   }
 
-  const [{ data: subgalleries }, { data: directPhotoRows }] = await Promise.all([
+  const [{ data: subgalleries }, { data: directPhotoRows }, { count: totalGalleryCount }, senderCtx] = await Promise.all([
     admin
       .from("subgalleries")
       .select("id, title, description, cover_image_path, location, date_label, start_date, end_date")
@@ -223,7 +226,27 @@ export default async function PublicSharedGalleryPage({
       .is("subgallery_id", null)
       .order("display_order", { ascending: true })
       .returns<DirectPhotoRow[]>(),
+    admin
+      .from("share_galleries")
+      .select("gallery_id", { count: "exact", head: true })
+      .eq("share_id", share.id),
+    getShareMetaContext(token),
   ]);
+
+  // When the sender attached only one gallery to this share, the landing
+  // page redirects straight here — so this gallery view stands in for the
+  // landing. Inline the sender's message above the title and drop the
+  // "All shared galleries" breadcrumb rung (which would loop back).
+  const isSingleGalleryShare = totalGalleryCount === 1;
+  const senderName = senderCtx?.senderName ?? "Someone";
+  const sharedDate = formatShareDate(share.created_at);
+  const memberLabels = (share.recipient_member_labels ?? []).filter(
+    (label): label is string =>
+      typeof label === "string" && label.trim().length > 0,
+  );
+  const eyebrowText = isSingleGalleryShare && memberLabels.length
+    ? memberLabels.join(" · ")
+    : "Memora";
 
   // The gallery cover used to render as a hero banner here, but
   // recipients found it redundant with the cover that already shows
@@ -269,20 +292,31 @@ export default async function PublicSharedGalleryPage({
     <main className="min-h-screen bg-[color:var(--background)] px-4 py-6 text-[color:var(--ink)] md:px-8 md:py-8">
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 border-b border-[color:var(--border)] pb-4 md:mb-8 md:pb-5">
-          <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
-          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
-            <Link
-              href={`/share/${token}`}
-              className="inline-flex items-center gap-1 underline underline-offset-4"
-              aria-label="All shared galleries"
-            >
-              <span aria-hidden className="md:hidden">←</span>
-              <span className="hidden md:inline">All shared galleries</span>
-            </Link>
-            <span aria-hidden>/</span>
-            <span className="min-w-0 truncate">{gallery.title}</span>
-          </div>
+          <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">{eyebrowText}</p>
+          {!isSingleGalleryShare ? (
+            <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
+              <Link
+                href={`/share/${token}`}
+                className="inline-flex items-center gap-1 underline underline-offset-4"
+                aria-label="All shared galleries"
+              >
+                <span aria-hidden className="md:hidden">←</span>
+                <span className="hidden md:inline">All shared galleries</span>
+              </Link>
+              <span aria-hidden>/</span>
+              <span className="min-w-0 truncate">{gallery.title}</span>
+            </div>
+          ) : null}
+          {isSingleGalleryShare && share.message ? (
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:text-[15px] md:leading-7">
+              {share.message}
+            </p>
+          ) : null}
           <h1 className="mt-2 font-serif text-3xl leading-tight md:text-5xl">{gallery.title}</h1>
+          <p className="mt-2 font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)] md:mt-3 md:text-[11px]">
+            From {senderName}
+            {sharedDate ? ` · ${sharedDate}` : ""}
+          </p>
           {gallery.description ? (
             <CollapsibleEntry text={gallery.description} className="mt-4 md:mt-5" defaultOpen />
           ) : null}

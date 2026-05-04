@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ShareThemeFrame } from "@/components/share/share-theme-frame";
 import {
   buildShareMetadata,
+  formatShareDate,
   getShareMetaContext,
   INVALID_SHARE_METADATA,
   signCoverUrlForOg,
@@ -18,6 +20,7 @@ type ShareRow = {
   recipient_group_name: string | null;
   recipient_member_labels: string[] | null;
   theme_id: string | null;
+  created_at: string;
 };
 
 type ShareGalleryRow = {
@@ -117,7 +120,7 @@ export default async function PublicSharePage({
   const { data: share, error: shareError } = await admin
     .from("shares")
     .select(
-      "id, message, revoked_at, recipient_group_name, recipient_member_labels, theme_id",
+      "id, message, revoked_at, recipient_group_name, recipient_member_labels, theme_id, created_at",
     )
     .eq("token", token)
     .maybeSingle<ShareRow>();
@@ -170,6 +173,17 @@ export default async function PublicSharePage({
     throw new Error(galleryError.message);
   }
 
+  // Single-gallery shares skip the landing grid (which would just be one
+  // tile) and drop the recipient straight into the gallery view. The gallery
+  // page detects this and inlines the sender's message above its own title.
+  if (galleryRows && galleryRows.length === 1) {
+    redirect(`/share/${token}/gallery/${galleryRows[0].id}`);
+  }
+
+  const senderCtx = await getShareMetaContext(token);
+  const senderName = senderCtx?.senderName ?? "Someone";
+  const sharedDate = formatShareDate(share.created_at);
+
   const coverPaths = (galleryRows ?? [])
     .map((gallery) => gallery.cover_image_path ?? "")
     .filter((path) => path && isLikelyStoragePath(path));
@@ -190,7 +204,7 @@ export default async function PublicSharePage({
 
   return (
     <ShareThemeFrame themeId={share.theme_id}>
-    <main className="min-h-screen bg-[color:var(--background)] px-4 py-6 text-[color:var(--ink)] md:px-8 md:py-8">
+    <main className="flex min-h-screen flex-col bg-[color:var(--background)] px-4 py-6 text-[color:var(--ink)] md:px-8 md:py-8">
       {/*
         Header eyebrow + title personalize the share when the sender
         chose a recipient group at create time. With group data:
@@ -199,8 +213,14 @@ export default async function PublicSharePage({
         Without group data we fall back to the original
         'Memora' / 'Shared with you' wording so older share links
         keep rendering exactly as they did before.
+
+        Sticky-footer layout: <main> is a min-h-screen flex column and the
+        inner wrapper grows to fill it. With only a couple of gallery tiles
+        the spacer below pushes the Memora footer to the bottom of the
+        viewport so it doesn't float up directly under the cards. With many
+        tiles the spacer collapses and the footer sits naturally below them.
       */}
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col">
         {(() => {
           const memberLabels = (share.recipient_member_labels ?? []).filter(
             (label): label is string =>
@@ -221,6 +241,10 @@ export default async function PublicSharePage({
               <h1 className="mt-2 font-serif text-3xl leading-tight md:mt-3 md:text-5xl">
                 {titleText}
               </h1>
+              <p className="mt-2 font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)] md:mt-3 md:text-[11px]">
+                From {senderName}
+                {sharedDate ? ` · ${sharedDate}` : ""}
+              </p>
               {share.message ? (
                 <p className="mt-3 max-w-3xl text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:text-[15px] md:leading-7">
                   {share.message}
@@ -272,6 +296,7 @@ export default async function PublicSharePage({
             </p>
           </section>
         )}
+        <div aria-hidden className="flex-1" />
         <footer className="mt-10 border-t border-[color:var(--border)] pt-6 text-center md:mt-14 md:pt-8">
           <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
           <p className="mt-2 text-sm text-[color:var(--ink-soft)]">
