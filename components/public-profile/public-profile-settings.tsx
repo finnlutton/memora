@@ -26,7 +26,14 @@ type HandleStatus =
   | { kind: "ok"; handle: string }
   | { kind: "error"; message: string };
 
-export function PublicProfileSettings() {
+export function PublicProfileSettings({
+  onProfileChange,
+}: {
+  // Called after a successful PATCH so a parent (e.g. the collapsible
+  // section header's "Live / Off" chip) can refresh its status without
+  // duplicating the request that already returned the new state.
+  onProfileChange?: () => void;
+} = {}) {
   const { addToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -152,6 +159,7 @@ export function PublicProfileSettings() {
         setBioDraft(fresh.bio ?? "");
         setHandleStatus({ kind: "idle" });
         addToast(successMessage, "success");
+        onProfileChange?.();
       } catch (caught) {
         setError(
           caught instanceof Error ? caught.message : "Unable to save right now.",
@@ -160,7 +168,7 @@ export function PublicProfileSettings() {
         setBusy(false);
       }
     },
-    [addToast],
+    [addToast, onProfileChange],
   );
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
