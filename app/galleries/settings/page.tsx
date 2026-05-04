@@ -11,6 +11,7 @@ import { DeleteAccountDialog } from "@/components/delete-account-dialog";
 import { WorkspaceTopbar } from "@/components/workspace-topbar";
 import { BillingStatusCard } from "@/components/membership/billing-status-card";
 import { LegalLinks } from "@/components/legal-links";
+import { PublicProfileSettings } from "@/components/public-profile/public-profile-settings";
 import { Button } from "@/components/ui/button";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 import { DISPLAY_NAME_MAX_LENGTH } from "@/lib/profile-state";
@@ -51,6 +52,32 @@ export default function WorkspaceSettingsPage() {
           <ReplayTourButton />
         </div>
         <AppearancePicker />
+      </section>
+
+      {/*
+        Public Memora page — sits above the two-column settings grid
+        because it's its own feature with multiple controls (handle,
+        display name, bio, enable toggle) and reads more cleanly at
+        full width than squeezed into one column. Quietly absent for
+        users who never opt in.
+      */}
+      <section
+        aria-labelledby="settings-public-profile-heading"
+        className="mx-auto mb-6 w-full max-w-5xl border-b border-[color:var(--border)] pb-6"
+      >
+        <div className="mb-2">
+          <p
+            id="settings-public-profile-heading"
+            className="text-[10px] font-medium uppercase tracking-[0.24em] text-[color:var(--ink)]"
+          >
+            Public Memora page
+          </p>
+          <p className="mt-2 max-w-xl text-sm text-[color:var(--ink-soft)]">
+            One clean URL — <span className="font-[family-name:var(--font-mono)]">memoragallery.com/@yourhandle</span> —
+            that shows just the galleries you choose. Great for an Instagram bio link.
+          </p>
+        </div>
+        <PublicProfileSettings />
       </section>
 
       <section className="mx-auto grid w-full max-w-5xl gap-5 md:grid-cols-2 md:gap-x-8 md:gap-y-6">

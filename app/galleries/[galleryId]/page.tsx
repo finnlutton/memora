@@ -9,6 +9,7 @@ import { CollapsibleEntry } from "@/components/collapsible-entry";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { GalleryDirectPhotos } from "@/components/gallery-direct-photos";
 import { OverLimitBanner } from "@/components/over-limit-banner";
+import { GallerySharingDialog } from "@/components/public-profile/gallery-sharing-dialog";
 import { SubgalleryCarousel } from "@/components/subgallery-carousel";
 import { WorkspaceTopbar } from "@/components/workspace-topbar";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ export default function GalleryDetailPage() {
   const gallery = getGallery(params.galleryId);
   const [activeSubgalleryIndex, setActiveSubgalleryIndex] = useState(0);
   const [actionsOpen, setActionsOpen] = useState(false);
+  const [sharingOpen, setSharingOpen] = useState(false);
   const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);
   const overLimitReport = computeOverLimit(galleries, selectedPlan ?? null);
 
@@ -112,6 +114,16 @@ export default function GalleryDetailPage() {
                     Edit subgallery
                   </Link>
                 ) : null}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActionsOpen(false);
+                    setSharingOpen(true);
+                  }}
+                  className="flex h-12 items-center rounded-lg px-3 text-left text-[14px] text-[color:var(--ink)] transition hover:bg-[color:var(--paper)] md:h-auto md:py-2 md:text-sm"
+                >
+                  Sharing
+                </button>
                 <Link
                   href={`/galleries/${gallery.id}/edit`}
                   onClick={() => setActionsOpen(false)}
@@ -165,6 +177,12 @@ export default function GalleryDetailPage() {
 
       <GalleryDirectPhotos gallery={gallery} />
       </div>
+      <GallerySharingDialog
+        open={sharingOpen}
+        onOpenChange={setSharingOpen}
+        galleryId={gallery.id}
+        galleryTitle={gallery.title}
+      />
     </AppShell>
   );
 }
