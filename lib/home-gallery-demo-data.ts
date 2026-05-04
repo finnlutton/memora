@@ -54,6 +54,7 @@ export const HOME_GALLERY_DEMO: DemoGallery = {
       id: "sub-1",
       title: "Mountain biking in Granada",
       location: "Granada",
+      dates: "Jan 2026 – May 2026",
       description:
         "Take a look at some of my mountain biking adventures around Granada!",
       coverImage: `${DIR}/subgallery-1-cover.jpg`,

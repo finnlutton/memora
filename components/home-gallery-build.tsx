@@ -778,14 +778,6 @@ function SubgalleryCard({
           {meta}
         </motion.p>
       ) : null}
-      <motion.p
-        initial={false}
-        animate={{ opacity: textVisible ? 1 : 0, y: textVisible ? 0 : 6 }}
-        transition={{ duration: 0.6, delay: 0.12, ease: EASE }}
-        className="mt-3 text-[14px] leading-[1.65] text-[color:var(--ink-soft)] md:text-[15px]"
-      >
-        {sub.description}
-      </motion.p>
     </div>
   );
 }
