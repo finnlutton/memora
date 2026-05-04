@@ -9,7 +9,6 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { LocationAutocompleteInput } from "@/components/location-autocomplete-input";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 import { filesToPhotos } from "@/lib/file";
@@ -129,7 +128,7 @@ export function GalleryDirectPhotos({ gallery }: { gallery: Gallery }) {
   return (
     <section className="mt-auto pt-12">
       {!isEmpty ? (
-        <div className="mb-8 grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-6">
+        <div className="mb-8 grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-5">
           {items.map((item) => {
             const isDragging = draggingId === item.data.id;
             const isHover = hoverId === item.data.id;
@@ -315,120 +314,181 @@ function PhotoCard({
   }) => Promise<void>;
   onRemove: () => Promise<void>;
 }) {
-  const captionRef = useRef<HTMLTextAreaElement | null>(null);
+  const caption = (photo.caption || "").trim();
+  const location = (photo.location || "").trim();
 
   return (
-    <div className="group relative aspect-[4/5] overflow-hidden border border-[color:var(--border)] bg-[rgba(255,255,255,0.82)] shadow-[0_8px_20px_rgba(34,49,71,0.05)]">
-      {photo.src ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={photo.src}
-          alt={photo.caption || "Gallery photo"}
-          className="absolute inset-0 h-full w-full object-cover"
-          loading="lazy"
+    <div className="group flex flex-col gap-1.5">
+      {/* Polaroid-style frame — hairline border + paper inset, mirrors
+          the read view in PhotoGrid (paper density) so the editor and
+          the eventual published view share the same visual language. */}
+      <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-1.5">
+        <div className="relative aspect-[4/5] overflow-hidden">
+          {photo.src ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={photo.src}
+              alt={caption || "Gallery photo"}
+              className="absolute inset-0 h-full w-full object-cover"
+              loading="lazy"
+            />
+          ) : null}
+        </div>
+
+        {/* Edit + delete affordances — always visible on touch devices,
+            hover-revealed on devices with a real pointer. The arbitrary
+            [@media(hover:hover)] variant scopes the fade to mouse-driven
+            UAs so the simple desktop design survives while phones/tablets
+            get the same controls without the hover trap. */}
+        {!editing ? (
+          <div className="absolute right-2 top-2 flex gap-1 transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100">
+            <button
+              type="button"
+              onClick={onStartEdit}
+              aria-label="Edit details"
+              className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-[color:var(--ink)] shadow-[0_3px_8px_rgba(14,22,34,0.18)] transition hover:bg-white sm:h-5 sm:w-5"
+            >
+              <Pencil className="h-2.5 w-2.5" strokeWidth={1.8} />
+            </button>
+            <button
+              type="button"
+              onClick={() => void onRemove()}
+              aria-label="Remove photo"
+              className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-[color:var(--ink)] shadow-[0_3px_8px_rgba(14,22,34,0.18)] transition hover:bg-white hover:text-[color:var(--accent-strong)] sm:h-5 sm:w-5"
+            >
+              <Trash2 className="h-2.5 w-2.5" strokeWidth={1.8} />
+            </button>
+          </div>
+        ) : null}
+      </div>
+
+      {/* Mono caption (+ optional location) below the frame, matching
+          the editorial scene style used in subgallery photo grids. */}
+      {location || caption ? (
+        <div className="font-[family-name:var(--font-mono)] text-[9px] uppercase leading-snug tracking-[0.12em] text-[color:var(--ink-soft)]">
+          {location ? (
+            <p className="inline-flex items-center gap-1 text-[color:var(--ink-faint)]">
+              <MapPin className="h-2 w-2" strokeWidth={1.6} />
+              {location}
+            </p>
+          ) : null}
+          {caption ? (
+            <p className={`line-clamp-2 ${location ? "mt-0.5" : ""}`}>
+              {caption}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* Caption editor — full-viewport centered modal so it isn't
+          constrained by the tiny tile bounds on mobile. Caption only;
+          location stays read-only here to keep the editor focused. */}
+      {editing ? (
+        <CaptionEditor
+          initialCaption={photo.caption ?? ""}
+          onSave={async (next) => {
+            if (next !== (photo.caption ?? "")) {
+              await onUpdate({ caption: next });
+            }
+            onCloseEdit();
+          }}
+          onCancel={onCloseEdit}
         />
       ) : null}
+    </div>
+  );
+}
 
-      {/* Caption + location overlay (only when set) */}
-      {!editing && (photo.caption || photo.location) ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-[rgba(10,18,30,0.72)] to-transparent px-2 pb-1.5 pt-6 text-white">
-          {photo.location ? (
-            <p className="inline-flex items-center gap-1 text-[8.5px] font-medium uppercase tracking-[0.2em] text-white/85">
-              <MapPin className="h-2 w-2" strokeWidth={1.6} />
-              {photo.location}
-            </p>
-          ) : null}
-          {photo.caption ? (
-            <p className="mt-0.5 line-clamp-2 text-[10px] leading-[1.35] text-white">
-              {photo.caption}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
+/* ── Caption editor modal ─────────────────────────────────────────────── */
 
-      {/* Edit + delete affordances — always visible on touch devices,
-          hover-revealed on devices with a real pointer. The arbitrary
-          [@media(hover:hover)] variant scopes the fade to mouse-driven
-          UAs so the simple desktop design survives while phones/tablets
-          get the same controls without the hover trap. */}
-      {!editing ? (
-        <div className="absolute right-1.5 top-1.5 flex gap-1 transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100">
+function CaptionEditor({
+  initialCaption,
+  onSave,
+  onCancel,
+}: {
+  initialCaption: string;
+  onSave: (caption: string) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const [value, setValue] = useState(initialCaption);
+  const [saving, setSaving] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Autofocus the textarea when the modal opens so the keyboard
+  // appears immediately on mobile.
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
+
+  // Lock body scroll while the modal is open so the page underneath
+  // doesn't bounce when the on-screen keyboard appears.
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, []);
+
+  const handleSave = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await onSave(value.trim());
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(10,18,30,0.55)] p-4 backdrop-blur-[2px] sm:items-center"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onCancel();
+      }}
+    >
+      <div className="w-full max-w-md bg-white shadow-[0_20px_50px_rgba(10,18,30,0.25)]">
+        <div className="flex items-center justify-between border-b border-[color:var(--border)] px-4 py-3">
+          <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-[color:var(--ink-soft)]">
+            Caption
+          </span>
           <button
             type="button"
-            onClick={onStartEdit}
-            aria-label="Edit details"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-[color:var(--ink)] shadow-[0_3px_8px_rgba(14,22,34,0.18)] transition hover:bg-white sm:h-6 sm:w-6"
-          >
-            <Pencil className="h-3 w-3" strokeWidth={1.8} />
-          </button>
-          <button
-            type="button"
-            onClick={() => void onRemove()}
-            aria-label="Remove photo"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-[color:var(--ink)] shadow-[0_3px_8px_rgba(14,22,34,0.18)] transition hover:bg-white hover:text-[color:var(--accent-strong)] sm:h-6 sm:w-6"
-          >
-            <Trash2 className="h-3 w-3" strokeWidth={1.8} />
-          </button>
-        </div>
-      ) : null}
-
-      {/* Inline editor — glass overlay covering the tile */}
-      {editing ? (
-        <div className="absolute inset-0 flex flex-col bg-[rgba(10,18,30,0.62)] backdrop-blur-[2px]">
-          <button
-            type="button"
-            onClick={onCloseEdit}
+            onClick={onCancel}
             aria-label="Close editor"
-            className="absolute right-1.5 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-[color:var(--ink)] shadow-[0_3px_8px_rgba(14,22,34,0.2)] transition hover:bg-white"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full text-[color:var(--ink-soft)] transition hover:bg-[color:var(--hover-tint)] hover:text-[color:var(--ink)]"
           >
-            <X className="h-3 w-3" strokeWidth={1.8} />
+            <X className="h-4 w-4" strokeWidth={1.8} />
           </button>
-          <div className="mt-auto space-y-1.5 bg-white/96 p-2">
-            <div>
-              <label className="text-[8.5px] font-medium uppercase tracking-[0.2em] text-[color:var(--ink-soft)]">
-                Location
-              </label>
-              <div className="mt-0.5">
-                <LocationAutocompleteInput
-                  value={{
-                    label: photo.location ?? "",
-                    lat: photo.locationLat ?? null,
-                    lng: photo.locationLng ?? null,
-                  }}
-                  onChange={(next) =>
-                    void onUpdate({
-                      location: next.label || null,
-                      locationLat: next.lat,
-                      locationLng: next.lng,
-                    })
-                  }
-                  placeholder="Optional"
-                  className="w-full border border-[color:var(--border-strong)] bg-white px-2 py-1 text-[10.5px] text-[color:var(--ink)] outline-none focus:border-[color:var(--ink-soft)]"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="text-[8.5px] font-medium uppercase tracking-[0.2em] text-[color:var(--ink-soft)]">
-                Caption
-              </label>
-              <textarea
-                ref={captionRef}
-                key={photo.caption ?? ""}
-                defaultValue={photo.caption ?? ""}
-                onBlur={() => {
-                  const next = captionRef.current?.value ?? "";
-                  if (next !== (photo.caption ?? "")) {
-                    void onUpdate({ caption: next });
-                  }
-                }}
-                rows={2}
-                placeholder="A short note (optional)"
-                className="mt-0.5 w-full resize-none border border-[color:var(--border-strong)] bg-white px-2 py-1 text-[10.5px] leading-4 text-[color:var(--ink)] outline-none focus:border-[color:var(--ink-soft)]"
-              />
-            </div>
-          </div>
         </div>
-      ) : null}
+        <div className="px-4 py-4">
+          <textarea
+            ref={textareaRef}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            rows={4}
+            placeholder="A short note (optional)"
+            className="w-full resize-none border border-[color:var(--border-strong)] bg-white px-3 py-2 text-[14px] leading-6 text-[color:var(--ink)] outline-none focus:border-[color:var(--ink-soft)]"
+          />
+        </div>
+        <div className="flex items-center justify-end gap-2 border-t border-[color:var(--border)] px-4 py-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-3 py-2 text-[12px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)] transition hover:text-[color:var(--ink)]"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleSave()}
+            disabled={saving}
+            className="bg-[color:var(--ink)] px-4 py-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white transition hover:bg-[color:var(--accent-strong-hover)] disabled:opacity-60"
+          >
+            {saving ? "Saving…" : "Save"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

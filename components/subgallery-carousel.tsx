@@ -11,7 +11,7 @@ export function SubgalleryCarousel({
   galleryId,
   subgalleries = [],
   title = "Subgalleries",
-  eyebrow = "Browse the chapters",
+  eyebrow,
   description,
   theme = "dark",
   clickable = true,
