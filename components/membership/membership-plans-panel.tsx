@@ -53,10 +53,19 @@ function formatDate(iso: string | null) {
 export function MembershipPlansPanel() {
   const router = useRouter();
   const { onboarding, completeCheckout } = useMemoraStore();
-  const { status: billing } = useBillingStatus();
+  const { status: billing, refetch: refetchBilling } = useBillingStatus();
   const [busyPlanId, setBusyPlanId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const submitLockRef = useRef(false);
+
+  const ACTIVE_SUB_STATUSES = new Set(["active", "trialing", "past_due"]);
+  const hasActiveStripeSub = Boolean(
+    billing?.subscriptionStatus &&
+      ACTIVE_SUB_STATUSES.has(billing.subscriptionStatus) &&
+      billing.planId !== "free" &&
+      billing.planId !== "lifetime",
+  );
 
   const recurringPlans = RECURRING_ORDER
     .map((id) => publicMembershipPlans.find((plan) => plan.id === id))
@@ -121,6 +130,7 @@ export function MembershipPlansPanel() {
     if (busyPlanId || submitLockRef.current) return;
     submitLockRef.current = true;
     setError(null);
+    setInfo(null);
 
     if (!onboarding.isAuthenticated || !onboarding.user?.id) {
       setError("Please log in again before choosing a plan.");
@@ -137,6 +147,49 @@ export function MembershipPlansPanel() {
 
     setBusyPlanId(selectedPlan.id);
     try {
+      // Existing Stripe subscriber → route through change-plan so we
+      // proration-update in place (Plus↔Max), schedule cancel-at-period-end
+      // (→ Free), or cancel + redirect to one-time Checkout (→ Founder).
+      // Never create a parallel subscription.
+      if (hasActiveStripeSub) {
+        const response = await fetch("/api/stripe/change-plan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ planId: selectedPlan.id }),
+        });
+        const data = (await response.json()) as {
+          ok?: boolean;
+          url?: string;
+          message?: string;
+          error?: string;
+          redirect?: string;
+        };
+
+        if (response.ok) {
+          if (data.url) {
+            // Founder upgrade — go finish the one-time payment.
+            window.location.href = data.url;
+            return;
+          }
+          // In-place update or scheduled cancellation.
+          await refetchBilling();
+          setInfo(data.message ?? "Plan updated.");
+          return;
+        }
+
+        // Stale local state can leave hasActiveStripeSub=true while the
+        // server has no live sub. In that case, fall through to checkout.
+        if (response.status === 409 && data.redirect === "checkout") {
+          // fall through to the checkout branch below
+        } else {
+          throw new Error(
+            data.error ?? "Could not change your plan. Please try again.",
+          );
+        }
+      }
+
+      // No active sub (or change-plan asked us to redirect) → standard
+      // Checkout flow for Plus / Max / Founder.
       if (isPaidPlan(selectedPlan.id)) {
         const response = await fetch(
           "/api/stripe/create-checkout-session",
@@ -149,6 +202,7 @@ export function MembershipPlansPanel() {
         const data = (await response.json()) as {
           url?: string;
           error?: string;
+          redirect?: string;
         };
         if (!response.ok || !data.url) {
           throw new Error(
@@ -158,6 +212,8 @@ export function MembershipPlansPanel() {
         window.location.href = data.url;
         return;
       }
+
+      // Free plan, no active sub → just write locally.
       await completeCheckout(selectedPlan.id);
       router.replace("/galleries");
     } catch (checkoutError) {
@@ -245,6 +301,12 @@ export function MembershipPlansPanel() {
         </Link>
         .
       </p>
+
+      {info ? (
+        <p className="border border-[color:var(--border)] bg-[color:var(--paper)] px-3 py-2 text-[13px] leading-6 text-[color:var(--ink)]">
+          {info}
+        </p>
+      ) : null}
 
       {error ? (
         <p className="border border-[#c98282] bg-[#fff7f7] px-3 py-2 text-[13px] leading-6 text-[#9a4545]">

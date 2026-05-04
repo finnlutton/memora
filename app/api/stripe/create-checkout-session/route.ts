@@ -63,13 +63,15 @@ export async function POST(request: NextRequest) {
   const { data: profile, error: profileError } = await admin
     .from("profiles")
     .select(
-      "id, email, stripe_customer_id, is_internal_account, selected_plan",
+      "id, email, stripe_customer_id, stripe_subscription_id, subscription_status, is_internal_account, selected_plan",
     )
     .eq("id", user.id)
     .maybeSingle<{
       id: string;
       email: string | null;
       stripe_customer_id: string | null;
+      stripe_subscription_id: string | null;
+      subscription_status: string | null;
       is_internal_account: boolean;
       selected_plan: string | null;
     }>();
@@ -87,6 +89,26 @@ export async function POST(request: NextRequest) {
           "This account already has full access and does not require billing.",
       },
       { status: 400 },
+    );
+  }
+
+  // Defense in depth: an existing active subscription must be modified
+  // via /api/stripe/change-plan, never stacked with a new Checkout
+  // session. The UI routes correctly today, but if a stale tab or a
+  // direct API call lands here, refuse to create a parallel sub.
+  const ACTIVE_SUB_STATUSES = new Set(["active", "trialing", "past_due"]);
+  if (
+    profile?.stripe_subscription_id &&
+    profile.subscription_status &&
+    ACTIVE_SUB_STATUSES.has(profile.subscription_status)
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "You already have an active subscription. Use the change-plan flow instead.",
+        redirect: "change-plan",
+      },
+      { status: 409 },
     );
   }
 
