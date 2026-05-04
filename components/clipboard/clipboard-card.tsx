@@ -17,6 +17,51 @@ import type { ClipboardItem } from "@/hooks/use-clipboard-items";
 const SHORT_TEXT_THRESHOLD = 60;
 
 /**
+ * Card tilt — applied to the whole scrap so cards feel pinned at slightly
+ * different angles. Five-step cycle keyed off the item id so the same
+ * memory keeps the same tilt across renders / refetches.
+ */
+const CARD_TILT_ANGLES = [-1.6, -0.9, 0, 1, 1.7];
+
+/**
+ * Photo tilt — applied to the inner photo container so the image looks
+ * stuck onto its scrap at a slightly different angle than the card.
+ * Different hash multiplier from the card so a card and its photo don't
+ * always lean the same way.
+ */
+const PHOTO_TILT_ANGLES = [-0.7, -0.3, 0.5, 0.8, -0.5];
+
+function hashId(id: string, multiplier: number): number {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash * multiplier + id.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+}
+
+export function cardTiltFor(id: string): number {
+  return CARD_TILT_ANGLES[hashId(id, 31) % CARD_TILT_ANGLES.length];
+}
+
+function photoTiltFor(id: string): number {
+  return PHOTO_TILT_ANGLES[hashId(id, 37) % PHOTO_TILT_ANGLES.length];
+}
+
+/**
+ * Tiny "thumbtack" indicator at the top of every clipboard scrap. Subtle
+ * inset highlight + drop shadow gives a hint of dimension without being
+ * literal about it.
+ */
+function PinDot() {
+  return (
+    <span
+      aria-hidden="true"
+      className="absolute left-1/2 top-1 z-10 block h-2 w-2 -translate-x-1/2 rounded-full bg-[color:var(--ink-soft)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.18),0_1px_2px_rgba(14,22,34,0.32)]"
+    />
+  );
+}
+
+/**
  * One memory card.
  *
  * Three layout variants — text, photo, text+photo — each rendered as a
@@ -88,7 +133,10 @@ export function ClipboardCard({
     return (
       <CompactClipboardCard
         item={item}
-        tilt={tilt}
+        // Allow callers to override (page can pin all-zero for testing,
+        // etc.) but otherwise compute from the item id so the same scrap
+        // keeps the same tilt across renders.
+        tilt={tilt ?? cardTiltFor(item.id)}
         priority={priority}
         onOpenDetail={onOpenDetail}
       />
@@ -124,6 +172,9 @@ export function ClipboardCard({
   const hasText = Boolean(item.content?.trim()) || editing;
   const hasPhoto = Boolean(item.photoUrl);
 
+  const cardTilt = cardTiltFor(item.id);
+  const photoTilt = photoTiltFor(item.id);
+
   return (
     <article
       // group + transition for the hover affordances; don't use motion.div
@@ -132,18 +183,26 @@ export function ClipboardCard({
         draggable ? "cursor-grab active:cursor-grabbing" : ""
       }`}
       style={{
+        // Card tilt — gives every scrap on the desktop canvas (and the
+        // mobile compact stack uses its own copy of this) a slightly
+        // pinned-at-an-angle feel. Combined with the canvas wrapper's
+        // drag-time scale via separate transforms on different
+        // elements, so the two don't fight.
+        transform: `rotate(${cardTilt}deg)`,
         // Subtle warm paper texture via a layered gradient — premium feel
         // without an external image.
         backgroundImage:
           "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.6) 0%, transparent 60%), radial-gradient(circle at 80% 80%, rgba(193,168,128,0.08) 0%, transparent 70%)",
       }}
     >
+      <PinDot />
       {hasPhoto ? (
         // Stop drag on the image so the user can long-press / right-click
         // it without it grabbing the card. Pointer events too — the
         // canvas listens for pointerdown.
         <div
           className="relative aspect-[4/3] w-full overflow-hidden bg-[color:var(--paper-strong)]"
+          style={{ transform: `rotate(${photoTilt}deg)` }}
           onPointerDown={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
         >
@@ -282,6 +341,7 @@ function CompactClipboardCard({
   const wordCount = hasText
     ? text.split(/\s+/).filter(Boolean).length
     : 0;
+  const photoTilt = photoTiltFor(item.id);
 
   return (
     <button
@@ -295,13 +355,7 @@ function CompactClipboardCard({
       }
       className="group relative block w-full overflow-hidden border border-[color:var(--border)] bg-[#fdf9f1] text-left shadow-[0_8px_22px_-14px_rgba(60,46,30,0.32)] transition-transform active:translate-y-[1px] active:scale-[0.99]"
     >
-      {/* Pin / thumbtack — small dot at the top-center of each card.
-          Subtle inset highlight gives a hint of dimension without
-          pretending to be a full skeuomorphic illustration. */}
-      <span
-        aria-hidden="true"
-        className="absolute left-1/2 top-1 z-10 block h-2 w-2 -translate-x-1/2 rounded-full bg-[color:var(--ink-soft)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.18),0_1px_2px_rgba(14,22,34,0.32)]"
-      />
+      <PinDot />
 
       {hasPhoto && item.photoUrl ? (
         <div
@@ -312,6 +366,7 @@ function CompactClipboardCard({
             // image gets a touch more vertical presence.
             hasText ? "aspect-square" : "aspect-[3/4]",
           )}
+          style={{ transform: `rotate(${photoTilt}deg)` }}
         >
           <Image
             src={item.photoUrl}

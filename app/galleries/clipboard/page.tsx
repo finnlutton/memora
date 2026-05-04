@@ -13,20 +13,10 @@ import {
   type ClipboardItem,
 } from "@/hooks/use-clipboard-items";
 
-// Five-step tilt cycle keyed off the item id — gives the mobile scrap
-// stack its "pinned at slightly different angles" character without
-// forcing each card to track its own random angle. Stable across
-// renders for the same id so a memory doesn't twitch when the list
-// re-orders or refetches.
-const TILT_ANGLES = [-1.6, -0.9, 0, 1, 1.7];
-
-function tiltFor(id: string): number {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = (hash * 31 + id.charCodeAt(i)) | 0;
-  }
-  return TILT_ANGLES[Math.abs(hash) % TILT_ANGLES.length];
-}
+// Tilt is computed inside ClipboardCard from item.id so both the
+// mobile compact stack and the desktop drag-canvas share the same
+// "pinned at slightly different angles" treatment. The page no longer
+// needs to forward a tilt prop — the card resolves it itself.
 
 /**
  * Clipboard page — full-bleed paper surface that fills the workspace
@@ -190,7 +180,6 @@ export default function ClipboardPage() {
                         onUpdateContent={updateContent}
                         onRemove={removeItem}
                         variant="compact"
-                        tilt={tiltFor(item.id)}
                         onOpenDetail={(id) => setDetailItemId(id)}
                         // First few thumbnails are above-the-fold or
                         // just below; preload them eagerly so the
