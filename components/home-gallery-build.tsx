@@ -62,12 +62,18 @@ const INTRO_TOTAL_MS =
 // Build phase offsets, relative to the start of the build phase.
 const BUILD = {
   shellIn: 0,
-  coverUploadStart: 280,
-  coverUploadDone: 1180,
-  titleStart: 520,
-  metaStart: 2000,
-  descStart: 2280,
-  subgalleryStart: 6200,
+  // Cover assembles in stages: empty dropzone → thumbnail drags in →
+  // photo fills the frame. The hint copy needs a beat alone before the
+  // thumbnail spawns so the visitor can actually read it.
+  coverEmptyStart: 220,
+  coverThumbAppear: 1100,
+  coverDragEnd: 2900,
+  coverFillStart: 3000,
+  coverFillDone: 3500,
+  titleStart: 700,
+  metaStart: 3700,
+  descStart: 4000,
+  subgalleryStart: 7900,
   // Subgalleries reveal one-by-one with a deliberate cadence: image
   // settles first, then the writing fills in below it. The long stagger
   // (1.3s) gives each card its own beat — feels considered, not loaded.
@@ -77,8 +83,8 @@ const BUILD = {
   subgalleryTextOffsetMs: 380,
   // ~850ms reveal + 380ms internal stagger ⇒ a card is "fully in" ~1.2s
   // after its visibleAt; shift the hint in just after the last one settles.
-  hintShow: 6200 + 2 * 1300 + 1300,
-  settled: 6200 + 2 * 1300 + 1600,
+  hintShow: 7900 + 2 * 1300 + 1300,
+  settled: 7900 + 2 * 1300 + 1600,
 } as const;
 
 const TITLE_TYPE_MS = 55;
@@ -484,8 +490,14 @@ function BuildView({
   const titleDone = titleProgress >= 1;
   const descDone = descProgress >= 1;
 
-  const coverProgress = between(BUILD.coverUploadStart, BUILD.coverUploadDone);
-  const coverShown = past(BUILD.coverUploadStart);
+  // Cover assembly stages — drives both the dropzone visuals and the
+  // floating thumbnail that drags into the frame.
+  const coverEmptyVisible = past(BUILD.coverEmptyStart) && !past(BUILD.coverFillStart);
+  const coverThumbVisible =
+    past(BUILD.coverThumbAppear) && !past(BUILD.coverFillStart);
+  const coverFillVisible = past(BUILD.coverFillStart);
+  const coverProgress = between(BUILD.coverFillStart, BUILD.coverFillDone);
+  const coverDragDurationMs = BUILD.coverDragEnd - BUILD.coverThumbAppear;
 
   return (
     <div>
@@ -511,9 +523,55 @@ function BuildView({
             ) : null}
           </h3>
           <div className="mt-4 block w-full text-left md:mt-5">
+            {/* Outer paper border — keeps overflow visible so the floating
+                drag thumbnail can travel from above the frame down into it. */}
             <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-2 md:p-[14px]">
-              <div className="relative aspect-[16/10] overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)]">
-                {coverShown ? (
+              {/* Inner cover frame: dashed during the empty/drag phases,
+                  solid once the photo has settled in. */}
+              <div
+                className={`relative aspect-[16/10] overflow-hidden border bg-[color:var(--paper-strong)] transition-[border-color,border-style] duration-500 ${
+                  settled || coverFillVisible
+                    ? "border-solid border-[color:var(--border)]"
+                    : "border-dashed border-[color:var(--ink-faint)]/55"
+                }`}
+              >
+                {/* Empty dropzone state */}
+                <AnimatePresence>
+                  {!settled && coverEmptyVisible ? (
+                    <motion.div
+                      key="empty"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.4, ease: EASE }}
+                      className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-4 text-center"
+                      aria-hidden
+                    >
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--ink-faint)]/45 text-[color:var(--ink-faint)]">
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 14 14"
+                          fill="none"
+                          aria-hidden
+                        >
+                          <path
+                            d="M7 1.5 V 12.5 M 1.5 7 H 12.5"
+                            stroke="currentColor"
+                            strokeWidth="1.4"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </span>
+                      <p className="font-serif text-[14px] italic leading-snug text-[color:var(--ink-soft)] md:text-[15px]">
+                        Add a cover photo for your gallery
+                      </p>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+
+                {/* Final cover image — fades in as the dropzone settles. */}
+                {coverFillVisible ? (
                   <motion.div
                     className="absolute inset-0"
                     initial={{ opacity: 0, scale: 1.02 }}
@@ -530,17 +588,75 @@ function BuildView({
                     />
                   </motion.div>
                 ) : null}
-                {/* Upload progress sweep — faint horizontal bar across the top
-                    while the cover is loading in. Quiet, not gimmicky. */}
-                {!settled && coverShown && coverProgress < 1 ? (
+
+                {/* Upload progress sweep — quiet bar across the top while
+                    the photo is filling in. */}
+                {!settled && coverFillVisible && coverProgress < 1 ? (
                   <div className="absolute inset-x-0 top-0 h-[2px] bg-[color:var(--paper-strong)]/60">
                     <div
                       className="h-full bg-[color:var(--ink)]/65"
-                      style={{ width: `${Math.round(coverProgress * 100)}%`, transition: "width 80ms linear" }}
+                      style={{
+                        width: `${Math.round(coverProgress * 100)}%`,
+                        transition: "width 80ms linear",
+                      }}
                     />
                   </div>
                 ) : null}
               </div>
+
+              {/* Floating drag thumbnail — travels from above-right down
+                  into the centre of the frame, then disappears as the
+                  full cover takes over. Lives outside the inner frame's
+                  overflow-hidden so it can enter from outside. The
+                  static `left`/`top` keep the thumbnail centred when the
+                  motion x/y offsets settle to zero. */}
+              <AnimatePresence>
+                {!settled && coverThumbVisible ? (
+                  <motion.div
+                    key="thumb"
+                    style={{
+                      left: "calc(50% - 12%)",
+                      top: "calc(50% - 12%)",
+                      width: "24%",
+                      aspectRatio: "16 / 10",
+                    }}
+                    initial={{
+                      opacity: 0,
+                      x: "120%",
+                      y: "-300%",
+                      rotate: -8,
+                      scale: 0.97,
+                    }}
+                    animate={{
+                      opacity: 1,
+                      x: 0,
+                      y: 0,
+                      rotate: 0,
+                      scale: 1,
+                    }}
+                    exit={{
+                      opacity: 0,
+                      transition: { duration: 0.45, ease: EASE },
+                    }}
+                    transition={{
+                      duration: coverDragDurationMs / 1000,
+                      ease: EASE,
+                      opacity: { duration: 0.5, ease: EASE },
+                    }}
+                    className="pointer-events-none absolute z-10 overflow-hidden border-2 border-white shadow-[0_18px_40px_-10px_rgba(15,24,35,0.45)]"
+                    aria-hidden
+                  >
+                    <Image
+                      src={gallery.coverImage}
+                      alt=""
+                      fill
+                      sizes="40vw"
+                      quality={70}
+                      className="object-cover"
+                    />
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
             </div>
           </div>
           <div className="mt-2 min-h-[14px]">
@@ -572,7 +688,7 @@ function BuildView({
               visible={past(BUILD.subgalleryStart)}
             />
 
-            <div className="mt-0 grid gap-x-6 gap-y-12 sm:grid-cols-2 md:grid-cols-3 md:gap-x-8 md:gap-y-16">
+            <div className="mt-0 grid grid-cols-3 gap-x-2 gap-y-6 sm:gap-x-4 sm:gap-y-10 md:gap-x-8 md:gap-y-16">
               {gallery.subgalleries.map((sub, i) => {
                 const visibleAt =
                   BUILD.subgalleryStart + i * BUILD.subgalleryStagger;
@@ -604,7 +720,7 @@ function BuildView({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
                   transition={{ duration: 0.45, ease: EASE }}
-                  className="pointer-events-none mt-10 hidden md:block"
+                  className="pointer-events-none mt-6 md:mt-10"
                   aria-hidden
                 >
                   <div className="relative mx-auto flex max-w-[44rem] flex-col items-center">
@@ -613,7 +729,7 @@ function BuildView({
                       height="46"
                       viewBox="0 0 200 46"
                       preserveAspectRatio="none"
-                      className="mb-1 block h-[42px] w-[180px] text-[color:var(--ink-soft)]/60"
+                      className="mb-1 block h-[30px] w-[120px] text-[color:var(--ink-soft)]/60 sm:h-[36px] sm:w-[150px] md:h-[42px] md:w-[180px]"
                       aria-hidden
                     >
                       {/* Arrow head at the top, pointing up at the middle
@@ -635,25 +751,11 @@ function BuildView({
                         strokeLinejoin="round"
                       />
                     </svg>
-                    <p className="text-center font-serif text-[15px] italic leading-snug text-[color:var(--ink-soft)] md:text-[16px]">
+                    <p className="text-center font-serif text-[12px] italic leading-snug text-[color:var(--ink-soft)] sm:text-[14px] md:text-[16px]">
                       Click on a subgallery to reveal its scenes
                     </p>
                   </div>
                 </motion.div>
-              ) : null}
-              {/* Mobile fallback — same copy without the curved line. */}
-              {past(BUILD.hintShow) && openSubId === null ? (
-                <motion.p
-                  key="hint-mobile"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.4, ease: EASE }}
-                  className="mt-8 text-center font-serif text-[14px] italic leading-snug text-[color:var(--ink-soft)] md:hidden"
-                  aria-hidden
-                >
-                  Tap a subgallery to reveal its scenes
-                </motion.p>
               ) : null}
             </AnimatePresence>
 
@@ -679,7 +781,7 @@ function BuildView({
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -4 }}
                         transition={{ duration: 0.32, ease: EASE }}
-                        className="mx-auto mt-4 grid max-w-5xl grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 md:grid-cols-4 md:gap-x-5 md:gap-y-8"
+                        className="mx-auto mt-4 grid max-w-5xl grid-cols-4 gap-x-1.5 gap-y-3 sm:gap-x-3 sm:gap-y-5 md:gap-x-5 md:gap-y-8"
                       >
                         {openSub.scenes.map((scene) => (
                           <SceneCard
@@ -728,7 +830,7 @@ function SubgalleryCard({
         initial={false}
         animate={{ opacity: coverVisible ? 1 : 0 }}
         transition={{ duration: 0.5, ease: EASE }}
-        className="font-[family-name:var(--font-mono)] text-[9.5px] uppercase tracking-[0.28em] text-[color:var(--ink-faint)]"
+        className="font-[family-name:var(--font-mono)] text-[7.5px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)] sm:text-[8.5px] sm:tracking-[0.22em] md:text-[9.5px] md:tracking-[0.28em]"
       >
         Subgallery
       </motion.p>
@@ -745,9 +847,9 @@ function SubgalleryCard({
           scale: coverVisible ? 1 : 0.985,
         }}
         transition={{ duration: 0.85, ease: EASE }}
-        className={`group mt-3 block w-full text-left transition-opacity ${interactive ? "cursor-pointer" : "cursor-default"} ${interactive && !open ? "opacity-90 hover:opacity-100" : "opacity-100"}`}
+        className={`group mt-2 block w-full text-left transition-opacity sm:mt-3 ${interactive ? "cursor-pointer" : "cursor-default"} ${interactive && !open ? "opacity-90 hover:opacity-100" : "opacity-100"}`}
       >
-        <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-2 md:p-[12px]">
+        <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-1 sm:p-[6px] md:p-[12px]">
           <div className="relative aspect-[5/3] overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)]">
             <Image
               src={sub.coverImage}
@@ -763,7 +865,7 @@ function SubgalleryCard({
           initial={false}
           animate={{ opacity: textVisible ? 1 : 0, y: textVisible ? 0 : 6 }}
           transition={{ duration: 0.55, ease: EASE }}
-          className="mt-2 font-serif text-[22px] leading-[1.12] text-[color:var(--ink)] md:mt-3 md:text-[28px]"
+          className="mt-1.5 font-serif text-[12px] leading-[1.2] text-[color:var(--ink)] sm:mt-2 sm:text-[15px] md:mt-2.5 md:text-[20px]"
         >
           {sub.title}
         </motion.h4>
@@ -773,7 +875,7 @@ function SubgalleryCard({
           initial={false}
           animate={{ opacity: textVisible ? 1 : 0, y: textVisible ? 0 : 6 }}
           transition={{ duration: 0.55, delay: 0.06, ease: EASE }}
-          className="mt-2 font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)]"
+          className="mt-1.5 font-[family-name:var(--font-mono)] text-[8px] uppercase tracking-[0.1em] text-[color:var(--ink-faint)] sm:mt-2 sm:text-[9px] sm:tracking-[0.13em] md:text-[10px] md:tracking-[0.16em]"
         >
           {meta}
         </motion.p>
@@ -805,20 +907,20 @@ function SceneCard({
       transition={{ duration: instant ? 0 : 0.45, ease: EASE }}
       className="flex flex-col"
     >
-      <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-1.5 md:p-2.5">
+      <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-[3px] sm:p-1.5 md:p-2.5">
         <div className="relative aspect-[4/3] overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)]">
           <Image
             src={scene.image}
             alt={scene.title ?? "Scene"}
             fill
-            sizes="(max-width: 768px) 50vw, 480px"
+            sizes="(max-width: 640px) 25vw, (max-width: 1024px) 25vw, 240px"
             quality={80}
             className="object-cover"
           />
         </div>
       </div>
       {scene.caption ? (
-        <p className="mt-2.5 font-serif text-[13px] italic leading-snug text-[color:var(--ink-soft)] md:text-[14px]">
+        <p className="mt-1.5 font-serif text-[9px] italic leading-snug text-[color:var(--ink-soft)] sm:mt-2 sm:text-[11px] md:mt-2.5 md:text-[14px]">
           {scene.caption}
         </p>
       ) : null}
@@ -843,7 +945,7 @@ function BranchConnector({
       initial={false}
       animate={{ opacity: visible ? 1 : 0 }}
       transition={{ duration: 0.4, ease: EASE }}
-      className="relative mx-auto hidden w-full sm:block"
+      className="relative mx-auto block w-full"
       aria-hidden
     >
       <div
