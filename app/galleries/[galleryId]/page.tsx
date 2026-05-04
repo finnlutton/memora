@@ -61,77 +61,85 @@ export default function GalleryDetailPage() {
   return (
     <AppShell accent="immersive">
       <div className="flex min-h-[calc(100vh-9rem)] flex-col">
+      {/* Quiet chrome row — back breadcrumb on the left, kebab on the
+          right. Pinned to the very top of the workspace at all sizes so
+          the title section directly below remains the focal point. */}
+      <div className="mb-3 flex items-center justify-between gap-2 md:mb-4">
+        <Link
+          href="/galleries"
+          className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.2em] text-[color:var(--ink-soft)] transition hover:text-[color:var(--ink)]"
+        >
+          <ArrowLeft className="h-3 w-3" />
+          Back
+        </Link>
+        <div className="relative">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => setActionsOpen((value) => !value)}
+            aria-label="More actions"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+          {actionsOpen ? (
+            <>
+              <div
+                aria-hidden
+                onClick={() => setActionsOpen(false)}
+                className="fixed inset-0 z-30 bg-[rgba(9,14,22,0.32)] backdrop-blur-[1px] md:hidden"
+              />
+              <div
+                role="menu"
+                style={{
+                  paddingBottom:
+                    "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)",
+                }}
+                className="fixed inset-x-0 bottom-0 z-40 flex flex-col gap-1 border-t border-[color:var(--border-strong)] bg-[color:var(--chrome-strong)] p-3 shadow-[0_-14px_34px_rgba(0,0,0,0.18)] md:absolute md:inset-auto md:right-0 md:top-[calc(100%+0.45rem)] md:w-48 md:rounded-xl md:border md:p-2 md:pb-2"
+              >
+                <Link
+                  href={`/galleries/${gallery.id}/subgalleries/new`}
+                  onClick={() => setActionsOpen(false)}
+                  className="flex h-12 items-center rounded-lg px-3 text-[14px] text-[color:var(--ink)] transition hover:bg-[color:var(--paper)] md:h-auto md:py-2 md:text-sm"
+                >
+                  Add subgallery
+                </Link>
+                {gallery.subgalleries.length > 0 ? (
+                  <Link
+                    href={`/galleries/${gallery.id}/subgalleries/${gallery.subgalleries[activeSubgalleryIndex].id}/edit`}
+                    onClick={() => setActionsOpen(false)}
+                    className="flex h-12 items-center rounded-lg px-3 text-[14px] text-[color:var(--ink)] transition hover:bg-[color:var(--paper)] md:h-auto md:py-2 md:text-sm"
+                  >
+                    Edit subgallery
+                  </Link>
+                ) : null}
+                <Link
+                  href={`/galleries/${gallery.id}/edit`}
+                  onClick={() => setActionsOpen(false)}
+                  className="flex h-12 items-center rounded-lg px-3 text-[14px] text-[color:var(--ink)] transition hover:bg-[color:var(--paper)] md:h-auto md:py-2 md:text-sm"
+                >
+                  Edit gallery
+                </Link>
+                <div className="px-1 py-1.5">
+                  <ConfirmDeleteDialog
+                    title="Delete this gallery?"
+                    description="This removes the gallery and every subgallery inside it from local storage."
+                    triggerLabel="Delete gallery"
+                    onConfirm={() => {
+                      setActionsOpen(false);
+                      void deleteGallery(gallery.id).then(() => {
+                        router.push("/galleries");
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+            </>
+          ) : null}
+        </div>
+      </div>
       <WorkspaceTopbar
         eyebrow="Gallery workspace"
         title={gallery.title}
-        actions={
-          <>
-            <Button asChild variant="ghost">
-              <Link href="/galleries">
-                <ArrowLeft className="h-3.5 w-3.5" />
-                Back
-              </Link>
-            </Button>
-            <Button asChild>
-              <Link href={`/galleries/${gallery.id}/subgalleries/new`}>Add subgallery</Link>
-            </Button>
-            <div className="relative">
-              <Button type="button" variant="secondary" onClick={() => setActionsOpen((value) => !value)}>
-                <MoreHorizontal className="h-4 w-4" />
-                More
-              </Button>
-              {actionsOpen ? (
-                <>
-                  {/* Mobile-only scrim — taps outside the sheet dismiss it.
-                      Desktop uses the existing inline-popover behavior. */}
-                  <div
-                    aria-hidden
-                    onClick={() => setActionsOpen(false)}
-                    className="fixed inset-0 z-30 bg-[rgba(9,14,22,0.32)] backdrop-blur-[1px] md:hidden"
-                  />
-                  <div
-                    role="menu"
-                    style={{
-                      paddingBottom:
-                        "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)",
-                    }}
-                    className="fixed inset-x-0 bottom-0 z-40 flex flex-col gap-1 border-t border-[color:var(--border-strong)] bg-[color:var(--chrome-strong)] p-3 shadow-[0_-14px_34px_rgba(0,0,0,0.18)] md:absolute md:inset-auto md:right-0 md:top-[calc(100%+0.45rem)] md:w-48 md:rounded-xl md:border md:p-2 md:pb-2"
-                  >
-                    {gallery.subgalleries.length > 0 ? (
-                      <Link
-                        href={`/galleries/${gallery.id}/subgalleries/${gallery.subgalleries[activeSubgalleryIndex].id}/edit`}
-                        onClick={() => setActionsOpen(false)}
-                        className="flex h-12 items-center rounded-lg px-3 text-[14px] text-[color:var(--ink)] transition hover:bg-[color:var(--paper)] md:h-auto md:py-2 md:text-sm"
-                      >
-                        Edit subgallery
-                      </Link>
-                    ) : null}
-                    <Link
-                      href={`/galleries/${gallery.id}/edit`}
-                      onClick={() => setActionsOpen(false)}
-                      className="flex h-12 items-center rounded-lg px-3 text-[14px] text-[color:var(--ink)] transition hover:bg-[color:var(--paper)] md:h-auto md:py-2 md:text-sm"
-                    >
-                      Edit gallery
-                    </Link>
-                    <div className="px-1 py-1.5">
-                      <ConfirmDeleteDialog
-                        title="Delete this gallery?"
-                        description="This removes the gallery and every subgallery inside it from local storage."
-                        triggerLabel="Delete gallery"
-                        onConfirm={() => {
-                          setActionsOpen(false);
-                          void deleteGallery(gallery.id).then(() => {
-                            router.push("/galleries");
-                          });
-                        }}
-                      />
-                    </div>
-                  </div>
-                </>
-              ) : null}
-            </div>
-          </>
-        }
       />
       {hydrated && onboarding.isAuthenticated && overLimitReport.hasOverLimit && selectedPlan ? (
         <OverLimitBanner

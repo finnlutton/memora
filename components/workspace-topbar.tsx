@@ -39,8 +39,8 @@ export function WorkspaceTopbar({
         // When the title is hidden on mobile we collapse to a single row so the
         // eyebrow sits top-left and the actions sit top-right, side by side.
         hideTitleOnMobile
-          ? "mb-8 flex flex-row items-center justify-between gap-3 md:mb-12 md:items-start md:gap-6"
-          : "mb-8 flex flex-col gap-4 md:mb-12 md:flex-row md:items-start md:justify-between md:gap-6",
+          ? "mb-6 flex flex-row items-center justify-between gap-3 md:mb-12 md:items-start md:gap-6"
+          : "mb-6 flex flex-col gap-3 md:mb-12 md:flex-row md:items-start md:justify-between md:gap-6",
         className,
       )}
     >
@@ -52,7 +52,7 @@ export function WorkspaceTopbar({
         ) : null}
         <h1
           className={cn(
-            "mt-2 font-serif text-[40px] leading-[0.94] text-[color:var(--ink)] md:mt-3 md:text-[64px]",
+            "mt-1.5 font-serif text-[28px] leading-[1] text-[color:var(--ink)] md:mt-3 md:text-[64px] md:leading-[0.94]",
             hideTitleOnMobile && "hidden md:block",
           )}
         >
