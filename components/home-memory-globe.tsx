@@ -21,7 +21,7 @@ const DEMO_PINS: DemoPin[] = [
   { id: "baja", title: "Baja Surf Trip", location: "Baja California, MX", season: "Mar 2024", lat: 26.0444, lng: -111.3456 },
   { id: "sicily", title: "Road Trip From Sicily", location: "Taormina, Italy", season: "Jun 2023", lat: 37.8516, lng: 15.2853 },
   { id: "cotswolds", title: "Cotswolds Day Trip", location: "Gloucestershire, UK", season: "May 2023", lat: 51.8355, lng: -1.8433 },
-  { id: "granada", title: "Granada Semester", location: "Andalucía, Spain", season: "Jan 2026", lat: 37.1773, lng: -3.5986 },
+  { id: "granada", title: "Semester abroad", location: "Andalucía, Spain", season: "Jan 2026", lat: 37.1773, lng: -3.5986 },
 ];
 
 /**
