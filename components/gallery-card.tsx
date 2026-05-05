@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { ArrowDown, ArrowUp, Check } from "lucide-react";
 import {
   formatDateRangeCompact,
   formatLocationForCard,
@@ -30,11 +30,25 @@ export function GalleryCard({
   shareSelectable = false,
   selected = false,
   onToggleSelected,
+  reorderMode = false,
+  canMoveUp = false,
+  canMoveDown = false,
+  onMoveUp,
+  onMoveDown,
 }: {
   gallery: Gallery;
   shareSelectable?: boolean;
   selected?: boolean;
   onToggleSelected?: (galleryId: string) => void;
+  /**
+   * When true, the card replaces its Link wrapper with a non-navigating
+   * div and exposes a small up/down arrow pill on the cover image.
+   */
+  reorderMode?: boolean;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
+  onMoveUp?: (galleryId: string) => void;
+  onMoveDown?: (galleryId: string) => void;
 }) {
   // Prefer the persisted gallery cover; fall back to first subgallery if absent.
   const coverImage = gallery.coverImage || gallery.subgalleries[0]?.coverImage;
@@ -113,6 +127,45 @@ export function GalleryCard({
             <Check className="h-2.5 w-2.5 md:h-3.5 md:w-3.5" strokeWidth={2.4} />
           </button>
         ) : null}
+        {reorderMode ? (
+          // Up/down pill sits where the share checkbox would. Sized so
+          // it reads as overlay chrome, not a button-bar — the user is
+          // already in a dedicated mode and doesn't need labels.
+          <div
+            className="absolute right-1.5 top-1.5 inline-flex items-center overflow-hidden rounded-full border border-white/70 bg-[rgba(255,255,255,0.85)] backdrop-blur md:right-4 md:top-4"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+          >
+            <button
+              type="button"
+              aria-label={`Move ${gallery.title} up`}
+              disabled={!canMoveUp}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onMoveUp?.(gallery.id);
+              }}
+              className="inline-flex h-5 w-5 items-center justify-center text-[color:var(--ink)] transition hover:bg-[rgba(0,0,0,0.06)] disabled:cursor-not-allowed disabled:opacity-30 md:h-7 md:w-7"
+            >
+              <ArrowUp className="h-2.5 w-2.5 md:h-3.5 md:w-3.5" strokeWidth={2.2} />
+            </button>
+            <button
+              type="button"
+              aria-label={`Move ${gallery.title} down`}
+              disabled={!canMoveDown}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onMoveDown?.(gallery.id);
+              }}
+              className="inline-flex h-5 w-5 items-center justify-center border-l border-white/70 text-[color:var(--ink)] transition hover:bg-[rgba(0,0,0,0.06)] disabled:cursor-not-allowed disabled:opacity-30 md:h-7 md:w-7"
+            >
+              <ArrowDown className="h-2.5 w-2.5 md:h-3.5 md:w-3.5" strokeWidth={2.2} />
+            </button>
+          </div>
+        ) : null}
       </div>
       {yearBadge ? (
         <span
@@ -153,6 +206,13 @@ export function GalleryCard({
   );
 
   const groupClass = "group block";
+
+  if (reorderMode) {
+    // Reorder mode owns clicks via the inline arrow pill — the rest of
+    // the card is intentionally inert so a stray click on the cover
+    // doesn't navigate to the gallery detail page.
+    return <div className={groupClass}>{body}</div>;
+  }
 
   if (shareSelectable) {
     return (

@@ -225,6 +225,14 @@ type MemoraStore = {
   createGallery: (input: GalleryInput) => Promise<string>;
   updateGallery: (galleryId: string, input: GalleryInput) => Promise<void>;
   deleteGallery: (galleryId: string) => Promise<void>;
+  /**
+   * Persist a new top-to-bottom ordering of the user's galleries on the
+   * workspace /galleries page. `orderedIds` is the desired order;
+   * any gallery missing from it keeps its current relative position
+   * appended at the end so a stale call can't drop galleries from the
+   * sort.
+   */
+  reorderGalleries: (orderedIds: string[]) => Promise<void>;
   createSubgallery: (galleryId: string, input: SubgalleryInput) => Promise<string>;
   updateSubgallery: (
     galleryId: string,
@@ -317,6 +325,7 @@ type GalleryRow = {
   people?: string[] | null;
   mood_tags?: string[] | null;
   privacy?: "private" | "public" | null;
+  display_order?: number | null;
 };
 
 type SubgalleryRow = {
@@ -806,6 +815,7 @@ async function loadUserGalleriesFromSupabase(
       people: gallery.people ?? [],
       moodTags: gallery.mood_tags ?? [],
       privacy: gallery.privacy ?? "private",
+      displayOrder: gallery.display_order ?? null,
       createdAt: gallery.created_at,
       updatedAt: gallery.updated_at,
       subgalleries: subgalleriesByGallery.get(gallery.id) ?? [],
@@ -1440,6 +1450,7 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           people: input.people,
           moodTags: input.moodTags,
           privacy: input.privacy,
+          displayOrder: null,
           id: nextGalleryId,
           coverImage: persistedCover,
           createdAt: timestamp,
@@ -1448,6 +1459,25 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           directPhotos: [],
           dividers: [],
         };
+        // If the user has ever reordered, push the new gallery to the
+        // top of the manual order by giving it a display_order one
+        // below the smallest existing value. Without this, a freshly
+        // created gallery would fall to the end (NULLS LAST sort).
+        const existingOrders = galleries
+          .map((entry) => entry.displayOrder)
+          .filter((value): value is number => typeof value === "number");
+        if (existingOrders.length > 0) {
+          const nextOrder = Math.min(...existingOrders) - 1;
+          nextGallery.displayOrder = nextOrder;
+          if (onboarding.isAuthenticated && onboarding.user?.id) {
+            const supabase = createSupabaseBrowserClient();
+            void supabase
+              .from("galleries")
+              .update({ display_order: nextOrder })
+              .eq("id", nextGalleryId)
+              .eq("user_id", onboarding.user.id);
+          }
+        }
         setActiveGalleries((current) => [nextGallery, ...current]);
         console.info("Memora: create gallery local state update", {
           galleryId: nextGallery.id,
@@ -1573,6 +1603,46 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           ]);
         }
         setActiveGalleries((current) => current.filter((gallery) => gallery.id !== galleryId));
+      },
+      async reorderGalleries(orderedIds) {
+        // Defensive: only reorder ids that actually belong to this
+        // user's collection. Anything missing keeps its current
+        // relative position appended at the end so a stale call can't
+        // drop galleries from local state.
+        const knownIds = new Set(galleries.map((g) => g.id));
+        const requested = orderedIds.filter((id) => knownIds.has(id));
+        const missing = galleries
+          .map((g) => g.id)
+          .filter((id) => !requested.includes(id));
+        const finalOrder = [...requested, ...missing];
+
+        if (onboarding.isAuthenticated) {
+          const supabase = createSupabaseBrowserClient();
+          const { data } = await supabase.auth.getUser();
+          const userId = data.user?.id;
+          if (!userId) {
+            throw new Error("Please sign in again to reorder galleries.");
+          }
+          await Promise.all(
+            finalOrder.map((id, index) =>
+              supabase
+                .from("galleries")
+                .update({ display_order: index })
+                .eq("id", id)
+                .eq("user_id", userId),
+            ),
+          );
+        }
+
+        const galleryById = new Map(galleries.map((entry) => [entry.id, entry]));
+        const reordered = finalOrder
+          .map((id, index) => {
+            const entry = galleryById.get(id);
+            if (!entry) return undefined;
+            return { ...entry, displayOrder: index } as Gallery;
+          })
+          .filter((entry): entry is Gallery => Boolean(entry));
+        setActiveGalleries(() => reordered);
       },
       async createSubgallery(galleryId, input) {
         const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);

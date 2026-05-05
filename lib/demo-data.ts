@@ -33,6 +33,7 @@ export const demoGalleries: Gallery[] = [
     people: ["Maya", "Elias"],
     moodTags: ["Quiet luxury", "Snow light", "Train days"],
     privacy: "private",
+    displayOrder: null,
     createdAt: now,
     updatedAt: now,
     subgalleries: [
@@ -124,6 +125,7 @@ export const demoGalleries: Gallery[] = [
     people: ["Lucia", "Andres", "Nina"],
     moodTags: ["Golden stone", "Late summer", "Daylight walks"],
     privacy: "public",
+    displayOrder: null,
     createdAt: now,
     updatedAt: now,
     subgalleries: [

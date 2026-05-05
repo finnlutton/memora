@@ -75,6 +75,13 @@ export type Gallery = {
   people: string[];
   moodTags: string[];
   privacy: GalleryPrivacy;
+  /**
+   * Manual sort position on the workspace /galleries page. `null` means
+   * the user has never reordered — sort falls back to `updatedAt DESC`.
+   * Once any reorder happens we write integers across every visible
+   * gallery so the chosen order is fully deterministic.
+   */
+  displayOrder: number | null;
   createdAt: string;
   updatedAt: string;
   subgalleries: Subgallery[];

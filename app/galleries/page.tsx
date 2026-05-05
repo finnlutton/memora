@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Pencil, Plus, Share2, X } from "lucide-react";
+import { ArrowRight, ArrowUpDown, Pencil, Plus, Share2, X } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { EmptyState } from "@/components/empty-state";
@@ -19,11 +19,13 @@ import { useMemoraStore } from "@/hooks/use-memora-store";
 import { useRecipientGroups } from "@/hooks/use-recipient-groups";
 import { computeOverLimit } from "@/lib/over-limit";
 import { getMembershipPlan } from "@/lib/plans";
+import { reorderList } from "@/lib/utils";
 
 export default function GalleriesPage() {
-  const { galleries, hydrated, onboarding } = useMemoraStore();
+  const { galleries, hydrated, onboarding, reorderGalleries } = useMemoraStore();
   const [shareMode, setShareMode] = useState(false);
   const [sharePanelOpen, setSharePanelOpen] = useState(false);
+  const [reorderMode, setReorderMode] = useState(false);
   const [selectedGalleryIds, setSelectedGalleryIds] = useState<string[]>([]);
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   // Custom share message is drafted so a user typing a long note who
@@ -51,10 +53,18 @@ export default function GalleriesPage() {
   } | null>(null);
   const sortedGalleries = useMemo(
     () =>
-      [...galleries].sort(
-        (left, right) =>
-          new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
-      ),
+      // `displayOrder ASC NULLS LAST, updatedAt DESC` — once any
+      // gallery has a manual order it anchors first; new galleries
+      // (created post-reorder) get pushed to the top via a min-1
+      // displayOrder in createGallery, so they don't fall to the end.
+      [...galleries].sort((left, right) => {
+        const leftOrder = left.displayOrder ?? Number.POSITIVE_INFINITY;
+        const rightOrder = right.displayOrder ?? Number.POSITIVE_INFINITY;
+        if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+        return (
+          new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
+        );
+      }),
     [galleries],
   );
   const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);
@@ -181,6 +191,7 @@ export default function GalleriesPage() {
                 onClick={() => {
                   setShareMode(true);
                   setSharePanelOpen(false);
+                  setReorderMode(false);
                   setSelectedGalleryIds([]);
                   setSelectedGroupIds([]);
                   setCustomMessage("");
@@ -191,6 +202,24 @@ export default function GalleriesPage() {
                 <span className="md:hidden">Share</span>
                 <span className="hidden md:inline">Share Galleries</span>
               </Button>
+              {sortedGalleries.length > 1 ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  aria-label="Reorder galleries"
+                  title="Reorder galleries"
+                  className="h-10 w-10 shrink-0 px-0 text-[color:var(--ink-soft)] hover:text-[color:var(--ink)] md:h-auto md:w-auto md:px-2 md:py-2"
+                  onClick={() => {
+                    setReorderMode(true);
+                    setShareMode(false);
+                    setSharePanelOpen(false);
+                    setSelectedGalleryIds([]);
+                    setSelectedGroupIds([]);
+                  }}
+                >
+                  <ArrowUpDown className="h-3.5 w-3.5" />
+                </Button>
+              ) : null}
             </>
           }
         />
@@ -261,6 +290,11 @@ export default function GalleriesPage() {
               <span className="text-[color:var(--ink)]">{selectedCount} selected</span>
             </div>
           ) : null}
+          {reorderMode ? (
+            <div className="flex items-center justify-between rounded-xl border border-[color:var(--border)] bg-[color:var(--chrome)] px-2.5 py-1.5 text-xs text-[color:var(--ink-soft)] md:px-3 md:py-2 md:text-sm">
+              <span>Reorder mode. Use the arrows on each gallery to rearrange.</span>
+            </div>
+          ) : null}
           {/*
             Editorial grid rhythm: 1-col on mobile/tablet so each photograph
             reads as a photograph, 2-col at lg+ with generous horizontal gap
@@ -269,7 +303,7 @@ export default function GalleriesPage() {
             decisive layout is the curated choice.
           */}
           <div className="grid grid-cols-2 gap-x-3 gap-y-7 md:gap-x-8 md:gap-y-14 lg:grid-cols-2 lg:gap-x-10 lg:gap-y-16">
-          {sortedGalleries.map((gallery) => (
+          {sortedGalleries.map((gallery, index) => (
             <GalleryCard
               key={gallery.id}
               gallery={gallery}
@@ -282,6 +316,25 @@ export default function GalleriesPage() {
                     : [...current, galleryId],
                 )
               }
+              reorderMode={reorderMode}
+              canMoveUp={reorderMode && index > 0}
+              canMoveDown={reorderMode && index < sortedGalleries.length - 1}
+              onMoveUp={(galleryId) => {
+                const fromIndex = sortedGalleries.findIndex(
+                  (entry) => entry.id === galleryId,
+                );
+                if (fromIndex <= 0) return;
+                const next = reorderList(sortedGalleries, fromIndex, fromIndex - 1);
+                void reorderGalleries(next.map((entry) => entry.id));
+              }}
+              onMoveDown={(galleryId) => {
+                const fromIndex = sortedGalleries.findIndex(
+                  (entry) => entry.id === galleryId,
+                );
+                if (fromIndex < 0 || fromIndex >= sortedGalleries.length - 1) return;
+                const next = reorderList(sortedGalleries, fromIndex, fromIndex + 1);
+                void reorderGalleries(next.map((entry) => entry.id));
+              }}
             />
           ))}
           </div>
@@ -365,6 +418,26 @@ export default function GalleriesPage() {
           return { shareUrl: payload.shareUrl };
         }}
       />
+      <AnimatePresence>
+        {reorderMode ? (
+          <motion.div
+            key="reorder-floating-bar"
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8, transition: { duration: 0.15 } }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+              bottom:
+                "calc(env(safe-area-inset-bottom, 0px) + var(--memora-bottom-banner, 0px) + 1.25rem)",
+            }}
+            className="fixed right-5 z-40 flex items-center gap-2 rounded-full border border-[color:var(--border-strong)] bg-[color:var(--chrome-strong)] p-2 shadow-[0_16px_40px_rgba(0,0,0,0.18)] md:right-7"
+          >
+            <Button type="button" onClick={() => setReorderMode(false)}>
+              Done
+            </Button>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
       <AnimatePresence>
         {shareMode && !sharePanelOpen ? (
           <motion.div
