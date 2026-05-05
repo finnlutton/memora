@@ -121,15 +121,17 @@ export default async function PublicProfilePage({
         <p className="font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
           @{profile.handle}
         </p>
-        {/* Mobile title scale bumped from text-3xl → text-4xl so the
-            identity block has more presence in the narrower viewport;
-            paired with extra mt + larger bio text it feels less
-            squished without changing the desktop look. */}
-        <h1 className="mt-3 font-serif text-4xl leading-[1.1] md:mt-3 md:text-5xl md:leading-tight">
+        {/* Mobile keeps the new mt-3 breathing room but pulls the
+            title weight back to text-3xl so it doesn't dominate the
+            narrow viewport. */}
+        <h1 className="mt-3 font-serif text-3xl leading-[1.15] md:mt-3 md:text-5xl md:leading-tight">
           {displayName}
         </h1>
         {profile.bio ? (
-          <p className="mx-auto mt-4 max-w-md whitespace-pre-line text-[15px] leading-7 text-[color:var(--ink-soft)] md:mt-4 md:text-[15px]">
+          // Tighter mobile cap so the bio is centered with whitespace
+          // either side, not edge-to-edge — reads as a deliberate
+          // caption block instead of a wall of text.
+          <p className="mx-auto mt-4 max-w-[18rem] whitespace-pre-line text-[15px] leading-7 text-[color:var(--ink-soft)] md:mt-4 md:max-w-md md:text-[15px]">
             {profile.bio}
           </p>
         ) : null}
@@ -167,7 +169,7 @@ export default async function PublicProfilePage({
                 href={`/@${profile.handle}/${gallery.id}`}
                 className="group block"
               >
-                <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-2 md:p-[14px]">
+                <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-1 md:p-[14px]">
                   <div className="relative aspect-[4/3] overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)] md:aspect-[16/9]">
                     {cover ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -180,14 +182,26 @@ export default async function PublicProfilePage({
                   </div>
                 </div>
                 <div className="mt-2 space-y-1.5 md:mt-3 md:space-y-2">
-                  {/* Smaller title on mobile so a 2-up tile (~half the
-                      old 1-col width) doesn't wrap awkwardly. */}
-                  <h2 className="font-serif text-[16px] leading-[1.2] text-[color:var(--ink)] md:text-[28px] md:leading-[1.15]">
+                  {/* Title sized to let the photo hold visual primacy
+                      on the narrow tile. Up to text-[28px] at md+. */}
+                  <h2 className="font-serif text-[14px] leading-[1.2] text-[color:var(--ink)] md:text-[28px] md:leading-[1.15]">
                     {gallery.title}
                   </h2>
+                  {/* On mobile the location + date stack on their own
+                      lines (the joined " · " line wrapped awkwardly on
+                      narrow tiles); on md+ they collapse back to the
+                      single mid-dot caption. */}
                   {metaParts.length ? (
-                    <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.14em] text-[color:var(--ink-faint)] md:text-[10.5px] md:tracking-[0.16em]">
-                      {metaParts.join(" · ")}
+                    <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase leading-[1.5] tracking-[0.14em] text-[color:var(--ink-faint)] md:text-[10.5px] md:tracking-[0.16em]">
+                      <span className="block md:inline">{metaParts[0]}</span>
+                      {metaParts[1] ? (
+                        <>
+                          <span aria-hidden className="hidden md:inline">
+                            {" · "}
+                          </span>
+                          <span className="block md:inline">{metaParts[1]}</span>
+                        </>
+                      ) : null}
                     </p>
                   ) : null}
                   {/* Description hidden on mobile — at 2 cols, 2-line
