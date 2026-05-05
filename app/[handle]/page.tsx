@@ -121,11 +121,15 @@ export default async function PublicProfilePage({
         <p className="font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
           @{profile.handle}
         </p>
-        <h1 className="mt-2 font-serif text-3xl leading-tight md:mt-3 md:text-5xl">
+        {/* Mobile title scale bumped from text-3xl → text-4xl so the
+            identity block has more presence in the narrower viewport;
+            paired with extra mt + larger bio text it feels less
+            squished without changing the desktop look. */}
+        <h1 className="mt-3 font-serif text-4xl leading-[1.1] md:mt-3 md:text-5xl md:leading-tight">
           {displayName}
         </h1>
         {profile.bio ? (
-          <p className="mx-auto mt-3 max-w-md whitespace-pre-line text-[14px] leading-7 text-[color:var(--ink-soft)] md:mt-4 md:text-[15px]">
+          <p className="mx-auto mt-4 max-w-md whitespace-pre-line text-[15px] leading-7 text-[color:var(--ink-soft)] md:mt-4 md:text-[15px]">
             {profile.bio}
           </p>
         ) : null}
@@ -143,7 +147,7 @@ export default async function PublicProfilePage({
           </p>
         </section>
       ) : (
-        <section className="mt-8 grid gap-x-3 gap-y-7 sm:grid-cols-2 md:mt-10 md:gap-x-8 md:gap-y-12">
+        <section className="mt-8 grid grid-cols-2 gap-x-3 gap-y-6 md:mt-10 md:gap-x-8 md:gap-y-12">
           {galleries.map((gallery) => {
             const coverPath = gallery.cover_image_path ?? "";
             const cover = isLikelyStoragePath(coverPath)
@@ -175,17 +179,22 @@ export default async function PublicProfilePage({
                     ) : null}
                   </div>
                 </div>
-                <div className="mt-3 space-y-2">
-                  <h2 className="font-serif text-[22px] leading-[1.15] text-[color:var(--ink)] md:text-[28px]">
+                <div className="mt-2 space-y-1.5 md:mt-3 md:space-y-2">
+                  {/* Smaller title on mobile so a 2-up tile (~half the
+                      old 1-col width) doesn't wrap awkwardly. */}
+                  <h2 className="font-serif text-[16px] leading-[1.2] text-[color:var(--ink)] md:text-[28px] md:leading-[1.15]">
                     {gallery.title}
                   </h2>
                   {metaParts.length ? (
-                    <p className="font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)]">
+                    <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.14em] text-[color:var(--ink-faint)] md:text-[10.5px] md:tracking-[0.16em]">
                       {metaParts.join(" · ")}
                     </p>
                   ) : null}
+                  {/* Description hidden on mobile — at 2 cols, 2-line
+                      clamps of varying length make adjacent rows uneven
+                      and crowd the photos. Returns at md+. */}
                   {gallery.description ? (
-                    <p className="line-clamp-2 text-[13.5px] leading-6 text-[color:var(--ink-soft)]">
+                    <p className="hidden line-clamp-2 text-[13.5px] leading-6 text-[color:var(--ink-soft)] md:block">
                       {gallery.description}
                     </p>
                   ) : null}
@@ -204,7 +213,9 @@ export default async function PublicProfilePage({
 
 function PublicShell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="min-h-screen bg-[color:var(--background)] px-4 pb-16 pt-10 text-[color:var(--ink)] md:px-8 md:pt-16">
+    // Extra top air on mobile so the identity block doesn't feel
+    // pinned to the status bar. Desktop padding unchanged.
+    <main className="min-h-screen bg-[color:var(--background)] px-4 pb-16 pt-14 text-[color:var(--ink)] md:px-8 md:pt-16">
       <div className="mx-auto w-full max-w-5xl">{children}</div>
     </main>
   );
