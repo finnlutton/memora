@@ -47,7 +47,7 @@ export const HOME_GALLERY_DEMO: DemoGallery = {
   location: "Granada, Spain",
   dates: "Jan 2026 – May 2026",
   description:
-    "While I was based in Granada, I spent a lot of time exploring southern Spain, and wanted to dedicate a gallery to the region. Some of these trips include Sevilla, Córdoba, Málaga, Cádiz, and Gibraltar.",
+    "While I was based in Granada, I spent a lot of time exploring Spain, and wanted to dedicate a gallery to the region. Some of these trips include Sevilla, Córdoba, Málaga, Cádiz, and Gibraltar.",
   coverImage: `${DIR}/gallery-cover.jpg`,
   subgalleries: [
     {
@@ -62,14 +62,13 @@ export const HOME_GALLERY_DEMO: DemoGallery = {
         {
           id: "s1-1",
           image: `${DIR}/scene-1-1.jpg`,
-          caption:
-            "This was one of my first rides. I hope I never forget the awe I felt when I first saw the city from above.",
+          caption: "One of my first rides!",
         },
         {
           id: "s1-2",
           image: `${DIR}/scene-1-2.jpg`,
           caption:
-            "Met this Granadino named Marco and he showed me a completely new route!",
+            "Met this Granadino named Marco and became close with him and his friends",
         },
         {
           id: "s1-3",
@@ -79,8 +78,6 @@ export const HOME_GALLERY_DEMO: DemoGallery = {
         {
           id: "s1-4",
           image: `${DIR}/scene-1-4.jpg`,
-          caption:
-            "Don't be fooled by her confident posing, this was shortly after I carried her bike up the hill.",
         },
       ],
     },
@@ -118,30 +115,31 @@ export const HOME_GALLERY_DEMO: DemoGallery = {
     },
     {
       id: "sub-3",
-      title: "Weekend trip to Sevilla",
-      location: "Sevilla",
-      dates: "Feb 2026",
+      title: "Pais Vasco road trip",
+      location: "Basque Country",
+      dates: "May 2026",
       description:
         "Had a great weekend with my program in Sevilla.",
-      coverImage: `${DIR}/subgallery-3-cover.jpg`,
+      coverImage: `${DIR}/subgallery-3-cover.JPG`,
       scenes: [
         {
           id: "s3-1",
-          image: `${DIR}/scene-3-1.jpg`,
+          image: `${DIR}/scene-3-1.JPG`,
         },
         {
           id: "s3-2",
-          image: `${DIR}/scene-3-2.jpg`,
-          caption: "Our first luxury dessert in Spain. Worth it.",
-        },
-        {
-          id: "s3-4",
-          image: `${DIR}/scene-3-4.jpg`,
+          image: `${DIR}/scene-3-2.jpeg`,
+          caption: "Hiked in Picos de Europa",
         },
         {
           id: "s3-3",
-          image: `${DIR}/scene-3-3.jpg`,
-          caption: "Got to sit by the Guadalquivir before heading home",
+          image: `${DIR}/scene-3-3.jpeg`,
+          caption: "Best steak in Spain",
+        },
+        {
+          id: "s3-4",
+          image: `${DIR}/scene-3-4.jpeg`,
+          caption: "Picking up bibs for Biarritz half",
         },
       ],
     },

@@ -38,7 +38,7 @@ const INTRO_TITLES = [
   "Family Japan Trip 2024",
   "Road Trip to Zion",
 ] as const;
-const FINAL_TITLE = "Semester Abroad in Granada";
+const FINAL_TITLE = "Semester abroad";
 
 const POST_FINAL_PAUSE = 520;
 const CURSOR_TRAVEL_MS = 760;
