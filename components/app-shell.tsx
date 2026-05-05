@@ -109,7 +109,7 @@ export function AppShell({
   return (
     <div
       className={cn(
-        "relative min-h-screen overflow-x-hidden",
+        "relative min-h-screen overflow-x-hidden bg-[color:var(--background)]",
         accent === "immersive" &&
           "bg-[radial-gradient(circle_at_top_left,rgba(217,228,240,0.68),transparent_30%),var(--background)]",
       )}

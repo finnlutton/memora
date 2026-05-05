@@ -38,7 +38,7 @@ function priceSuffix(plan: MembershipPlan): string | null {
 
 function planSummary(plan: MembershipPlan): string {
   if (plan.id === "plus") {
-    return "Create more galleries, preserve more moments, and share beautiful memory links with the people who matter.";
+    return "Create more galleries, preserve more moments, and share beautiful memories with the people who matter.";
   }
   return plan.summary;
 }
@@ -176,20 +176,20 @@ export default function PricingPage() {
             which renders the existing Founder CTA + payment logic. */}
         <section
           aria-label="Founder offer"
-          className="mt-10 border border-[#c8aa75] bg-[#efe2c8] px-5 py-4 md:mt-12"
+          className="mt-10 border border-[#ead9c0] bg-[#fbf6ec] px-5 py-4 md:mt-12"
         >
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-[10.5px] font-medium uppercase tracking-[0.22em] text-[#9c805a]">
+              <p className="text-[10.5px] font-medium uppercase tracking-[0.22em] text-[#8a7659]">
                 Limited Founder Offer
               </p>
-              <p className="mt-1 text-[13.5px] leading-6 text-[#3e2f1a]">
+              <p className="mt-1 text-[13.5px] leading-6 text-[#2a2018]">
                 Special pricing is available for early users.
               </p>
             </div>
             <Link
               href="/auth?mode=signup&plan=lifetime"
-              className="inline-flex items-center justify-center bg-[#3e2f1a] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#efe2c8] transition hover:bg-[#564028] md:self-auto"
+              className="inline-flex items-center justify-center border border-[#c9b48a] bg-transparent px-3.5 py-2 text-[10.5px] font-medium uppercase tracking-[0.2em] text-[#2a2018] transition hover:bg-[#f3e9d6] md:self-auto"
             >
               View Founder offer
             </Link>
