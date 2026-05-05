@@ -2,8 +2,12 @@
  * Centralized plan config — the single source of truth for everything
  * about Memora's billing tiers.
  *
- * Public plans:        free, plus, max, lifetime
- * Internal-only plan:  internal  (founder/full-access, never shown publicly)
+ * Public plans:        free, plus, abroad_pass
+ * Promo banner:        lifetime (Founder Plan — surfaced via a small banner,
+ *                      not a full pricing card)
+ * Hidden plans:        max  (kept for backward compatibility with legacy
+ *                      Max subscribers — never shown as a selectable option)
+ * Internal-only plan:  internal  (full-access, never shown publicly)
  *
  * Stripe price IDs are derived from env vars at the point of use; the
  * client only ever sends a `planId` string, which the server validates
@@ -14,6 +18,7 @@
 export type MembershipPlanId =
   | "free"
   | "plus"
+  | "abroad_pass"
   | "max"
   | "lifetime"
   | "internal";
@@ -52,14 +57,24 @@ export type MembershipPlan = {
   features: string[];
   /** Pricing page accent. */
   featured?: boolean;
-  /** Hidden from the public pricing grid. */
+  /**
+   * Comped/internal-only — never shown publicly and never charged. The
+   * runtime resolver uses the `is_internal_account` profile flag, this
+   * field just keeps the plan out of the public picker.
+   */
   internal?: boolean;
+  /**
+   * Hidden from the public pricing/picker UI but still a real backend
+   * plan. Used for retired plans we keep for legacy subscribers (Max)
+   * so existing customers keep working without us advertising it.
+   */
+  hidden?: boolean;
   /** Display label inside the checkout summary UI. */
   effectiveCost: string;
   /**
    * Stripe billing mode for this plan. Only relevant for paid plans.
    *   "subscription" → recurring (Plus, Max)
-   *   "payment"      → one-time (Lifetime)
+   *   "payment"      → one-time (Abroad Pass, Founder)
    */
   stripeMode?: "subscription" | "payment";
 };
@@ -125,6 +140,30 @@ export const membershipPlans: MembershipPlan[] = [
     stripeMode: "subscription",
   },
   {
+    id: "abroad_pass",
+    name: "Abroad Pass",
+    priceMonthlyLabel: "$29.99",
+    // Annual-equivalent isn't meaningful for a one-time 6-month pass;
+    // store the actual cost so the checkout summary renders correctly.
+    price: 29.99,
+    galleryCount: 100,
+    subgalleriesPerGallery: 50,
+    photosPerSubgallery: 200,
+    directPhotosPerGallery: 200,
+    activeShareLinks: 60,
+    shareLimitPeriod: "monthly",
+    summary: "One upfront payment. Six months of creation access.",
+    features: [
+      "6 months of creation access",
+      "5x higher limits than Plus",
+      "Galleries stay viewable after the term ends",
+      "One payment, no renewal",
+    ],
+    featured: false,
+    effectiveCost: "Abroad Pass",
+    stripeMode: "payment",
+  },
+  {
     id: "max",
     name: "Max",
     priceMonthlyLabel: "$5.99",
@@ -142,6 +181,11 @@ export const membershipPlans: MembershipPlan[] = [
       "Early access to new features",
     ],
     featured: false,
+    // Retired plan kept for backward compatibility with legacy Max
+    // subscribers. Hidden from all public/upgrade UI but still resolves
+    // through normalizePlanId, getStripePriceIdForPlan, and the webhook
+    // mapping so existing subs keep functioning.
+    hidden: true,
     effectiveCost: "Custom",
     stripeMode: "subscription",
   },
@@ -158,11 +202,15 @@ export const membershipPlans: MembershipPlan[] = [
     summary:
       "Pay once and get 3 years of premium Memora access. No monthly billing during the 3-year term.",
     features: [
-      "Everything in Max for 3 years",
-      "One payment, no monthly billing",
+      "3 years of premium access",
+      "Very high limits across the board",
+      "One payment, no renewal",
       "Limited early-adopter pricing",
     ],
     featured: false,
+    // Surfaced via a small banner CTA, not the main pricing grid. Kept
+    // out of the public list so it doesn't render as a fourth card.
+    hidden: true,
     effectiveCost: "Founder",
     stripeMode: "payment",
   },
@@ -187,6 +235,7 @@ export const membershipPlans: MembershipPlan[] = [
 const KNOWN_PLAN_IDS = new Set<MembershipPlanId>([
   "free",
   "plus",
+  "abroad_pass",
   "max",
   "lifetime",
   "internal",
@@ -195,13 +244,22 @@ const KNOWN_PLAN_IDS = new Set<MembershipPlanId>([
 /**
  * Coerce any input string into a valid MembershipPlanId. Old plan IDs from
  * pre-Stripe versions ("lite", "pro") are remapped: lite→free (downgrade,
- * Lite is gone) and pro→max (renamed). Unknown values fall back to free.
+ * Lite is gone) and pro→max (renamed). Hyphenated/spaced variants of the
+ * Abroad Pass ("abroad-pass", "abroad pass") are tolerated. Unknown
+ * values fall back to free.
  */
 export function normalizePlanId(value: string | null | undefined): MembershipPlanId {
   const normalized = value?.trim().toLowerCase();
   if (!normalized) return "free";
   if (normalized === "pro") return "max";
   if (normalized === "lite") return "free";
+  if (
+    normalized === "abroad-pass" ||
+    normalized === "abroad pass" ||
+    normalized === "abroadpass"
+  ) {
+    return "abroad_pass";
+  }
   if (KNOWN_PLAN_IDS.has(normalized as MembershipPlanId)) {
     return normalized as MembershipPlanId;
   }
@@ -213,7 +271,21 @@ export function isUnlimited(value: PlanLimitValue) {
 }
 
 export function isPaidPlan(planId: MembershipPlanId): boolean {
-  return planId === "plus" || planId === "max" || planId === "lifetime";
+  return (
+    planId === "plus" ||
+    planId === "abroad_pass" ||
+    planId === "max" ||
+    planId === "lifetime"
+  );
+}
+
+/**
+ * One-time/non-recurring paid plans — stored against
+ * `subscription_current_period_end` with no Stripe subscription, and
+ * resolved to "free" once the access window has elapsed.
+ */
+export function isOneTimePlan(planId: MembershipPlanId): boolean {
+  return planId === "abroad_pass" || planId === "lifetime";
 }
 
 export function isInternalPlan(planId: MembershipPlanId): boolean {
@@ -233,11 +305,40 @@ export function isInternalPlan(planId: MembershipPlanId): boolean {
 export const FOUNDER_TERM_MS = 3 * 365.25 * 24 * 60 * 60 * 1000;
 
 /**
+ * Abroad Pass term, in milliseconds (≈ 6 months / 183 days). Approximated
+ * as 6 × 30.5 days for the same simple-arithmetic reason as
+ * FOUNDER_TERM_MS — drift is well under a day across the 6-month window.
+ */
+export const ABROAD_PASS_TERM_MS = 6 * 30.5 * 24 * 60 * 60 * 1000;
+
+/**
  * Compute when a Founder Plan purchase made now will expire. Returns an
  * ISO string suitable for the `subscription_current_period_end` column.
  */
 export function computeFounderExpiry(purchasedAt: Date = new Date()): string {
   return new Date(purchasedAt.getTime() + FOUNDER_TERM_MS).toISOString();
+}
+
+/**
+ * Compute when an Abroad Pass purchase made now will expire. Returns an
+ * ISO string for `subscription_current_period_end`; once that time
+ * passes, `resolveEffectivePlanId` silently downgrades the user to Free.
+ */
+export function computeAbroadPassExpiry(purchasedAt: Date = new Date()): string {
+  return new Date(purchasedAt.getTime() + ABROAD_PASS_TERM_MS).toISOString();
+}
+
+/**
+ * Stamp the appropriate one-time-plan expiry timestamp. Centralized so
+ * the webhook handler doesn't need to know the term length per plan.
+ */
+export function computeOneTimePlanExpiry(
+  planId: MembershipPlanId,
+  purchasedAt: Date = new Date(),
+): string | null {
+  if (planId === "lifetime") return computeFounderExpiry(purchasedAt);
+  if (planId === "abroad_pass") return computeAbroadPassExpiry(purchasedAt);
+  return null;
 }
 
 export type ProfilePlanFields = {
@@ -248,11 +349,16 @@ export type ProfilePlanFields = {
 
 /**
  * Resolves the *effective* plan id for a profile, accounting for
- * Founder Plan expiry. The Founder Plan ($59.99 / 3 yrs) is stored
- * internally as `selected_plan = "lifetime"` with the access end
- * stamped in `subscription_current_period_end`. Once that timestamp is
- * in the past, the user silently drops to Free for any limit check or
- * UI gate — the row is left intact so an audit trail survives.
+ * one-time-plan expiry.
+ *
+ *   - Founder Plan ($59.99 / 3 yrs)     → `selected_plan = "lifetime"`
+ *   - Abroad Pass  ($29.99 / 6 months)  → `selected_plan = "abroad_pass"`
+ *
+ * Both stamp the access end into `subscription_current_period_end`.
+ * Once that timestamp is in the past, the user silently drops to Free
+ * for any limit check or UI gate — the row is left intact so an audit
+ * trail survives (and so the UI can show "your Abroad Pass period has
+ * ended" rather than a generic Free state).
  *
  * Internal/comped accounts always resolve to `internal` regardless of
  * the stored plan. Recurring subscriptions (plus, max) ignore the
@@ -263,12 +369,25 @@ export function resolveEffectivePlanId(
 ): MembershipPlanId {
   if (profile?.is_internal_account) return "internal";
   const planId = normalizePlanId(profile?.selected_plan ?? null);
-  if (planId !== "lifetime") return planId;
+  if (!isOneTimePlan(planId)) return planId;
   const endsAt = profile?.subscription_current_period_end;
   if (!endsAt) return planId;
   const expiresAt = new Date(endsAt);
   if (Number.isNaN(expiresAt.getTime())) return planId;
   return expiresAt.getTime() < Date.now() ? "free" : planId;
+}
+
+function isOneTimePlanExpired(
+  profile: ProfilePlanFields | null | undefined,
+  expectedPlan: MembershipPlanId,
+): boolean {
+  if (profile?.is_internal_account) return false;
+  if (normalizePlanId(profile?.selected_plan ?? null) !== expectedPlan) return false;
+  const endsAt = profile?.subscription_current_period_end;
+  if (!endsAt) return false;
+  const expiresAt = new Date(endsAt);
+  if (Number.isNaN(expiresAt.getTime())) return false;
+  return expiresAt.getTime() < Date.now();
 }
 
 /**
@@ -279,13 +398,36 @@ export function resolveEffectivePlanId(
 export function isFounderExpired(
   profile: ProfilePlanFields | null | undefined,
 ): boolean {
+  return isOneTimePlanExpired(profile, "lifetime");
+}
+
+/**
+ * True when the profile is an expired Abroad Pass account — used to
+ * render the warm "your Abroad Pass period has ended" state in the
+ * settings UI (galleries stay viewable, new uploads require an active
+ * plan).
+ */
+export function isAbroadPassExpired(
+  profile: ProfilePlanFields | null | undefined,
+): boolean {
+  return isOneTimePlanExpired(profile, "abroad_pass");
+}
+
+/**
+ * True when the profile holds an Abroad Pass that has not yet expired.
+ * Read by settings UI to swap "Active until [date]" copy for the
+ * normal recurring-subscription row.
+ */
+export function isAbroadPassActive(
+  profile: ProfilePlanFields | null | undefined,
+): boolean {
   if (profile?.is_internal_account) return false;
-  if (normalizePlanId(profile?.selected_plan ?? null) !== "lifetime") return false;
+  if (normalizePlanId(profile?.selected_plan ?? null) !== "abroad_pass") return false;
   const endsAt = profile?.subscription_current_period_end;
   if (!endsAt) return false;
   const expiresAt = new Date(endsAt);
   if (Number.isNaN(expiresAt.getTime())) return false;
-  return expiresAt.getTime() < Date.now();
+  return expiresAt.getTime() >= Date.now();
 }
 
 export function getPlan(planId: MembershipPlanId): MembershipPlan {
@@ -367,11 +509,12 @@ export function translatePlanLimitError(error: unknown): Error | null {
 }
 
 /**
- * Public plans for the pricing grid — anything with `internal: true` is
- * filtered out so it never appears as a buyable option.
+ * Public plans for the pricing grid — anything `internal` (comped) or
+ * `hidden` (legacy/promo) is filtered out so it never appears as a
+ * buyable card. Today this is exactly Free, Plus, Abroad Pass.
  */
 export const publicMembershipPlans: MembershipPlan[] = membershipPlans.filter(
-  (plan) => !plan.internal,
+  (plan) => !plan.internal && !plan.hidden,
 );
 
 /**
@@ -404,7 +547,9 @@ export function getStripePriceIdForPlan(planId: MembershipPlanId): string {
       ? "STRIPE_PRICE_PLUS_MONTHLY"
       : planId === "max"
         ? "STRIPE_PRICE_MAX_MONTHLY"
-        : "STRIPE_PRICE_LIFETIME";
+        : planId === "abroad_pass"
+          ? "STRIPE_ABROAD_PASS_PRICE_ID"
+          : "STRIPE_PRICE_LIFETIME";
   const value = process.env[envName];
   if (!value) {
     throw new Error(`Missing Stripe price env var: ${envName}`);
@@ -422,5 +567,6 @@ export function mapStripePriceIdToPlan(priceId: string): MembershipPlanId | null
   if (priceId === process.env.STRIPE_PRICE_PLUS_MONTHLY) return "plus";
   if (priceId === process.env.STRIPE_PRICE_MAX_MONTHLY) return "max";
   if (priceId === process.env.STRIPE_PRICE_LIFETIME) return "lifetime";
+  if (priceId === process.env.STRIPE_ABROAD_PASS_PRICE_ID) return "abroad_pass";
   return null;
 }

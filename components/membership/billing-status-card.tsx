@@ -133,22 +133,34 @@ export function BillingStatusCard() {
   // ── State 3: Free plan ───────────────────────────────────────────────
   if (status.planId === "free") {
     // Distinguish a never-paid Free account from one that lapsed out of
-    // the Founder Plan, so the user understands why their limits
-    // dropped.
+    // a one-time plan so the user understands why their limits dropped.
     const expiredFounder = status.founderExpired;
+    const expiredAbroad = status.abroadPassExpired;
+    let title = "Current plan: Free";
+    let body: string | null = null;
+    let cta = "Upgrade plan";
+    if (expiredAbroad) {
+      title = "Abroad Pass period ended";
+      body =
+        "Your Abroad Pass creation period has ended. Your galleries are still viewable and shareable. Upgrade to Plus to create new galleries or upload more photos.";
+      cta = "Choose a new plan";
+    } else if (expiredFounder) {
+      title = "Founder access ended";
+      body =
+        "Your 3-year Founder term has ended. Your archive is safe and still viewable; new uploads and shares now follow Free-plan limits.";
+      cta = "Choose a new plan";
+    }
     return (
       <div className="border border-[color:var(--border)] bg-white px-4 py-4">
         <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-[color:var(--ink-soft)]">
           Billing
         </p>
         <p className="mt-3 font-serif text-[20px] leading-tight text-[color:var(--ink)]">
-          {expiredFounder ? "Founder access ended" : "Current plan: Free"}
+          {title}
         </p>
-        {expiredFounder ? (
+        {body ? (
           <p className="mt-2 text-[13px] leading-6 text-[color:var(--ink-soft)]">
-            Your 3-year Founder term has ended. Your archive is safe and
-            still viewable; new uploads and shares now follow Free-plan
-            limits.
+            {body}
           </p>
         ) : null}
         <div className="mt-4">
@@ -156,7 +168,7 @@ export function BillingStatusCard() {
             href="/galleries/settings/membership"
             className="inline-flex items-center justify-center bg-[color:var(--ink)] px-3.5 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-[color:var(--ink-soft)]"
           >
-            {expiredFounder ? "Choose a new plan" : "Upgrade plan"}
+            {cta}
           </Link>
         </div>
       </div>
@@ -207,6 +219,35 @@ export function BillingStatusCard() {
             Founder access until {renewDate}.
           </p>
         ) : null}
+        {status.hasStripeCustomer ? (
+          <div className="mt-4">
+            <ManageBillingInline />
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  // Abroad Pass is also a one-time purchase — six months of creation
+  // access, no recurring billing during the term.
+  if (status.planId === "abroad_pass") {
+    return (
+      <div className="border border-[color:var(--border)] bg-white px-4 py-4">
+        <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-[color:var(--ink-soft)]">
+          Billing
+        </p>
+        <p className="mt-3 font-serif text-[20px] leading-tight text-[color:var(--ink)]">
+          Abroad Pass active
+        </p>
+        {renewDate ? (
+          <p className="mt-2 text-[13px] leading-6 text-[color:var(--ink-soft)]">
+            Creation access through {renewDate}.
+          </p>
+        ) : null}
+        <p className="mt-1 text-[12.5px] leading-6 text-[color:var(--ink-soft)]">
+          After your six-month window ends, your galleries stay viewable and
+          shareable. New uploads will need an active plan.
+        </p>
         {status.hasStripeCustomer ? (
           <div className="mt-4">
             <ManageBillingInline />

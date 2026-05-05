@@ -4,17 +4,26 @@ import { Check } from "lucide-react";
 import type { MembershipPlan } from "@/lib/plans";
 
 /**
- * Editorial recurring-plan card.
+ * Editorial plan card.
  *
  * Three of these render in a single row on the membership page (Free,
- * Plus, Max). The featured plan (`plan.featured`) gets a soft tint, a
- * "Recommended" pill, and a slightly lifted shadow — restrained, not
- * shouty. Everything else is identical so plans read as comparable
+ * Plus, Abroad Pass). The featured plan (`plan.featured`) gets a soft
+ * tint, a "Recommended" pill, and a slightly lifted shadow — restrained,
+ * not shouty. Everything else is identical so plans read as comparable
  * options, not as a hierarchy with one obvious winner.
  *
  * Card content is driven entirely by the centralized plan config; this
- * component intentionally has no plan-specific copy or limits.
+ * component intentionally has no plan-specific copy or limits. The
+ * price-suffix (/ month vs / once) is the only piece of layout that
+ * branches on plan type.
  */
+
+function priceSuffix(plan: MembershipPlan): string | null {
+  if (plan.id === "free") return null;
+  if (plan.id === "abroad_pass") return "/ once";
+  if (plan.id === "lifetime") return "/ 3 yrs";
+  return "/ month";
+}
 
 export function RecurringPlanCard({
   plan,
@@ -30,7 +39,7 @@ export function RecurringPlanCard({
   onSelect: (plan: MembershipPlan) => void;
 }) {
   const featured = Boolean(plan.featured);
-  const isFree = plan.id === "free";
+  const suffix = priceSuffix(plan);
 
   return (
     <article
@@ -64,9 +73,9 @@ export function RecurringPlanCard({
           <span className="font-serif text-[40px] leading-none text-[color:var(--ink)] md:text-[44px]">
             {plan.priceMonthlyLabel}
           </span>
-          {!isFree ? (
+          {suffix ? (
             <span className="text-[12px] font-medium tracking-wide text-[color:var(--ink-soft)]">
-              / month
+              {suffix}
             </span>
           ) : null}
         </div>

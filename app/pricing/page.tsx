@@ -11,11 +11,11 @@ import {
 export const metadata: Metadata = {
   title: "Pricing · Memora",
   description:
-    "Plans for the Memora archive — Free, Plus, Max, and the Founder Plan. Pick the size that fits how much you want to remember.",
+    "Plans for the Memora archive — Free, Plus, and the Abroad Pass. Pick the size that fits how much you want to remember.",
   openGraph: {
     title: "Pricing · Memora",
     description:
-      "Plans for the Memora archive — Free, Plus, Max, and the Founder Plan.",
+      "Plans for the Memora archive — Free, Plus, and the Abroad Pass.",
   },
 };
 
@@ -30,10 +30,24 @@ function shareLine(plan: MembershipPlan) {
   return `${plan.activeShareLinks} private shares ${period}`;
 }
 
-function ctaLabel(planId: MembershipPlan["id"]) {
-  if (planId === "free") return "Start free";
-  if (planId === "lifetime") return "Get Founder access";
-  return `Start with ${planId === "plus" ? "Plus" : "Max"}`;
+function priceSuffix(plan: MembershipPlan): string | null {
+  if (plan.id === "free") return null;
+  if (plan.id === "abroad_pass") return "/ once";
+  return "/ mo";
+}
+
+function planSummary(plan: MembershipPlan): string {
+  if (plan.id === "plus") {
+    return "Create more galleries, preserve more moments, and share beautiful memory links with the people who matter.";
+  }
+  return plan.summary;
+}
+
+function ctaLabel(plan: MembershipPlan) {
+  if (plan.id === "free") return "Start free";
+  if (plan.id === "plus") return "Upgrade to Plus";
+  if (plan.id === "abroad_pass") return "Get Abroad Pass";
+  return `Start with ${plan.name}`;
 }
 
 export default function PricingPage() {
@@ -66,21 +80,16 @@ export default function PricingPage() {
 
         <section
           aria-label="Plan options"
-          className="mt-10 grid gap-4 md:mt-14 md:grid-cols-2 lg:grid-cols-4"
+          className="mt-10 grid gap-4 md:mt-14 md:grid-cols-3"
         >
           {plans.map((plan) => {
             const featured = !!plan.featured;
-            // Founder is a one-time, multi-year plan — give it a warm
-            // tan treatment so it visibly steps out of the monthly tier
-            // grid without shouting.
-            const isFounder = plan.id === "lifetime";
+            const isAbroad = plan.id === "abroad_pass";
             return (
               <article
                 key={plan.id}
                 className={`relative flex h-full flex-col border p-6 transition md:p-7 ${
-                  isFounder
-                    ? "border-[#c8aa75] bg-[#efe2c8]"
-                    : featured
+                  featured
                     ? "border-[color:var(--ink)] bg-[color:var(--paper)]"
                     : "border-[color:var(--border)] bg-[color:var(--paper)]"
                 }`}
@@ -90,95 +99,101 @@ export default function PricingPage() {
                     Most chosen
                   </p>
                 ) : null}
-                {isFounder ? (
-                  <p className="absolute -top-2.5 left-6 bg-[#efe2c8] px-2 text-[9.5px] uppercase tracking-[0.28em] text-[#5a4628]">
-                    3-year
+                {isAbroad ? (
+                  <p className="absolute -top-2.5 left-6 bg-[color:var(--background)] px-2 text-[9.5px] uppercase tracking-[0.28em] text-[color:var(--ink-soft)]">
+                    Semester
                   </p>
                 ) : null}
 
-                <p
-                  className={`text-[10.5px] uppercase tracking-[0.22em] ${
-                    isFounder
-                      ? "text-[#9c805a]"
-                      : "text-[color:var(--ink-faint)]"
-                  }`}
-                >
+                <p className="text-[10.5px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
                   {plan.name}
                 </p>
 
-                <p
-                  className={`mt-3 font-serif text-[28px] leading-none md:text-[32px] ${
-                    isFounder ? "text-[#3e2f1a]" : "text-[color:var(--ink)]"
-                  }`}
-                >
+                <p className="mt-3 font-serif text-[28px] leading-none text-[color:var(--ink)] md:text-[32px]">
                   {plan.priceMonthlyLabel}
-                  {plan.id === "lifetime" ? (
-                    <span className="ml-1 text-[12px] uppercase tracking-[0.18em] text-[#9c805a]">
-                      / 3 yrs
-                    </span>
-                  ) : plan.id !== "free" ? (
+                  {priceSuffix(plan) ? (
                     <span className="ml-1 text-[12px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)]">
-                      / mo
+                      {priceSuffix(plan)}
                     </span>
                   ) : null}
                 </p>
 
-                <p
-                  className={`mt-3 text-[13.5px] leading-6 ${
-                    isFounder
-                      ? "text-[#5a4628]"
-                      : "text-[color:var(--ink-soft)]"
-                  }`}
-                >
-                  {plan.summary}
+                <p className="mt-3 text-[13.5px] leading-6 text-[color:var(--ink-soft)]">
+                  {planSummary(plan)}
                 </p>
 
-                {plan.id === "lifetime" ? (
-                  <p className="mt-6 text-[12.5px] leading-5 text-[#5a4628]">
-                    Same limits as Max — locked in for three years, no renewal.
+                {isAbroad ? (
+                  <p className="mt-4 text-[12.5px] leading-6 text-[color:var(--ink-soft)]">
+                    The Abroad Pass gives you six months to build your semester
+                    archive. After that, your galleries remain viewable and
+                    shareable, but new uploads and new galleries require an
+                    active plan.
                   </p>
-                ) : (
-                  <dl className="mt-6 space-y-2.5 text-[12.5px] leading-5 text-[color:var(--ink)]">
-                    <div className="flex items-baseline justify-between gap-3">
-                      <dt className="text-[color:var(--ink-soft)]">Galleries</dt>
-                      <dd>{formatLimit(plan.galleryCount)}</dd>
-                    </div>
-                    <div className="flex items-baseline justify-between gap-3">
-                      <dt className="text-[color:var(--ink-soft)]">
-                        Scenes per gallery
-                      </dt>
-                      <dd>{formatLimit(plan.subgalleriesPerGallery)}</dd>
-                    </div>
-                    <div className="flex items-baseline justify-between gap-3">
-                      <dt className="text-[color:var(--ink-soft)]">
-                        Photos per scene
-                      </dt>
-                      <dd>{formatLimit(plan.photosPerSubgallery)}</dd>
-                    </div>
-                    <div className="flex items-baseline justify-between gap-3">
-                      <dt className="text-[color:var(--ink-soft)]">Sharing</dt>
-                      <dd className="text-right">{shareLine(plan)}</dd>
-                    </div>
-                  </dl>
-                )}
+                ) : null}
+
+                <dl className="mt-6 space-y-2.5 text-[12.5px] leading-5 text-[color:var(--ink)]">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <dt className="text-[color:var(--ink-soft)]">Galleries</dt>
+                    <dd>{formatLimit(plan.galleryCount)}</dd>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <dt className="text-[color:var(--ink-soft)]">
+                      Scenes per gallery
+                    </dt>
+                    <dd>{formatLimit(plan.subgalleriesPerGallery)}</dd>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <dt className="text-[color:var(--ink-soft)]">
+                      Photos per scene
+                    </dt>
+                    <dd>{formatLimit(plan.photosPerSubgallery)}</dd>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <dt className="text-[color:var(--ink-soft)]">Sharing</dt>
+                    <dd className="text-right">{shareLine(plan)}</dd>
+                  </div>
+                </dl>
 
                 <div className="mt-auto pt-7">
                   <Link
                     href="/auth?mode=signup"
                     className={`inline-flex h-10 w-full items-center justify-center px-4 text-[11px] uppercase tracking-[0.2em] transition md:h-11 ${
-                      isFounder
-                        ? "bg-[#3e2f1a] text-[#efe2c8] hover:bg-[#564028]"
-                        : featured
+                      featured
                         ? "bg-[color:var(--ink)] text-[color:var(--background)] hover:opacity-90"
                         : "border border-[color:var(--border-strong)] text-[color:var(--ink)] hover:bg-[color:var(--paper-strong)]"
                     }`}
                   >
-                    {ctaLabel(plan.id)}
+                    {ctaLabel(plan)}
                   </Link>
                 </div>
               </article>
             );
           })}
+        </section>
+
+        {/* Founder offer — small, subtle banner. Routes into the same
+            checkout/pricing flow as before via /galleries/settings/membership,
+            which renders the existing Founder CTA + payment logic. */}
+        <section
+          aria-label="Founder offer"
+          className="mt-10 border border-[#c8aa75] bg-[#efe2c8] px-5 py-4 md:mt-12"
+        >
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-[10.5px] font-medium uppercase tracking-[0.22em] text-[#9c805a]">
+                Limited Founder Offer
+              </p>
+              <p className="mt-1 text-[13.5px] leading-6 text-[#3e2f1a]">
+                Special pricing is available for early users.
+              </p>
+            </div>
+            <Link
+              href="/auth?mode=signup&plan=lifetime"
+              className="inline-flex items-center justify-center bg-[#3e2f1a] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#efe2c8] transition hover:bg-[#564028] md:self-auto"
+            >
+              View Founder offer
+            </Link>
+          </div>
         </section>
 
         <section

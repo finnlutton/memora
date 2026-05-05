@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 import {
   getStripePriceIdForPlan,
   isInternalPlan,
+  isOneTimePlan,
   membershipPlans,
   normalizePlanId,
   resolveEffectivePlanId,
@@ -44,9 +45,10 @@ export const runtime = "nodejs";
 const PLAN_RANK: Record<MembershipPlanId, number> = {
   free: 0,
   plus: 1,
-  max: 2,
-  lifetime: 3,
-  internal: 4,
+  abroad_pass: 2,
+  max: 3,
+  lifetime: 4,
+  internal: 5,
 };
 
 const ACTIVE_SUB_STATUSES = new Set(["active", "trialing", "past_due"]);
@@ -158,6 +160,22 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Abroad Pass already covers 5x-Plus limits for the duration of the
+  // 6-month creation window — switching to Plus mid-window would charge
+  // them again for less. Send them to the billing status / wait flow.
+  if (
+    effectivePlanId === "abroad_pass" &&
+    (targetPlanId === "plus" || targetPlanId === "max")
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "Your Abroad Pass already covers higher limits than Plus for the rest of your six-month window. Wait until it ends to switch to a recurring plan.",
+      },
+      { status: 400 },
+    );
+  }
+
   const stripe = getStripeClient();
   const hasActiveSub = Boolean(
     profile.stripe_subscription_id &&
@@ -202,35 +220,37 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 7. Plus/Max → Founder: cancel current sub at period end, then issue a
-  // Checkout URL for the one-time Founder payment. Slight overlap (≤ one
-  // billing period of paid time they've already covered) is intentional —
-  // see decision (2a) in the design doc / chat.
-  if (targetPlanId === "lifetime") {
+  // 7. Plus/Max → one-time plan (Founder, Abroad Pass): cancel current
+  // sub at period end, then issue a Checkout URL for the one-time
+  // payment. Slight overlap (≤ one billing period of paid time they've
+  // already covered) is intentional — see decision (2a) in the design
+  // doc / chat.
+  if (isOneTimePlan(targetPlanId)) {
+    const planLabel = targetPlanId === "lifetime" ? "Founder" : "Abroad Pass";
     try {
       await stripe.subscriptions.update(subscriptionId, {
         cancel_at_period_end: true,
       });
     } catch (err) {
-      console.error("Memora: change-plan founder pre-cancel failed", err);
+      console.error("Memora: change-plan one-time pre-cancel failed", err);
       return NextResponse.json(
-        { error: "Could not start Founder upgrade. Please try again." },
+        { error: `Could not start ${planLabel} upgrade. Please try again.` },
         { status: 500 },
       );
     }
 
     let priceId: string;
     try {
-      priceId = getStripePriceIdForPlan("lifetime");
+      priceId = getStripePriceIdForPlan(targetPlanId);
     } catch (err) {
-      console.error("Memora: change-plan founder price env missing", err);
+      console.error("Memora: change-plan one-time price env missing", err);
       // Roll back the schedule so we don't leave the user pending-cancel
       // with no path forward.
       await stripe.subscriptions
         .update(subscriptionId, { cancel_at_period_end: false })
         .catch(() => {});
       return NextResponse.json(
-        { error: "Founder plan not currently available." },
+        { error: `${planLabel} not currently available.` },
         { status: 500 },
       );
     }
@@ -252,23 +272,23 @@ export async function POST(request: NextRequest) {
         line_items: [{ price: priceId, quantity: 1 }],
         allow_promotion_codes: true,
         client_reference_id: user.id,
-        metadata: { user_id: user.id, plan_id: "lifetime" },
+        metadata: { user_id: user.id, plan_id: targetPlanId },
         payment_intent_data: {
-          metadata: { user_id: user.id, plan_id: "lifetime" },
+          metadata: { user_id: user.id, plan_id: targetPlanId },
         },
         success_url: successUrl,
         cancel_url: cancelUrl,
       });
       return NextResponse.json({ url: session.url });
     } catch (err) {
-      console.error("Memora: change-plan founder checkout failed", err);
+      console.error("Memora: change-plan one-time checkout failed", err);
       // Roll back the schedule on checkout-creation failure so the user
       // isn't stranded with a pending cancel and no completed upgrade.
       await stripe.subscriptions
         .update(subscriptionId, { cancel_at_period_end: false })
         .catch(() => {});
       return NextResponse.json(
-        { error: "Could not start Founder checkout." },
+        { error: `Could not start ${planLabel} checkout.` },
         { status: 500 },
       );
     }

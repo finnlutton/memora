@@ -6,7 +6,7 @@ import { ChevronDown } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMemoraStore } from "@/hooks/use-memora-store";
-import { getMembershipPlan, membershipPlans } from "@/lib/plans";
+import { getMembershipPlan, publicMembershipPlans } from "@/lib/plans";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -313,7 +313,7 @@ function SettingsDropdown({
               Upgrade subscription
             </p>
             <div className="mt-3 space-y-2">
-              {membershipPlans.map((plan) => (
+              {publicMembershipPlans.map((plan) => (
                 <button
                   key={plan.id}
                   type="button"

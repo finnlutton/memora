@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LifetimeSection } from "@/components/membership/lifetime-section";
+import { FounderOfferBanner } from "@/components/membership/founder-offer-banner";
 import { RecurringPlanCard } from "@/components/membership/recurring-plan-card";
 import { useBillingStatus } from "@/hooks/use-billing-status";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 import {
+  getPlan,
   isPaidPlan,
+  membershipPlans,
   publicMembershipPlans,
   type MembershipPlan,
   type MembershipPlanId,
@@ -18,23 +20,29 @@ import {
  * Membership / pricing panel.
  *
  * Layout:
- *   1. Optional cancel-at-period-end notice
- *   2. Three recurring plans in a row (Free, Plus, Max)
- *   3. Lifetime as a separate, horizontally-laid feature section
+ *   1. Optional cancel-at-period-end / Abroad-Pass / Max notice
+ *   2. Three plan cards in a row: Free, Plus, Abroad Pass
+ *   3. Small Founder offer banner (Limited early-adopter pricing) that
+ *      reuses the existing Founder checkout/cancel logic
+ *
+ * Max remains a real backend plan but is hidden from the public picker.
+ * Legacy Max users keep their plan; they see a notice that lets them
+ * downgrade to Plus or Free if they want.
  *
  * Driven entirely by the centralized plan config + the billing status
  * endpoint. All payment + Stripe logic from the previous version is
  * preserved — only the layout, copy, and visual treatment changed.
  */
 
-const RECURRING_ORDER: MembershipPlanId[] = ["free", "plus", "max"];
+const PLAN_PICKER_ORDER: MembershipPlanId[] = ["free", "plus", "abroad_pass"];
 
 const PLAN_RANK: Record<MembershipPlanId, number> = {
   free: 0,
   plus: 1,
-  max: 2,
-  lifetime: 3,
-  internal: 4,
+  abroad_pass: 2,
+  max: 3,
+  lifetime: 4,
+  internal: 5,
 };
 
 function formatDate(iso: string | null) {
@@ -64,13 +72,14 @@ export function MembershipPlansPanel() {
     billing?.subscriptionStatus &&
       ACTIVE_SUB_STATUSES.has(billing.subscriptionStatus) &&
       billing.planId !== "free" &&
-      billing.planId !== "lifetime",
+      billing.planId !== "lifetime" &&
+      billing.planId !== "abroad_pass",
   );
 
-  const recurringPlans = RECURRING_ORDER
+  const pickerPlans = PLAN_PICKER_ORDER
     .map((id) => publicMembershipPlans.find((plan) => plan.id === id))
     .filter((plan): plan is MembershipPlan => Boolean(plan));
-  const lifetimePlan = publicMembershipPlans.find((p) => p.id === "lifetime");
+  const founderPlan = membershipPlans.find((p) => p.id === "lifetime");
 
   // Use billing endpoint when available; fall back to local onboarding
   // state during the brief window before /api/billing/status responds.
@@ -79,7 +88,9 @@ export function MembershipPlansPanel() {
     "free") as MembershipPlanId;
   const cancelAtPeriodEnd = Boolean(billing?.cancelAtPeriodEnd);
   const renewDate = formatDate(billing?.currentPeriodEnd ?? null);
-  const effectivePlan = publicMembershipPlans.find((p) => p.id === effectivePlanId);
+  const effectivePlan = getPlan(effectivePlanId);
+  const isLegacyMax = effectivePlanId === "max";
+  const isAbroadActive = effectivePlanId === "abroad_pass";
   const [billingPortalBusy, setBillingPortalBusy] = useState(false);
   const [billingPortalError, setBillingPortalError] = useState<string | null>(null);
 
@@ -116,14 +127,16 @@ export function MembershipPlansPanel() {
     if (busy) return planId === "free" ? "Saving…" : "Redirecting…";
     if (planId === effectivePlanId) return "Current plan";
     if (planId === "free") return "Switch to Free";
+    if (planId === "plus") return "Upgrade to Plus";
+    if (planId === "abroad_pass") return "Get Abroad Pass";
     if (PLAN_RANK[planId] > PLAN_RANK[effectivePlanId]) return "Upgrade";
     return "Choose plan";
   };
 
-  const lifetimeLabel = (busy: boolean) => {
+  const founderLabel = (busy: boolean) => {
     if (busy) return "Redirecting…";
     if (effectivePlanId === "lifetime") return "Current plan";
-    return "Get Founder access";
+    return "View Founder offer";
   };
 
   const handleSelect = async (selectedPlan: MembershipPlan) => {
@@ -258,9 +271,36 @@ export function MembershipPlansPanel() {
         </div>
       ) : null}
 
-      {/* ── Recurring plan row ────────────────────────────────────────── */}
+      {/* Active Abroad Pass — show creation-access-through date. */}
+      {isAbroadActive && renewDate ? (
+        <div className="border border-[color:var(--border)] bg-white px-4 py-3 text-[12.5px] leading-5 text-[color:var(--ink-soft)]">
+          <p>
+            <span className="text-[color:var(--ink)]">Abroad Pass active.</span>{" "}
+            Creation access through{" "}
+            <span className="text-[color:var(--ink)]">{renewDate}</span>. After
+            that, your galleries stay viewable and shareable; new uploads will
+            need an active plan.
+          </p>
+        </div>
+      ) : null}
+
+      {/* Legacy Max users — Max is no longer offered to new users, but
+          existing subscribers stay on it indefinitely until they choose
+          to switch. */}
+      {isLegacyMax ? (
+        <div className="border border-[color:var(--border)] bg-white px-4 py-3 text-[12.5px] leading-5 text-[color:var(--ink-soft)]">
+          <p>
+            You&apos;re on the{" "}
+            <span className="text-[color:var(--ink)]">Max</span> plan. You can
+            stay on Max as long as your subscription is active, or switch to
+            one of the plans below at any time.
+          </p>
+        </div>
+      ) : null}
+
+      {/* ── Plan picker row: Free / Plus / Abroad Pass ────────────────── */}
       <div className="grid items-stretch gap-4 md:grid-cols-3 md:gap-5">
-        {recurringPlans.map((plan) => (
+        {pickerPlans.map((plan) => (
           <RecurringPlanCard
             key={plan.id}
             plan={plan}
@@ -272,14 +312,15 @@ export function MembershipPlansPanel() {
         ))}
       </div>
 
-      {/* ── Lifetime — separate horizontal feature section ───────────── */}
-      {lifetimePlan ? (
-        <LifetimeSection
+      {/* ── Founder offer — small, subtle banner reusing the existing
+          Founder checkout flow. Not rendered as a fourth card. ─────── */}
+      {founderPlan ? (
+        <FounderOfferBanner
           isCurrent={effectivePlanId === "lifetime"}
           isBusy={busyPlanId === "lifetime"}
-          buttonLabel={lifetimeLabel(busyPlanId === "lifetime")}
+          buttonLabel={founderLabel(busyPlanId === "lifetime")}
           effectivePlanId={effectivePlanId}
-          onSelect={() => handleSelect(lifetimePlan)}
+          onSelect={() => handleSelect(founderPlan)}
         />
       ) : null}
 

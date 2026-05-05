@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  isAbroadPassExpired,
   isFounderExpired,
   resolveEffectivePlanId,
   type MembershipPlanId,
@@ -9,15 +10,16 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 
 export type BillingStatusResponse = {
-  /** Effective plan after Founder Plan expiry resolution. */
+  /** Effective plan after one-time-plan expiry resolution. */
   planId: MembershipPlanId;
   isInternal: boolean;
   hasStripeCustomer: boolean;
   subscriptionStatus: string | null;
   /**
-   * For monthly subs: next renewal date.
-   * For an active Founder Plan: when 3-year access ends.
-   * Null for Free, internal, or expired Founder.
+   * For monthly subs:        next renewal date.
+   * For an active Founder:   when 3-year access ends.
+   * For an active Abroad:    when the 6-month creation window ends.
+   * Null for Free, internal, expired Founder, or expired Abroad Pass.
    */
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
@@ -28,6 +30,13 @@ export type BillingStatusResponse = {
    * state instead of a generic Free state.
    */
   founderExpired: boolean;
+  /**
+   * True when the stored plan is `abroad_pass` but the 6-month creation
+   * window has elapsed. Lets the UI render the warm "your Abroad Pass
+   * period has ended" state — galleries stay viewable, new uploads
+   * require an active plan.
+   */
+  abroadPassExpired: boolean;
 };
 
 /**
@@ -77,19 +86,22 @@ export async function GET() {
   };
   const planId = resolveEffectivePlanId(planFields);
   const founderExpired = isFounderExpired(planFields);
+  const abroadPassExpired = isAbroadPassExpired(planFields);
+  const oneTimeExpired = founderExpired || abroadPassExpired;
 
   const body: BillingStatusResponse = {
     planId,
     isInternal: Boolean(profile?.is_internal_account),
     hasStripeCustomer: Boolean(profile?.stripe_customer_id),
     subscriptionStatus: profile?.subscription_status ?? null,
-    // Hide the stale end-date once the Founder term has lapsed — the UI
-    // shouldn't render "ends on (yesterday)".
-    currentPeriodEnd: founderExpired
+    // Hide the stale end-date once a one-time plan's window has lapsed
+    // — the UI shouldn't render "ends on (yesterday)".
+    currentPeriodEnd: oneTimeExpired
       ? null
       : profile?.subscription_current_period_end ?? null,
     cancelAtPeriodEnd: Boolean(profile?.subscription_cancel_at_period_end),
     founderExpired,
+    abroadPassExpired,
   };
   return NextResponse.json(body);
 }

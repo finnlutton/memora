@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type Stripe from "stripe";
 import {
-  computeFounderExpiry,
+  computeOneTimePlanExpiry,
+  isOneTimePlan,
   isPaidPlan,
   mapStripePriceIdToPlan,
   normalizePlanId,
@@ -182,21 +183,25 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // and carry the canonical state — skip the redundant write.
   if (session.mode === "subscription") return;
 
-  // For one-time payment (Founder Plan) sessions, this is where we
-  // activate the plan. Plan id rides on the session metadata.
+  // For one-time-payment sessions (Founder Plan, Abroad Pass) this is
+  // where we activate the plan. Plan id rides on the session metadata.
   //
-  // Internally the plan id is still `lifetime` (column values, env
-  // vars, status string all carry the legacy name). What changed: the
-  // public Founder Plan grants 3 years of access, not life. We stamp
-  // the access end date in `subscription_current_period_end` — the
-  // resolver in @/lib/plans (resolveEffectivePlanId) treats anything
-  // past that timestamp as Free.
+  // Internally the plan id is preserved as-is — `lifetime` for Founder
+  // and `abroad_pass` for the Abroad Pass — and the access window end
+  // is stamped in `subscription_current_period_end`. The resolver in
+  // @/lib/plans (resolveEffectivePlanId) silently treats anything past
+  // that timestamp as Free for limit checks while preserving the
+  // historical row so the UI can show "Founder access ended" or
+  // "Abroad Pass period ended" instead of a generic Free state.
   if (session.mode === "payment") {
     const planId = normalizePlanId(session.metadata?.plan_id ?? null);
     if (!isPaidPlan(planId)) return;
     const purchasedAt = session.created
       ? new Date(session.created * 1000)
       : new Date();
+    const periodEnd = isOneTimePlan(planId)
+      ? computeOneTimePlanExpiry(planId, purchasedAt)
+      : null;
     await applyProfileUpdate(customerId, {
       selected_plan: planId,
       stripe_customer_id: customerId,
@@ -206,9 +211,16 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         typeof session.line_items?.data[0]?.price?.id === "string"
           ? session.line_items.data[0].price.id
           : null,
-      subscription_status: "lifetime",
-      subscription_current_period_end:
-        planId === "lifetime" ? computeFounderExpiry(purchasedAt) : null,
+      // Marker status for one-time plans so the billing UI can tell
+      // them apart from recurring subscriptions without inferring from
+      // plan id alone.
+      subscription_status:
+        planId === "lifetime"
+          ? "lifetime"
+          : planId === "abroad_pass"
+            ? "abroad_pass"
+            : null,
+      subscription_current_period_end: periodEnd,
       subscription_cancel_at_period_end: false,
     });
   }
