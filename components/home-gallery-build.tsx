@@ -783,7 +783,7 @@ function BuildView({
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -4 }}
                         transition={{ duration: 0.32, ease: EASE }}
-                        className="mx-auto mt-4 grid max-w-5xl grid-cols-4 gap-x-1.5 gap-y-3 sm:gap-x-3 sm:gap-y-5 md:gap-x-5 md:gap-y-8"
+                        className="mx-auto mt-4 grid max-w-5xl grid-cols-4 gap-x-1.5 gap-y-3 sm:gap-x-3 sm:gap-y-5 md:max-w-7xl md:gap-x-5 md:gap-y-8"
                       >
                         {openSub.scenes.map((scene) => (
                           <SceneCard
