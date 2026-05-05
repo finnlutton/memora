@@ -97,6 +97,9 @@ export function LightboxViewer({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-[rgba(9,14,22,0.76)] backdrop-blur-md" />
         <Dialog.Content className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-8">
+          <Dialog.Title className="sr-only">
+            {current?.caption || "Photo viewer"}
+          </Dialog.Title>
           {current ? (
             <div className="relative flex h-full w-full max-w-6xl flex-col justify-center gap-3 md:gap-5">
               {/* Counter pill — tells you where you are in the set without
@@ -132,6 +135,7 @@ export function LightboxViewer({
                   fill
                   className="pointer-events-none object-contain"
                   sizes="100vw"
+                  quality={95}
                   unoptimized={nextImageUnoptimizedForSrc(current.src)}
                   draggable={false}
                 />
