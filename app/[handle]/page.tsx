@@ -131,7 +131,7 @@ export default async function PublicProfilePage({
           // Tighter mobile cap so the bio is centered with whitespace
           // either side, not edge-to-edge — reads as a deliberate
           // caption block instead of a wall of text.
-          <p className="mx-auto mt-4 max-w-[18rem] whitespace-pre-line text-[15px] leading-7 text-[color:var(--ink-soft)] md:mt-4 md:max-w-md md:text-[15px]">
+          <p className="mx-auto mt-4 max-w-[18rem] whitespace-pre-line text-[14px] leading-6 text-[color:var(--ink-soft)] md:mt-4 md:max-w-md md:text-[15px] md:leading-7">
             {profile.bio}
           </p>
         ) : null}
