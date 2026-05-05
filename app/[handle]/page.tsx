@@ -204,14 +204,9 @@ export default async function PublicProfilePage({
                       ) : null}
                     </p>
                   ) : null}
-                  {/* Description hidden on mobile — at 2 cols, 2-line
-                      clamps of varying length make adjacent rows uneven
-                      and crowd the photos. Returns at md+. */}
-                  {gallery.description ? (
-                    <p className="hidden line-clamp-2 text-[13.5px] leading-6 text-[color:var(--ink-soft)] md:block">
-                      {gallery.description}
-                    </p>
-                  ) : null}
+                  {/* Descriptions live on the gallery itself, not on the
+                      profile-page tile. Keeps the index scannable and
+                      pushes readers to open the gallery for context. */}
                 </div>
               </Link>
             );
