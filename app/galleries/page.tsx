@@ -157,31 +157,24 @@ export default function GalleriesPage() {
           actionsClassName="md:flex-col md:items-stretch md:self-center md:gap-2.5 md:pt-0"
           actions={
             <>
-              {hasReachedGalleryLimit ? (
+              {sortedGalleries.length > 1 ? (
                 <Button
-                  asChild
-                  variant="secondary"
-                  data-tour-id="gallery-create"
-                  className="h-10 gap-1.5 whitespace-nowrap px-3 text-[11px] tracking-[0.14em] md:h-auto md:px-3 md:py-2 md:text-xs"
+                  type="button"
+                  variant="ghost"
+                  aria-label="Reorder galleries"
+                  title="Reorder galleries"
+                  className="h-10 w-10 shrink-0 px-0 text-[color:var(--ink-soft)] hover:text-[color:var(--ink)] md:h-auto md:w-auto md:px-2 md:py-2"
+                  onClick={() => {
+                    setReorderMode(true);
+                    setShareMode(false);
+                    setSharePanelOpen(false);
+                    setSelectedGalleryIds([]);
+                    setSelectedGroupIds([]);
+                  }}
                 >
-                  <Link href="/galleries/settings/membership?source=gallery-limit">
-                    <span className="md:hidden">Upgrade</span>
-                    <span className="hidden md:inline">Upgrade plan</span>
-                  </Link>
+                  <ArrowUpDown className="h-3.5 w-3.5" />
                 </Button>
-              ) : (
-                <Button
-                  asChild
-                  data-tour-id="gallery-create"
-                  className="h-10 gap-1.5 whitespace-nowrap px-3 text-[11px] tracking-[0.14em] md:h-auto md:px-3 md:py-2 md:text-xs"
-                >
-                  <Link href="/galleries/new">
-                    <Plus className="h-3 w-3 md:h-3 md:w-3" />
-                    <span className="md:hidden">Create</span>
-                    <span className="hidden md:inline">Create gallery</span>
-                  </Link>
-                </Button>
-              )}
+              ) : null}
               <Button
                 type="button"
                 variant="ghost"
@@ -202,24 +195,32 @@ export default function GalleriesPage() {
                 <span className="md:hidden">Share</span>
                 <span className="hidden md:inline">Share Galleries</span>
               </Button>
-              {sortedGalleries.length > 1 ? (
+              {hasReachedGalleryLimit ? (
                 <Button
-                  type="button"
-                  variant="ghost"
-                  aria-label="Reorder galleries"
-                  title="Reorder galleries"
-                  className="h-10 w-10 shrink-0 px-0 text-[color:var(--ink-soft)] hover:text-[color:var(--ink)] md:h-auto md:w-auto md:px-2 md:py-2"
-                  onClick={() => {
-                    setReorderMode(true);
-                    setShareMode(false);
-                    setSharePanelOpen(false);
-                    setSelectedGalleryIds([]);
-                    setSelectedGroupIds([]);
-                  }}
+                  asChild
+                  variant="secondary"
+                  data-tour-id="gallery-create"
+                  className="h-10 gap-1.5 whitespace-nowrap px-3 text-[11px] tracking-[0.14em] md:h-auto md:px-3 md:py-2 md:text-xs"
                 >
-                  <ArrowUpDown className="h-3.5 w-3.5" />
+                  <Link href="/galleries/settings/membership?source=gallery-limit">
+                    <span className="md:hidden">Upgrade</span>
+                    <span className="hidden md:inline">Upgrade plan</span>
+                  </Link>
                 </Button>
-              ) : null}
+              ) : (
+                <Button
+                  asChild
+                  variant="secondary"
+                  data-tour-id="gallery-create"
+                  className="h-10 gap-1.5 whitespace-nowrap px-3 text-[11px] tracking-[0.14em] md:h-auto md:px-3 md:py-2 md:text-xs"
+                >
+                  <Link href="/galleries/new">
+                    <Plus className="h-3 w-3 md:h-3 md:w-3" />
+                    <span className="md:hidden">Create</span>
+                    <span className="hidden md:inline">Create gallery</span>
+                  </Link>
+                </Button>
+              )}
             </>
           }
         />
