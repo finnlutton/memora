@@ -5,7 +5,6 @@ import {
   CalendarPlus,
   ChevronLeft,
   ChevronRight,
-  GripVertical,
   ImagePlus,
   MapPin,
   Pencil,
@@ -72,6 +71,23 @@ export function GalleryDirectPhotos({ gallery }: { gallery: Gallery }) {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [hoverId, setHoverId] = useState<string | null>(null);
 
+  // Live column count, mirroring the grid breakpoints below
+  // (grid-cols-3 / sm:grid-cols-4 / lg:grid-cols-5). Used so divider
+  // chevrons step one *visual row* at a time instead of one item.
+  const [cols, setCols] = useState(3);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const compute = () => {
+      if (window.matchMedia("(min-width: 1024px)").matches) return 5;
+      if (window.matchMedia("(min-width: 640px)").matches) return 4;
+      return 3;
+    };
+    setCols(compute());
+    const onResize = () => setCols(compute());
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
   const onFiles = async (files: File[]) => {
     setBusy(true);
     setError(null);
@@ -129,49 +145,54 @@ export function GalleryDirectPhotos({ gallery }: { gallery: Gallery }) {
   // Step reorder via prev/next arrows — touch-friendly alternative to
   // drag-and-drop.
   //
-  // Photos move one slot at a time. Dividers move as a *group*: the
-  // divider plus every photo beneath it (until the next divider or the
-  // end of the list). Moving a divider therefore swaps two whole sections
-  // — its own and the adjacent one — so the photos a user has gathered
-  // under a heading travel with that heading.
+  // Photos step one slot at a time. Dividers step one *visual row* of
+  // photos at a time — so each click jumps the divider past up to
+  // `cols` photos in its current section. The divider stops at the
+  // next divider (it doesn't cross other dividers) and naturally lands
+  // exactly on the row line you'd expect.
   const moveItem = async (id: string, direction: -1 | 1) => {
     const idx = items.findIndex((it) => it.data.id === id);
     if (idx < 0) return;
 
     let next: Item[];
     if (items[idx].kind === "divider") {
-      // Find this divider's group end (exclusive).
-      let groupEnd = idx + 1;
-      while (groupEnd < items.length && items[groupEnd].kind !== "divider") {
-        groupEnd++;
-      }
-      if (direction === -1) {
-        if (idx === 0) return;
-        // Previous block runs from the previous divider (or 0 for the
-        // pre-first-divider prefix) up to this divider.
-        let prevStart = idx - 1;
-        while (prevStart > 0 && items[prevStart].kind !== "divider") {
-          prevStart--;
+      if (direction === 1) {
+        // Walk forward through up to `cols` consecutive photos.
+        let target = idx + 1;
+        let crossed = 0;
+        while (
+          target < items.length &&
+          items[target].kind === "photo" &&
+          crossed < cols
+        ) {
+          target++;
+          crossed++;
         }
-        if (items[prevStart].kind !== "divider") prevStart = 0;
-        const before = items.slice(0, prevStart);
-        const prev = items.slice(prevStart, idx);
-        const self = items.slice(idx, groupEnd);
-        const after = items.slice(groupEnd);
-        next = [...before, ...self, ...prev, ...after];
+        if (crossed === 0) return;
+        next = [
+          ...items.slice(0, idx),
+          ...items.slice(idx + 1, target),
+          items[idx],
+          ...items.slice(target),
+        ];
       } else {
-        if (groupEnd >= items.length) return;
-        // Next block runs from groupEnd (a divider) until the divider
-        // after it, or the end of the list.
-        let nextEnd = groupEnd + 1;
-        while (nextEnd < items.length && items[nextEnd].kind !== "divider") {
-          nextEnd++;
+        let target = idx - 1;
+        let crossed = 0;
+        while (
+          target >= 0 &&
+          items[target].kind === "photo" &&
+          crossed < cols
+        ) {
+          target--;
+          crossed++;
         }
-        const before = items.slice(0, idx);
-        const self = items.slice(idx, groupEnd);
-        const nextBlock = items.slice(groupEnd, nextEnd);
-        const after = items.slice(nextEnd);
-        next = [...before, ...nextBlock, ...self, ...after];
+        if (crossed === 0) return;
+        next = [
+          ...items.slice(0, target + 1),
+          items[idx],
+          ...items.slice(target + 1, idx),
+          ...items.slice(idx + 1),
+        ];
       }
     } else {
       const targetIdx = idx + direction;
@@ -230,20 +251,16 @@ export function GalleryDirectPhotos({ gallery }: { gallery: Gallery }) {
           {items.map((item, idx) => {
             const isDragging = draggingId === item.data.id;
             const isHover = hoverId === item.data.id;
-            // For dividers, "next" means the section following this one
-            // — so the chevron disables only when this divider's group
-            // already runs to the end of the list. Photos still step one
-            // slot at a time.
-            let groupEnd = idx + 1;
-            if (item.kind === "divider") {
-              while (groupEnd < items.length && items[groupEnd].kind !== "divider") {
-                groupEnd++;
-              }
-            }
-            const canMovePrev = idx > 0;
+            // Dividers can only step over photos (one row at a time), so
+            // their chevrons disable when the immediate neighbour is
+            // another divider or a list edge. Photos step one slot.
+            const canMovePrev =
+              item.kind === "divider"
+                ? idx > 0 && items[idx - 1].kind === "photo"
+                : idx > 0;
             const canMoveNext =
               item.kind === "divider"
-                ? groupEnd < items.length
+                ? idx < items.length - 1 && items[idx + 1].kind === "photo"
                 : idx < items.length - 1;
             const dndProps = {
               draggable: true,
@@ -390,7 +407,6 @@ function DividerRow({
 
   return (
     <div className="group flex items-center gap-2 pt-3">
-      <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-[color:var(--ink-faint)] transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100" />
       <div className="flex flex-col">
         <input
           ref={inputRef}
