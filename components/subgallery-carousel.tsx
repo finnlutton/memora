@@ -146,7 +146,7 @@ export function SubgalleryCarousel({
             </p>
           ) : null}
           {title ? (
-            <h2 className={`font-serif text-xl md:text-4xl ${eyebrow ? "mt-2 md:mt-3" : ""} ${textClass}`}>
+            <h2 className={`hidden font-serif text-xl md:block md:text-4xl ${eyebrow ? "mt-2 md:mt-3" : ""} ${textClass}`}>
               {title}
             </h2>
           ) : null}
