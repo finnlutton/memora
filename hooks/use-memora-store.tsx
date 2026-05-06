@@ -248,7 +248,7 @@ type MemoraStore = {
    */
   reorderSubgalleries: (galleryId: string, orderedIds: string[]) => Promise<void>;
   // Direct gallery photos (no subgallery wrapper) and date dividers.
-  addGalleryPhotos: (galleryId: string, photos: MemoryPhoto[]) => Promise<void>;
+  addGalleryPhotos: (galleryId: string, photos: MemoryPhoto[]) => Promise<string[]>;
   updateGalleryPhoto: (
     galleryId: string,
     photoId: string,
@@ -2190,9 +2190,9 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
       // rearranged together by `reorderGalleryItems`.
 
       async addGalleryPhotos(galleryId, photos) {
-        if (photos.length === 0) return;
+        if (photos.length === 0) return [];
         const gallery = galleries.find((entry) => entry.id === galleryId);
-        if (!gallery) return;
+        if (!gallery) return [];
         const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);
         // Direct gallery photos use their own per-gallery limit
         // (directPhotos), not the per-subgallery photo limit.
@@ -2308,6 +2308,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
               : g,
           ),
         );
+
+        return persistedPhotos.map((p) => p.id);
       },
 
       async updateGalleryPhoto(galleryId, photoId, fields) {

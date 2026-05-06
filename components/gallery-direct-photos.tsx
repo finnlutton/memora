@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   GripVertical,
+  ImagePlus,
   MapPin,
   Pencil,
   Trash2,
@@ -126,9 +127,9 @@ export function GalleryDirectPhotos({ gallery }: { gallery: Gallery }) {
   };
 
   // Step reorder via prev/next arrows — touch-friendly alternative to
-  // drag-and-drop. Swaps the photo with its neighbour in the shared
+  // drag-and-drop. Swaps the item with its neighbour in the shared
   // photo+divider ordering namespace and persists the new order.
-  const movePhoto = async (id: string, direction: -1 | 1) => {
+  const moveItem = async (id: string, direction: -1 | 1) => {
     const idx = items.findIndex((it) => it.data.id === id);
     if (idx < 0) return;
     const targetIdx = idx + direction;
@@ -143,6 +144,36 @@ export function GalleryDirectPhotos({ gallery }: { gallery: Gallery }) {
     } catch (err) {
       console.error("Memora: reorderGalleryItems failed", err);
       setError(err instanceof Error ? err.message : "Failed to reorder.");
+    }
+  };
+
+  // Upload photos and insert them immediately after a given divider
+  // instead of appending to the end. Uploads first (which appends),
+  // then reorders so the new IDs sit right after the divider.
+  const onFilesAfterDivider = async (dividerId: string, files: File[]) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const photos = await filesToPhotos(files, null);
+      const newIds = await addGalleryPhotos(gallery.id, photos);
+      if (newIds.length === 0) return;
+      const dividerIdx = items.findIndex((it) => it.data.id === dividerId);
+      if (dividerIdx < 0) return;
+      const existingOrder = items
+        .filter((it) => !newIds.includes(it.data.id))
+        .map((it) => ({ type: it.kind, id: it.data.id }));
+      const insertAt = existingOrder.findIndex((it) => it.id === dividerId) + 1;
+      const reordered = [
+        ...existingOrder.slice(0, insertAt),
+        ...newIds.map((id) => ({ type: "photo" as const, id })),
+        ...existingOrder.slice(insertAt),
+      ];
+      await reorderGalleryItems(gallery.id, reordered);
+    } catch (err) {
+      console.error("Memora: insert-after-divider upload failed", err);
+      setError(err instanceof Error ? err.message : "Failed to upload photos.");
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -179,7 +210,14 @@ export function GalleryDirectPhotos({ gallery }: { gallery: Gallery }) {
                   <DividerRow
                     divider={item.data}
                     autoFocus={focusDividerId === item.data.id}
+                    canMovePrev={canMovePrev}
+                    canMoveNext={canMoveNext}
                     onAutoFocusHandled={() => setFocusDividerId(null)}
+                    onMovePrev={() => moveItem(item.data.id, -1)}
+                    onMoveNext={() => moveItem(item.data.id, 1)}
+                    onAddFiles={(files) =>
+                      onFilesAfterDivider(item.data.id, files)
+                    }
                     onUpdate={(label) =>
                       updateDivider(gallery.id, item.data.id, label)
                     }
@@ -201,8 +239,8 @@ export function GalleryDirectPhotos({ gallery }: { gallery: Gallery }) {
                   editing={editingPhotoId === item.data.id}
                   canMovePrev={canMovePrev}
                   canMoveNext={canMoveNext}
-                  onMovePrev={() => movePhoto(item.data.id, -1)}
-                  onMoveNext={() => movePhoto(item.data.id, 1)}
+                  onMovePrev={() => moveItem(item.data.id, -1)}
+                  onMoveNext={() => moveItem(item.data.id, 1)}
                   onStartEdit={() => setEditingPhotoId(item.data.id)}
                   onCloseEdit={() => setEditingPhotoId(null)}
                   onUpdate={(fields) =>
@@ -261,18 +299,29 @@ export function GalleryDirectPhotos({ gallery }: { gallery: Gallery }) {
 function DividerRow({
   divider,
   autoFocus,
+  canMovePrev,
+  canMoveNext,
   onAutoFocusHandled,
+  onMovePrev,
+  onMoveNext,
+  onAddFiles,
   onUpdate,
   onRemove,
 }: {
   divider: GalleryDivider;
   autoFocus?: boolean;
+  canMovePrev: boolean;
+  canMoveNext: boolean;
   onAutoFocusHandled?: () => void;
+  onMovePrev: () => Promise<void> | void;
+  onMoveNext: () => Promise<void> | void;
+  onAddFiles: (files: File[]) => Promise<void> | void;
   onUpdate: (label: string) => Promise<void>;
   onRemove: () => Promise<void>;
 }) {
   const [value, setValue] = useState(divider.label);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (autoFocus && inputRef.current) {
@@ -309,14 +358,59 @@ function DividerRow({
           className="mt-1 h-px w-8 bg-[color:var(--border-strong)] opacity-70"
         />
       </div>
-      <button
-        type="button"
-        onClick={() => void onRemove()}
-        aria-label="Remove divider"
-        className="ml-1 rounded-sm p-1 text-[color:var(--ink-faint)] transition hover:text-[color:var(--accent-strong)] [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
-      >
-        <Trash2 className="h-3 w-3" />
-      </button>
+      {/* Hover/touch tools — reorder chevrons, insert-photos here, trash.
+          Always visible on touch, hover-revealed on pointer devices to
+          keep the divider row visually quiet by default. */}
+      <div className="ml-1 inline-flex items-center gap-2 transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100">
+        <div className="inline-flex items-center">
+          <button
+            type="button"
+            onClick={() => void onMovePrev()}
+            disabled={!canMovePrev}
+            aria-label="Move divider earlier"
+            className="inline-flex h-5 w-5 items-center justify-center text-[color:var(--ink-faint)] transition hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <ChevronLeft className="h-3 w-3" strokeWidth={1.8} />
+          </button>
+          <button
+            type="button"
+            onClick={() => void onMoveNext()}
+            disabled={!canMoveNext}
+            aria-label="Move divider later"
+            className="inline-flex h-5 w-5 items-center justify-center text-[color:var(--ink-faint)] transition hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <ChevronRight className="h-3 w-3" strokeWidth={1.8} />
+          </button>
+        </div>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          aria-label="Add photos under this divider"
+          className="inline-flex h-5 w-5 items-center justify-center rounded-sm text-[color:var(--ink-faint)] transition hover:text-[color:var(--ink)]"
+        >
+          <ImagePlus className="h-3 w-3" strokeWidth={1.8} />
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            const files = Array.from(e.target.files ?? []);
+            e.target.value = "";
+            if (files.length > 0) void onAddFiles(files);
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => void onRemove()}
+          aria-label="Remove divider"
+          className="inline-flex h-5 w-5 items-center justify-center rounded-sm text-[color:var(--ink-faint)] transition hover:text-[color:var(--accent-strong)]"
+        >
+          <Trash2 className="h-3 w-3" />
+        </button>
+      </div>
     </div>
   );
 }
