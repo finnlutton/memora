@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CollapsibleEntry } from "@/components/collapsible-entry";
-import { PhotoGrid } from "@/components/photo-grid";
+import { SharedGalleryItems } from "@/components/shared-gallery-items";
 import { ShareThemeFrame } from "@/components/share/share-theme-frame";
 import {
   buildShareMetadata,
@@ -13,7 +13,7 @@ import {
 import { imageProxyUrlForPath } from "@/lib/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { formatLocationForCard } from "@/lib/utils";
-import type { MemoryPhoto } from "@/types/memora";
+import type { GalleryDivider, MemoryPhoto } from "@/types/memora";
 
 type ShareRow = {
   id: string;
@@ -50,6 +50,13 @@ type DirectPhotoRow = {
   id: string;
   storage_path: string;
   caption: string | null;
+  display_order: number | null;
+  created_at: string;
+};
+
+type DividerRow = {
+  id: string;
+  label: string;
   display_order: number | null;
   created_at: string;
 };
@@ -211,7 +218,7 @@ export default async function PublicSharedGalleryPage({
     );
   }
 
-  const [{ data: subgalleries }, { data: directPhotoRows }, { count: totalGalleryCount }, senderCtx] = await Promise.all([
+  const [{ data: subgalleries }, { data: directPhotoRows }, { data: dividerRows }, { count: totalGalleryCount }, senderCtx] = await Promise.all([
     admin
       .from("subgalleries")
       .select("id, title, description, cover_image_path, location, date_label, start_date, end_date")
@@ -225,6 +232,12 @@ export default async function PublicSharedGalleryPage({
       .is("subgallery_id", null)
       .order("display_order", { ascending: true })
       .returns<DirectPhotoRow[]>(),
+    admin
+      .from("gallery_dividers")
+      .select("id, label, display_order, created_at")
+      .eq("gallery_id", galleryId)
+      .order("display_order", { ascending: true })
+      .returns<DividerRow[]>(),
     admin
       .from("share_galleries")
       .select("gallery_id", { count: "exact", head: true })
@@ -261,6 +274,14 @@ export default async function PublicSharedGalleryPage({
       order: photo.display_order ?? index,
     };
   });
+
+  const dividers: GalleryDivider[] = (dividerRows ?? []).map((row, index) => ({
+    id: row.id,
+    galleryId,
+    label: row.label ?? "",
+    order: row.display_order ?? index,
+    createdAt: row.created_at,
+  }));
 
   const hasSubgalleries = (subgalleries ?? []).length > 0;
   const hasDirectPhotos = directPhotos.length > 0;
@@ -343,7 +364,7 @@ export default async function PublicSharedGalleryPage({
         {hasDirectPhotos ? (
           <section className={hasSubgalleries ? "mt-10 md:mt-14" : ""}>
             <p className="mb-3 font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">Photos</p>
-            <PhotoGrid photos={directPhotos} />
+            <SharedGalleryItems photos={directPhotos} dividers={dividers} />
           </section>
         ) : null}
 
