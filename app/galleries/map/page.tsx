@@ -8,10 +8,7 @@ import {
   type DateFilter,
 } from "@/components/memory-map/date-filter";
 import { WorldGlobe } from "@/components/WorldGlobe";
-import { UsaMemoryMap } from "@/components/UsaMemoryMap";
 import { useMemoraStore } from "@/hooks/use-memora-store";
-
-type MapView = "globe" | "usa";
 
 type MapPin = {
   id: string;
@@ -38,7 +35,6 @@ function pinDateRange(pin: MapPin): { start: number; end: number } | null {
 
 export default function MemoryMapPage() {
   const { galleries } = useMemoraStore();
-  const [view, setView] = useState<MapView>("globe");
   const [dateFilter, setDateFilter] = useState<DateFilter>({ kind: "all" });
 
   // All pins, with subgallery pins inheriting their parent gallery's
@@ -143,11 +139,7 @@ export default function MemoryMapPage() {
         className="fixed bottom-0 right-0 z-0 overflow-hidden"
       >
         <div data-tour-id="globe" className="absolute inset-0 flex items-center justify-center">
-          {view === "globe" ? (
-            <WorldGlobe pins={mapPins} allowWheelZoom />
-          ) : (
-            <UsaMemoryMap pins={mapPins} />
-          )}
+          <WorldGlobe pins={mapPins} allowWheelZoom />
         </div>
 
         <div
@@ -174,11 +166,6 @@ export default function MemoryMapPage() {
           </p>
         </header>
 
-        {/*
-          Top-right cluster: date filter on top, view toggle below.
-          Stacked so the filter pill doesn't shove the toggle off-screen
-          on narrow viewports.
-        */}
         <div className="pointer-events-auto absolute right-5 top-6 z-20 flex flex-col items-end gap-2 md:right-10 md:top-10">
           <div data-tour-id="map-date-filter">
             <MemoryMapDateFilter
@@ -186,32 +173,6 @@ export default function MemoryMapPage() {
               onChange={setDateFilter}
               availableYears={availableYears}
             />
-          </div>
-          <div
-            role="tablist"
-            aria-label="Map view"
-            className="inline-flex items-stretch border border-[color:var(--border-strong)] bg-[rgba(250,252,255,0.94)] backdrop-blur-sm shadow-[0_6px_18px_rgba(14,22,34,0.08)]"
-          >
-            {(["globe", "usa"] as const).map((option) => {
-              const selected = view === option;
-              const label = option === "globe" ? "Globe" : "U.S.A.";
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  onClick={() => setView(option)}
-                  className={`px-3.5 py-1.5 text-[10.5px] font-medium uppercase tracking-[0.22em] transition md:px-4 md:py-2 md:text-[11px] ${
-                    selected
-                      ? "bg-[color:var(--ink)] text-white"
-                      : "text-[color:var(--ink-soft)] hover:text-[color:var(--ink)]"
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
           </div>
         </div>
 
