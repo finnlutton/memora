@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CalendarPlus,
+  ChevronLeft,
+  ChevronRight,
   GripVertical,
   MapPin,
   Pencil,
@@ -123,15 +125,38 @@ export function GalleryDirectPhotos({ gallery }: { gallery: Gallery }) {
     }
   };
 
+  // Step reorder via prev/next arrows — touch-friendly alternative to
+  // drag-and-drop. Swaps the photo with its neighbour in the shared
+  // photo+divider ordering namespace and persists the new order.
+  const movePhoto = async (id: string, direction: -1 | 1) => {
+    const idx = items.findIndex((it) => it.data.id === id);
+    if (idx < 0) return;
+    const targetIdx = idx + direction;
+    if (targetIdx < 0 || targetIdx >= items.length) return;
+    const next = items.slice();
+    [next[idx], next[targetIdx]] = [next[targetIdx], next[idx]];
+    try {
+      await reorderGalleryItems(
+        gallery.id,
+        next.map((it) => ({ type: it.kind, id: it.data.id })),
+      );
+    } catch (err) {
+      console.error("Memora: reorderGalleryItems failed", err);
+      setError(err instanceof Error ? err.message : "Failed to reorder.");
+    }
+  };
+
   const isEmpty = items.length === 0;
 
   return (
     <section className="mt-auto pt-12">
       {!isEmpty ? (
         <div className="mb-8 grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-5">
-          {items.map((item) => {
+          {items.map((item, idx) => {
             const isDragging = draggingId === item.data.id;
             const isHover = hoverId === item.data.id;
+            const canMovePrev = idx > 0;
+            const canMoveNext = idx < items.length - 1;
             const dndProps = {
               draggable: true,
               onDragStart: onDragStartItem(item.data.id),
@@ -174,6 +199,10 @@ export function GalleryDirectPhotos({ gallery }: { gallery: Gallery }) {
                 <PhotoCard
                   photo={item.data}
                   editing={editingPhotoId === item.data.id}
+                  canMovePrev={canMovePrev}
+                  canMoveNext={canMoveNext}
+                  onMovePrev={() => movePhoto(item.data.id, -1)}
+                  onMoveNext={() => movePhoto(item.data.id, 1)}
                   onStartEdit={() => setEditingPhotoId(item.data.id)}
                   onCloseEdit={() => setEditingPhotoId(null)}
                   onUpdate={(fields) =>
@@ -297,6 +326,10 @@ function DividerRow({
 function PhotoCard({
   photo,
   editing,
+  canMovePrev,
+  canMoveNext,
+  onMovePrev,
+  onMoveNext,
   onStartEdit,
   onCloseEdit,
   onUpdate,
@@ -304,6 +337,10 @@ function PhotoCard({
 }: {
   photo: MemoryPhoto;
   editing: boolean;
+  canMovePrev: boolean;
+  canMoveNext: boolean;
+  onMovePrev: () => Promise<void> | void;
+  onMoveNext: () => Promise<void> | void;
   onStartEdit: () => void;
   onCloseEdit: () => void;
   onUpdate: (fields: {
@@ -335,11 +372,33 @@ function PhotoCard({
           ) : null}
         </div>
 
-        {/* Edit + delete affordances — always visible on touch devices,
-            hover-revealed on devices with a real pointer. The arbitrary
-            [@media(hover:hover)] variant scopes the fade to mouse-driven
-            UAs so the simple desktop design survives while phones/tablets
-            get the same controls without the hover trap. */}
+        {/* Reorder pill — prev/next chevrons sharing one rounded shell.
+            Mirrors the hover/touch pattern of edit + delete: always
+            visible on touch, hover-revealed on pointer devices. */}
+        {!editing ? (
+          <div className="absolute left-2 top-2 inline-flex items-center rounded-full bg-white/90 shadow-[0_3px_8px_rgba(14,22,34,0.18)] transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100">
+            <button
+              type="button"
+              onClick={() => void onMovePrev()}
+              disabled={!canMovePrev}
+              aria-label="Move photo earlier"
+              className="inline-flex h-6 w-6 items-center justify-center rounded-l-full text-[color:var(--ink)] transition hover:bg-white disabled:cursor-not-allowed disabled:text-[color:var(--ink-faint)] disabled:opacity-50 sm:h-5 sm:w-5"
+            >
+              <ChevronLeft className="h-2.5 w-2.5" strokeWidth={1.8} />
+            </button>
+            <span aria-hidden className="h-3 w-px bg-[color:var(--border)]" />
+            <button
+              type="button"
+              onClick={() => void onMoveNext()}
+              disabled={!canMoveNext}
+              aria-label="Move photo later"
+              className="inline-flex h-6 w-6 items-center justify-center rounded-r-full text-[color:var(--ink)] transition hover:bg-white disabled:cursor-not-allowed disabled:text-[color:var(--ink-faint)] disabled:opacity-50 sm:h-5 sm:w-5"
+            >
+              <ChevronRight className="h-2.5 w-2.5" strokeWidth={1.8} />
+            </button>
+          </div>
+        ) : null}
+
         {!editing ? (
           <div className="absolute right-2 top-2 flex gap-1 transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100">
             <button
