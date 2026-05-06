@@ -390,9 +390,23 @@ function storagePathFromSupabaseObjectUrl(url: string) {
   }
 }
 
+function storagePathFromImageProxyUrl(value: string) {
+  if (!value.startsWith("/api/img/")) return null;
+  const raw = value.slice("/api/img/".length);
+  try {
+    return raw.split("/").map(decodeURIComponent).join("/");
+  } catch {
+    return null;
+  }
+}
+
 function normalizeToStoragePath(value: string) {
   if (!value) return value;
-  return storagePathFromSupabaseObjectUrl(value) ?? value;
+  return (
+    storagePathFromSupabaseObjectUrl(value) ??
+    storagePathFromImageProxyUrl(value) ??
+    value
+  );
 }
 
 function isSupabaseObjectUrl(value: string) {
@@ -904,7 +918,7 @@ async function deleteStorageObjectsSafe(
   userId: string,
   paths: Array<string | null | undefined>,
 ) {
-  const toDelete = Array.from(
+  const candidates = Array.from(
     new Set(
       paths
         .filter((path): path is string => Boolean(path && path.trim()))
@@ -912,6 +926,53 @@ async function deleteStorageObjectsSafe(
         .filter((path) => isLikelyStoragePath(path) && path.startsWith(`${userId}/`)),
     ),
   );
+
+  if (candidates.length === 0) return;
+
+  // Defense in depth: never delete bytes that any DB row still references.
+  // Even if a caller computed the wrong diff (e.g. mismatched URL forms in
+  // storage_path / cover_image_path), this re-check catches it before the
+  // Supabase remove call. Cost is three small per-user reads.
+  const [galleriesResult, subgalleriesResult, photosResult] = await Promise.all([
+    supabase.from("galleries").select("cover_image_path").eq("user_id", userId),
+    supabase.from("subgalleries").select("cover_image_path").eq("user_id", userId),
+    supabase.from("photos").select("storage_path").eq("user_id", userId),
+  ]);
+
+  if (galleriesResult.error || subgalleriesResult.error || photosResult.error) {
+    // Refusing to delete is the safe failure mode here — losing photos is
+    // far worse than leaving stale bytes that a later cleanup can pick up.
+    console.error("Memora: refused storage delete (reference check failed)", {
+      galleries: galleriesResult.error,
+      subgalleries: subgalleriesResult.error,
+      photos: photosResult.error,
+    });
+    return;
+  }
+
+  const referenced = new Set<string>();
+  for (const row of (galleriesResult.data ?? []) as Array<{ cover_image_path: string | null }>) {
+    if (!row.cover_image_path) continue;
+    referenced.add(normalizeToStoragePath(row.cover_image_path));
+  }
+  for (const row of (subgalleriesResult.data ?? []) as Array<{ cover_image_path: string | null }>) {
+    if (!row.cover_image_path) continue;
+    referenced.add(normalizeToStoragePath(row.cover_image_path));
+  }
+  for (const row of (photosResult.data ?? []) as Array<{ storage_path: string }>) {
+    if (!row.storage_path) continue;
+    referenced.add(normalizeToStoragePath(row.storage_path));
+  }
+
+  const blocked = candidates.filter((path) => referenced.has(path));
+  const toDelete = candidates.filter((path) => !referenced.has(path));
+
+  if (blocked.length > 0) {
+    console.warn("Memora: blocked storage delete for still-referenced paths", {
+      blockedCount: blocked.length,
+      sample: blocked.slice(0, 5),
+    });
+  }
 
   if (toDelete.length === 0) return;
   const { error } = await supabase.storage.from(STORAGE_BUCKET).remove(toDelete);

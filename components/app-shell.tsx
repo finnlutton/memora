@@ -301,11 +301,18 @@ function SettingsDropdown({
             >
               Recover password
             </button>
-            <StorageCleanupDialog
-              onAfterAction={() => {
-                setOpen(false);
-              }}
-            />
+            {/* Temporarily hidden — the orphan scan misclassifies photos
+                whose storage_path was persisted as a `/api/img/...` proxy URL
+                as orphaned, so cleanup deletes referenced bytes. Re-enable
+                once normalizeToStoragePath strips the proxy prefix and any
+                affected rows have been healed. */}
+            {false ? (
+              <StorageCleanupDialog
+                onAfterAction={() => {
+                  setOpen(false);
+                }}
+              />
+            ) : null}
           </div>
 
           <div className="mt-5 border-t border-[color:var(--border)] pt-4">
