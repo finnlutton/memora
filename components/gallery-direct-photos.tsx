@@ -127,15 +127,59 @@ export function GalleryDirectPhotos({ gallery }: { gallery: Gallery }) {
   };
 
   // Step reorder via prev/next arrows — touch-friendly alternative to
-  // drag-and-drop. Swaps the item with its neighbour in the shared
-  // photo+divider ordering namespace and persists the new order.
+  // drag-and-drop.
+  //
+  // Photos move one slot at a time. Dividers move as a *group*: the
+  // divider plus every photo beneath it (until the next divider or the
+  // end of the list). Moving a divider therefore swaps two whole sections
+  // — its own and the adjacent one — so the photos a user has gathered
+  // under a heading travel with that heading.
   const moveItem = async (id: string, direction: -1 | 1) => {
     const idx = items.findIndex((it) => it.data.id === id);
     if (idx < 0) return;
-    const targetIdx = idx + direction;
-    if (targetIdx < 0 || targetIdx >= items.length) return;
-    const next = items.slice();
-    [next[idx], next[targetIdx]] = [next[targetIdx], next[idx]];
+
+    let next: Item[];
+    if (items[idx].kind === "divider") {
+      // Find this divider's group end (exclusive).
+      let groupEnd = idx + 1;
+      while (groupEnd < items.length && items[groupEnd].kind !== "divider") {
+        groupEnd++;
+      }
+      if (direction === -1) {
+        if (idx === 0) return;
+        // Previous block runs from the previous divider (or 0 for the
+        // pre-first-divider prefix) up to this divider.
+        let prevStart = idx - 1;
+        while (prevStart > 0 && items[prevStart].kind !== "divider") {
+          prevStart--;
+        }
+        if (items[prevStart].kind !== "divider") prevStart = 0;
+        const before = items.slice(0, prevStart);
+        const prev = items.slice(prevStart, idx);
+        const self = items.slice(idx, groupEnd);
+        const after = items.slice(groupEnd);
+        next = [...before, ...self, ...prev, ...after];
+      } else {
+        if (groupEnd >= items.length) return;
+        // Next block runs from groupEnd (a divider) until the divider
+        // after it, or the end of the list.
+        let nextEnd = groupEnd + 1;
+        while (nextEnd < items.length && items[nextEnd].kind !== "divider") {
+          nextEnd++;
+        }
+        const before = items.slice(0, idx);
+        const self = items.slice(idx, groupEnd);
+        const nextBlock = items.slice(groupEnd, nextEnd);
+        const after = items.slice(nextEnd);
+        next = [...before, ...nextBlock, ...self, ...after];
+      }
+    } else {
+      const targetIdx = idx + direction;
+      if (targetIdx < 0 || targetIdx >= items.length) return;
+      next = items.slice();
+      [next[idx], next[targetIdx]] = [next[targetIdx], next[idx]];
+    }
+
     try {
       await reorderGalleryItems(
         gallery.id,
@@ -186,8 +230,21 @@ export function GalleryDirectPhotos({ gallery }: { gallery: Gallery }) {
           {items.map((item, idx) => {
             const isDragging = draggingId === item.data.id;
             const isHover = hoverId === item.data.id;
+            // For dividers, "next" means the section following this one
+            // — so the chevron disables only when this divider's group
+            // already runs to the end of the list. Photos still step one
+            // slot at a time.
+            let groupEnd = idx + 1;
+            if (item.kind === "divider") {
+              while (groupEnd < items.length && items[groupEnd].kind !== "divider") {
+                groupEnd++;
+              }
+            }
             const canMovePrev = idx > 0;
-            const canMoveNext = idx < items.length - 1;
+            const canMoveNext =
+              item.kind === "divider"
+                ? groupEnd < items.length
+                : idx < items.length - 1;
             const dndProps = {
               draggable: true,
               onDragStart: onDragStartItem(item.data.id),
@@ -351,11 +408,11 @@ function DividerRow({
           }}
           placeholder="add label"
           size={Math.max(value.length, 8)}
-          className="bg-transparent text-left font-serif text-[15px] leading-tight text-[color:var(--ink)] outline-none placeholder:text-[color:var(--ink-faint)] md:text-[16px]"
+          className="bg-transparent text-left font-serif text-[17px] leading-tight text-[color:var(--ink)] outline-none placeholder:text-[color:var(--ink-faint)] md:text-[19px]"
         />
         <span
           aria-hidden
-          className="mt-1 h-px w-8 bg-[color:var(--border-strong)] opacity-70"
+          className="mt-1 h-px w-12 bg-[color:var(--border-strong)]"
         />
       </div>
       {/* Hover/touch tools — reorder chevrons, insert-photos here, trash.
