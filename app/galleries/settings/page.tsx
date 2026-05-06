@@ -14,6 +14,7 @@ import { LegalLinks } from "@/components/legal-links";
 import { PublicProfileSection } from "@/components/public-profile/public-profile-section";
 import { Button } from "@/components/ui/button";
 import { useMemoraStore } from "@/hooks/use-memora-store";
+import { getMembershipPlan } from "@/lib/plans";
 import { DISPLAY_NAME_MAX_LENGTH } from "@/lib/profile-state";
 import { dispatchTourReplay } from "@/lib/tour";
 
@@ -90,6 +91,7 @@ export default function WorkspaceSettingsPage() {
           </p>
           <div className="mt-3 space-y-3">
             <BillingStatusCard />
+            <WorkspaceUsage />
             <Button
               asChild
               variant="ghost"
@@ -145,6 +147,89 @@ export default function WorkspaceSettingsPage() {
         <LegalLinks />
       </footer>
     </AppShell>
+  );
+}
+
+/**
+ * Archive + sharing usage tucked into the Membership section. Surfaces
+ * the same numbers the dashboard used to show on its top stat row, now
+ * relocated here so the dashboard stays photo-first on mobile.
+ */
+function WorkspaceUsage() {
+  const { galleries, onboarding } = useMemoraStore();
+  const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);
+  const [shareUsage, setShareUsage] = useState<{
+    current: number;
+    limit: number | null;
+    period: "lifetime" | "monthly" | null;
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const response = await fetch("/api/plan-limits/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ resource: "shares" }),
+        });
+        const payload = (await response.json()) as {
+          currentUsage?: number;
+          limit?: number | null;
+          sharePeriod?: "lifetime" | "monthly";
+        };
+        if (!response.ok || cancelled) return;
+        setShareUsage({
+          current: payload.currentUsage ?? 0,
+          limit: payload.limit ?? null,
+          period: payload.sharePeriod ?? null,
+        });
+      } catch {
+        if (!cancelled) setShareUsage(null);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const galleryCount = galleries.length;
+  const archiveLabel = selectedPlan
+    ? Number.isFinite(selectedPlan.galleryCount)
+      ? `${galleryCount} of ${selectedPlan.galleryCount} active galleries`
+      : `${galleryCount} active galleries`
+    : `${galleryCount} galleries in archive`;
+  const shareSuffix =
+    shareUsage?.period === "monthly"
+      ? "private share links this month"
+      : "private share links";
+  const shareLabel =
+    shareUsage && Number.isFinite(shareUsage.limit)
+      ? `${shareUsage.current} / ${shareUsage.limit} ${shareSuffix}`
+      : shareUsage
+        ? `${shareUsage.current} ${shareSuffix}`
+        : "Share usage unavailable";
+
+  return (
+    <div className="grid grid-cols-2 gap-4 border-t border-[color:var(--border)] pt-3">
+      <div>
+        <p className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
+          Archive usage
+        </p>
+        <p className="mt-1.5 text-[13.5px] leading-[1.35] text-[color:var(--ink)]">
+          {archiveLabel}
+        </p>
+      </div>
+      <div>
+        <p className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
+          Sharing usage
+        </p>
+        <p className="mt-1.5 text-[13.5px] leading-[1.35] text-[color:var(--ink)]">
+          {shareLabel}
+        </p>
+      </div>
+    </div>
   );
 }
 

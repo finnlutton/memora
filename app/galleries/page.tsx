@@ -225,7 +225,7 @@ export default function GalleriesPage() {
         />
       </div>
 
-      <section className="mb-3 grid grid-cols-3 gap-3 border-t border-b border-[color:var(--border)] py-4 md:mb-8 md:my-8 md:gap-6 md:py-5">
+      <section className="hidden border-t border-b border-[color:var(--border)] md:mb-8 md:my-8 md:grid md:grid-cols-3 md:gap-6 md:py-5">
         {/*
           Membership stat doubles as the dashboard's plan affordance — a
           single small link to Settings → Membership. Keeps the dashboard
