@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AppProviders } from "@/components/providers/app-providers";
 import { ThemeRouteSync } from "@/components/theme-route-sync";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
@@ -75,6 +76,7 @@ export default function RootLayout({
       <body className="min-h-full">
         <ThemeRouteSync />
         <AppProviders>{children}</AppProviders>
+        <SpeedInsights />
       </body>
     </html>
   );
