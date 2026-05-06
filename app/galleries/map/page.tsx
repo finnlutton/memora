@@ -149,7 +149,7 @@ export default function MemoryMapPage() {
 
         {/* Editorial header — top-left. The active filter summary
             replaces the default "every pin" copy when set. */}
-        <header className="pointer-events-none absolute left-5 top-6 max-w-[10.5rem] md:left-10 md:top-10 md:max-w-md">
+        <header className="pointer-events-none absolute left-5 top-14 max-w-[10.5rem] md:left-10 md:top-10 md:max-w-md">
           <p className="hidden text-[10px] font-medium uppercase tracking-[0.24em] text-[color:var(--ink-soft)] md:block">
             Memory map
           </p>

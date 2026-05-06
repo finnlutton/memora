@@ -197,8 +197,20 @@ export function GalleryCard({
           {gallery.title}
         </h3>
         {metaParts.length ? (
-          <p className="mt-1 font-[family-name:var(--font-mono)] text-[10px] uppercase leading-[1.4] tracking-[0.12em] text-[color:var(--ink-faint)] md:mt-2 md:text-[11px] md:tracking-[0.16em]">
-            {metaParts.join(" · ")}
+          // Mobile: location and date stack on their own lines so a long
+          // location doesn't drag the date onto a half-broken second line
+          // (e.g. "APR 22 — APR 26," / "2026"). Desktop keeps the single
+          // mid-dot caption since the wider column doesn't wrap.
+          <p className="mt-1 font-[family-name:var(--font-mono)] text-[9px] uppercase leading-[1.5] tracking-[0.12em] text-[color:var(--ink-faint)] md:mt-2 md:text-[11px] md:leading-[1.4] md:tracking-[0.16em]">
+            <span className="block md:inline">{metaParts[0]}</span>
+            {metaParts[1] ? (
+              <>
+                <span aria-hidden className="hidden md:inline">
+                  {" · "}
+                </span>
+                <span className="block md:inline">{metaParts[1]}</span>
+              </>
+            ) : null}
           </p>
         ) : null}
       </div>

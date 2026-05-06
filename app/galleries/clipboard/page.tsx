@@ -99,7 +99,7 @@ export default function ClipboardPage() {
         */}
         <header
           data-tour-id="clipboard-prompt"
-          className="pointer-events-none absolute left-4 right-4 top-3 z-20 max-w-2xl md:left-12 md:top-12"
+          className="pointer-events-none absolute left-4 right-4 top-14 z-20 max-w-2xl md:left-12 md:top-12"
         >
           <p className="text-[9px] font-medium uppercase tracking-[0.22em] text-[color:var(--ink-soft)] md:text-[10px] md:tracking-[0.24em]">
             Your scraps are worth keeping
@@ -163,7 +163,7 @@ export default function ClipboardPage() {
                   </p>
                 </div>
               ) : (
-                <div className="columns-2 gap-3 px-3 pb-28 pt-24 [column-fill:_balance]">
+                <div className="columns-2 gap-3 px-3 pb-28 pt-32 [column-fill:_balance]">
                   {items.map((item, index) => (
                     <div key={item.id} className="mb-3 break-inside-avoid">
                       <ClipboardCard
