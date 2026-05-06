@@ -120,11 +120,11 @@ export const HOME_GALLERY_DEMO: DemoGallery = {
       dates: "May 2026",
       description:
         "Had a great weekend with my program in Sevilla.",
-      coverImage: `${DIR}/subgallery-3-cover.JPG`,
+      coverImage: `${DIR}/subgallery-3-cover.jpg`,
       scenes: [
         {
           id: "s3-1",
-          image: `${DIR}/scene-3-1.JPG`,
+          image: `${DIR}/scene-3-1.jpg`,
         },
         {
           id: "s3-2",
