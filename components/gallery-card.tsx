@@ -92,7 +92,7 @@ export function GalleryCard({
         reads as a printed photograph's edge, not a UI card.
       */}
       <div className="relative w-full border border-[color:var(--border)] bg-[color:var(--paper)] p-1.5 md:p-[14px]">
-      <div className="relative aspect-[4/3] w-full overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)] md:aspect-[16/9]">
+      <div className="relative aspect-[4/5] w-full overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)] md:aspect-[16/9]">
         {/*
           Empty `coverImage` happens when the photo's `data:` src has been
           stripped from the persisted snapshot but Supabase hasn't yet
