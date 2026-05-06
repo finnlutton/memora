@@ -7,7 +7,6 @@ import { AddMemoryDialog } from "@/components/clipboard/add-memory-dialog";
 import { ClipboardCanvas } from "@/components/clipboard/clipboard-canvas";
 import { ClipboardCard } from "@/components/clipboard/clipboard-card";
 import { ClipboardDetailSheet } from "@/components/clipboard/clipboard-detail-sheet";
-import { pickPromptForToday } from "@/components/clipboard/clipboard-prompts";
 import {
   useClipboardItems,
   type ClipboardItem,
@@ -53,8 +52,6 @@ export default function ClipboardPage() {
     detailItemId == null
       ? null
       : items.find((entry) => entry.id === detailItemId) ?? null;
-
-  const prompt = pickPromptForToday();
 
   const handleAdd = async (input: {
     layoutType: "text" | "photo" | "text_photo";
@@ -107,19 +104,11 @@ export default function ClipboardPage() {
           <p className="text-[9px] font-medium uppercase tracking-[0.22em] text-[color:var(--ink-soft)] md:text-[10px] md:tracking-[0.24em]">
             Your scraps are worth keeping
           </p>
-          {/*
-            Title IS the rotating prompt. Today's prompt is picked
-            deterministically by date in pickPromptForToday() so the
-            user sees the same heading all day, then a fresh one
-            tomorrow. Mobile keeps the serif but drops the editorial
-            scale so the prompt doesn't dominate above-the-fold real
-            estate that should belong to the scraps themselves.
-          */}
           <h1
             id="clipboard-title"
             className="mt-1.5 font-serif text-[19px] leading-[1.15] text-[color:var(--ink)] md:mt-3 md:text-[58px] md:leading-[0.94]"
           >
-            {prompt}
+            What&apos;s on your mind?
           </h1>
           {/*
             Tiny inline loading caption — sits in the title block so the
@@ -182,7 +171,7 @@ export default function ClipboardPage() {
                         onUpdateContent={updateContent}
                         onRemove={removeItem}
                         variant="compact"
-                        onOpenDetail={(id) => setDetailItemId(id)}
+                        onOpenDetail={setDetailItemId}
                         // First few thumbnails are above-the-fold or
                         // just below; preload them eagerly so the
                         // initial paint isn't a stack of empty paper.

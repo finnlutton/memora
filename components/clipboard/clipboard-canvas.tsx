@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { ClipboardCard } from "@/components/clipboard/clipboard-card";
 import type {
   ClipboardItem,
@@ -13,10 +14,16 @@ import type {
  * - Cards render at their stored x/y coords; cards without coords
  *   land in a soft scatter pattern derived from their id so the
  *   layout is stable across reloads even before the user drags.
- * - Drag uses native pointer events tracked at the canvas root so
- *   only one set of listeners fires regardless of how many cards
- *   exist; touch isn't supported here intentionally — mobile uses
- *   the stacked layout.
+ * - Drag runs outside the React tree. Pointermove writes
+ *   `transform: translate3d(...)` straight onto the dragged card's
+ *   DOM node, rAF-coalesced. Sibling cards never re-render during a
+ *   drag, no matter how many are on the board. The final position
+ *   is committed via `flushSync` on pointerup so the resting render
+ *   (new left/top) and the inline-transform clear hit the browser
+ *   in the same paint — no snap-back flicker.
+ *
+ * Touch isn't supported here intentionally — mobile uses the
+ * stacked layout.
  *
  * Cards stay inside the canvas via a clamp on drop. The canvas is
  * tall enough (2200px) that ~30 cards never overflow horizontally
@@ -29,6 +36,8 @@ const CARD_DEFAULT_HEIGHT = 220;
 // Reserve the top of the canvas for the floating editorial header so
 // fallback-positioned cards don't render under the title block.
 const HEADER_SAFE_TOP_PX = 240;
+// Pointer movement under this distance counts as a click, not a drag.
+const DRAG_THRESHOLD_PX = 4;
 
 // Stable pseudo-random scatter for cards without saved coords. Hashing
 // the uuid keeps initial positions deterministic so reloads don't shift
@@ -38,7 +47,6 @@ function hashToUnit(seed: string, salt: number): number {
   for (let i = 0; i < seed.length; i += 1) {
     hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
   }
-  // Map to [0, 1)
   return ((hash >>> 0) % 10000) / 10000;
 }
 
@@ -85,11 +93,9 @@ export function ClipboardCanvas({
     return () => observer.disconnect();
   }, []);
 
-  // Drag state lives in refs so re-renders during drag don't slow us down.
-  // `moved` flips to true on the first pointermove that exceeds the
-  // intentional-drag threshold; a clean click without movement leaves
-  // it false so we never write a position update for a tap.
-  const DRAG_THRESHOLD_PX = 4;
+  // Everything about an in-flight drag lives in this ref + on the
+  // dragged DOM node. No React state changes fire while the user
+  // moves the pointer, so sibling cards stay still even at 240+Hz.
   const dragStateRef = useRef<{
     id: string;
     pointerId: number;
@@ -98,10 +104,15 @@ export function ClipboardCanvas({
     /** Pointer-down origin in viewport coords for threshold checks. */
     startClientX: number;
     startClientY: number;
+    /** Resting card position; the live transform is a delta from this. */
+    baseX: number;
+    baseY: number;
     moved: boolean;
+    node: HTMLDivElement;
+    rafHandle: number | null;
+    pendingDx: number;
+    pendingDy: number;
   } | null>(null);
-  const [dragId, setDragId] = useState<string | null>(null);
-  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
 
   const handlePointerDown = (
     item: ClipboardItem,
@@ -111,23 +122,25 @@ export function ClipboardCanvas({
     if (e.button !== 0) return;
     const card = e.currentTarget;
     const cardRect = card.getBoundingClientRect();
-    const offsetX = e.clientX - cardRect.left;
-    const offsetY = e.clientY - cardRect.top;
     dragStateRef.current = {
       id: item.id,
       pointerId: e.pointerId,
-      offsetX,
-      offsetY,
+      offsetX: e.clientX - cardRect.left,
+      offsetY: e.clientY - cardRect.top,
       startClientX: e.clientX,
       startClientY: e.clientY,
+      baseX: initialX,
+      baseY: initialY,
       moved: false,
+      node: card,
+      rafHandle: null,
+      pendingDx: 0,
+      pendingDy: 0,
     };
-    setDragId(item.id);
-    // Seed dragPos with the card's CURRENT canvas-relative coords so a
-    // click without movement releases at the same spot. (Previous bug:
-    // we seeded with viewport-relative cardRect.left/top, which made a
-    // simple click jump the card to the click coordinates.)
-    setDragPos({ x: initialX, y: initialY });
+    // Promote just this card to its own compositor layer for the
+    // duration of the drag — the rest of the canvas stays on the
+    // main thread's layer and avoids extra GPU memory cost.
+    card.style.willChange = "transform";
     card.setPointerCapture(e.pointerId);
   };
 
@@ -140,28 +153,54 @@ export function ClipboardCanvas({
       const dy = e.clientY - drag.startClientY;
       if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
       drag.moved = true;
+      // Lift the card above its siblings only once we've committed to
+      // a drag — keeps a clean tap from briefly bumping the z-stack.
+      drag.node.style.zIndex = "50";
     }
     const canvasRect = canvas.getBoundingClientRect();
     let nextX = e.clientX - canvasRect.left - drag.offsetX;
     let nextY = e.clientY - canvasRect.top - drag.offsetY;
     nextX = Math.max(0, Math.min(canvasRect.width - CARD_WIDTH, nextX));
     nextY = Math.max(0, Math.min(CANVAS_HEIGHT - CARD_DEFAULT_HEIGHT, nextY));
-    setDragPos({ x: nextX, y: nextY });
+    drag.pendingDx = nextX - drag.baseX;
+    drag.pendingDy = nextY - drag.baseY;
+    if (drag.rafHandle == null) {
+      drag.rafHandle = requestAnimationFrame(() => {
+        const d = dragStateRef.current;
+        if (!d) return;
+        d.rafHandle = null;
+        d.node.style.transform = `translate3d(${d.pendingDx}px, ${d.pendingDy}px, 0) scale(1.02)`;
+      });
+    }
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     const drag = dragStateRef.current;
     if (!drag || drag.pointerId !== e.pointerId) return;
-    const finalPos = dragPos;
+    if (drag.rafHandle != null) cancelAnimationFrame(drag.rafHandle);
     const moved = drag.moved;
+    const node = drag.node;
+    const id = drag.id;
+    const finalX = drag.baseX + drag.pendingDx;
+    const finalY = drag.baseY + drag.pendingDy;
     dragStateRef.current = null;
-    setDragId(null);
-    setDragPos(null);
-    // Only persist a new position when the user actually dragged. A
-    // pure click (no movement) leaves the card exactly where it was.
-    if (moved && finalPos) {
-      void onUpdatePosition(drag.id, finalPos.x, finalPos.y);
+
+    if (!moved) {
+      // Pure tap — nothing to persist. Strip any layer-promotion hint.
+      node.style.willChange = "";
+      return;
     }
+
+    // Commit the new position synchronously so React re-renders the
+    // wrapper with the new left/top in the same JS task. We then
+    // clear the inline transform/zIndex; the browser paints both
+    // changes together and the card lands without a snap-back.
+    flushSync(() => {
+      void onUpdatePosition(id, finalX, finalY);
+    });
+    node.style.transform = "";
+    node.style.zIndex = "";
+    node.style.willChange = "";
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -183,7 +222,7 @@ export function ClipboardCanvas({
   // priority preloads them via <link rel="preload"> so they're already
   // streaming by the time the canvas hydrates.
   const PRIORITY_COUNT = 4;
-  const priorityIds = (() => {
+  const priorityIds = useMemo(() => {
     if (items.length === 0) return new Set<string>();
     const sorted = items
       .map((item) => {
@@ -195,7 +234,7 @@ export function ClipboardCanvas({
       .sort((a, b) => a.y - b.y)
       .slice(0, PRIORITY_COUNT);
     return new Set(sorted.map((entry) => entry.id));
-  })();
+  }, [items, canvasWidth]);
 
   return (
     <div
@@ -222,34 +261,20 @@ export function ClipboardCanvas({
       ) : null}
 
       {items.map((item) => {
-        const stored = {
-          x: item.xPosition,
-          y: item.yPosition,
-        };
         const fallback = fallbackPosition(item, canvasWidth);
-        const baseX = typeof stored.x === "number" ? stored.x : fallback.x;
-        const baseY = typeof stored.y === "number" ? stored.y : fallback.y;
-        const isDragging = dragId === item.id && dragPos;
-        const x = isDragging ? dragPos!.x : baseX;
-        const y = isDragging ? dragPos!.y : baseY;
+        const baseX =
+          typeof item.xPosition === "number" ? item.xPosition : fallback.x;
+        const baseY =
+          typeof item.yPosition === "number" ? item.yPosition : fallback.y;
 
         return (
           <div
             key={item.id}
             onPointerDown={handlePointerDown(item, baseX, baseY)}
             style={{
-              left: x,
-              top: y,
-              // No explicit width — the card sizes itself based on its
-              // content (short text-only notes shrink, photos and long
-              // prose stay at the 20rem max). Drag clamping below still
-              // uses CARD_WIDTH as a safe upper bound so a card never
-              // spawns clipped at the right edge.
-              transform: isDragging ? "scale(1.02)" : undefined,
-              transition: isDragging
-                ? undefined
-                : "transform 200ms cubic-bezier(0.22, 1, 0.36, 1)",
-              zIndex: isDragging ? 50 : 1,
+              left: baseX,
+              top: baseY,
+              zIndex: 1,
             }}
             className="absolute touch-none"
           >

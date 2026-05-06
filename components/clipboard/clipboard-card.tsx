@@ -2,7 +2,7 @@
 
 import { Pencil, Trash2 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { cn } from "@/lib/utils";
 import type {
@@ -175,7 +175,7 @@ function formatDate(iso: string) {
   }
 }
 
-export function ClipboardCard({
+export const ClipboardCard = memo(function ClipboardCard({
   item,
   onUpdateContent,
   onUpdatePhotoSize,
@@ -483,7 +483,7 @@ export function ClipboardCard({
       </div>
     </article>
   );
-}
+});
 
 /**
  * Compact ("scrap on a clipboard") variant used on mobile only. Sized
@@ -497,7 +497,7 @@ export function ClipboardCard({
  * editing and deleting live (the default-variant hover affordances
  * aren't reachable on touch).
  */
-function CompactClipboardCard({
+const CompactClipboardCard = memo(function CompactClipboardCard({
   item,
   tilt,
   priority,
@@ -612,4 +612,4 @@ function CompactClipboardCard({
       </p>
     </button>
   );
-}
+});
