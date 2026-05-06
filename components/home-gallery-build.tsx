@@ -651,7 +651,7 @@ function BuildView({
                       alt=""
                       fill
                       sizes="40vw"
-                      quality={70}
+                      quality={75}
                       className="object-cover"
                     />
                   </motion.div>

@@ -31,7 +31,7 @@ export function HomeCloser({ createHref, imageSrc, imageCaption }: HomeCloserPro
           alt=""
           fill
           sizes="100vw"
-          quality={95}
+          quality={80}
           className="object-cover"
         />
 

@@ -51,7 +51,7 @@ export function PhotoGrid({
                     fill
                     className="object-cover transition duration-700 group-hover:scale-[1.03]"
                     sizes="(max-width: 1024px) 50vw, 33vw"
-                    quality={95}
+                    quality={80}
                     unoptimized={nextImageUnoptimizedForSrc(photo.src)}
                   />
                 ) : null}
@@ -78,7 +78,7 @@ export function PhotoGrid({
                       fill
                       className="object-cover transition duration-700 group-hover:scale-[1.03]"
                       sizes="(max-width: 1024px) 50vw, 33vw"
-                      quality={95}
+                      quality={80}
                       unoptimized={nextImageUnoptimizedForSrc(photo.src)}
                     />
                   ) : null}

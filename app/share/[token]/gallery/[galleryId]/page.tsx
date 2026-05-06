@@ -10,6 +10,7 @@ import {
   INVALID_SHARE_METADATA,
   signCoverUrlForOg,
 } from "@/lib/share-metadata";
+import { IMAGE_SIGNED_URL_TTL_SECONDS } from "@/lib/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { formatLocationForCard } from "@/lib/utils";
 import type { MemoryPhoto } from "@/types/memora";
@@ -263,7 +264,7 @@ export default async function PublicSharedGalleryPage({
   const allPaths = [...coverPaths, ...directPhotoPaths];
   if (allPaths.length) {
     const uniquePaths = Array.from(new Set(allPaths));
-    const { data } = await admin.storage.from(STORAGE_BUCKET).createSignedUrls(uniquePaths, 60 * 60);
+    const { data } = await admin.storage.from(STORAGE_BUCKET).createSignedUrls(uniquePaths, IMAGE_SIGNED_URL_TTL_SECONDS);
     (data ?? []).forEach((entry, index) => {
       if (entry.signedUrl) signedUrlByPath.set(uniquePaths[index], entry.signedUrl);
     });

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { IMAGE_SIGNED_URL_TTL_SECONDS } from "@/lib/storage";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 // GET /api/public-profile/galleries
@@ -11,7 +12,6 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 // client here because the data is per-user, not public.)
 
 const STORAGE_BUCKET = "gallery-images";
-const COVER_URL_TTL_SECONDS = 60 * 60;
 
 type GalleryRow = {
   id: string;
@@ -65,7 +65,7 @@ export async function GET() {
     const unique = Array.from(new Set(coverPaths));
     const { data: signed } = await supabase.storage
       .from(STORAGE_BUCKET)
-      .createSignedUrls(unique, COVER_URL_TTL_SECONDS);
+      .createSignedUrls(unique, IMAGE_SIGNED_URL_TTL_SECONDS);
     (signed ?? []).forEach((entry, i) => {
       if (entry.signedUrl) signedByPath.set(unique[i], entry.signedUrl);
     });

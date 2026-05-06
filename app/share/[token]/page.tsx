@@ -9,6 +9,7 @@ import {
   INVALID_SHARE_METADATA,
   signCoverUrlForOg,
 } from "@/lib/share-metadata";
+import { IMAGE_SIGNED_URL_TTL_SECONDS } from "@/lib/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const STORAGE_BUCKET = "gallery-images";
@@ -193,7 +194,7 @@ export default async function PublicSharePage({
     const uniquePaths = Array.from(new Set(coverPaths));
     const { data: signedData } = await admin.storage
       .from(STORAGE_BUCKET)
-      .createSignedUrls(uniquePaths, 60 * 60);
+      .createSignedUrls(uniquePaths, IMAGE_SIGNED_URL_TTL_SECONDS);
 
     (signedData ?? []).forEach((entry, index) => {
       if (entry.signedUrl) {

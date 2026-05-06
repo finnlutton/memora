@@ -30,6 +30,7 @@ import {
   type MembershipPlanId,
   type PlanResource,
 } from "@/lib/plans";
+import { IMAGE_SIGNED_URL_TTL_SECONDS } from "@/lib/storage";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { createId } from "@/lib/utils";
 import type {
@@ -550,7 +551,7 @@ async function resolveImageUrls(
   const uniqueStoragePaths = Array.from(new Set(storagePaths));
   const { data, error } = await supabase.storage
     .from(STORAGE_BUCKET)
-    .createSignedUrls(uniqueStoragePaths, 60 * 60);
+    .createSignedUrls(uniqueStoragePaths, IMAGE_SIGNED_URL_TTL_SECONDS);
 
   if (error) {
     console.error("Memora: batch signed URL generation failed", {
@@ -563,7 +564,7 @@ async function resolveImageUrls(
       uniqueStoragePaths.map(async (path) => {
         const { data: fallbackData, error: fallbackError } = await supabase.storage
           .from(STORAGE_BUCKET)
-          .createSignedUrl(path, 60 * 60);
+          .createSignedUrl(path, IMAGE_SIGNED_URL_TTL_SECONDS);
 
         if (fallbackError) {
           console.error("Memora: fallback signed URL generation failed", {

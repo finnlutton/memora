@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LegalLinks } from "@/components/legal-links";
 import { ShareThemeFrame } from "@/components/share/share-theme-frame";
+import { IMAGE_SIGNED_URL_TTL_SECONDS } from "@/lib/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   extractHandleFromSegment,
@@ -106,7 +107,7 @@ export default async function PublicProfilePage({
     const uniquePaths = Array.from(new Set(coverPaths));
     const { data: signedData } = await createSupabaseAdminClient()
       .storage.from(STORAGE_BUCKET)
-      .createSignedUrls(uniquePaths, 60 * 60);
+      .createSignedUrls(uniquePaths, IMAGE_SIGNED_URL_TTL_SECONDS);
     (signedData ?? []).forEach((entry, index) => {
       if (entry.signedUrl) signedUrlByPath.set(uniquePaths[index], entry.signedUrl);
     });

@@ -41,18 +41,13 @@ export function HomeHero({
     >
       {/* Stage height: full viewport — header is hidden on the home page. */}
       <div className="relative h-[100svh] min-h-[520px] w-full md:min-h-[640px]">
-        {/*
-          quality={95} to minimize compression softness. Pixel-count softness
-          (upscale artifacts from a <1024px source to >2880px display) is a
-          source-image issue — swap in a ≥3000px original to fix fully.
-        */}
         <Image
           src={imageSrc}
           alt=""
           fill
           priority
           sizes="100vw"
-          quality={95}
+          quality={80}
           className="object-cover"
         />
 

@@ -7,7 +7,18 @@ const supabaseHostname = supabaseUrl ? new URL(supabaseUrl).hostname : null;
 const nextConfig: NextConfig = {
   reactCompiler: true,
   images: {
-    qualities: [75, 95],
+    // Trim the optimizer fan-out. Default deviceSizes/imageSizes generate up to
+    // ~16 widths per source; the layout only ever renders a handful, and each
+    // unused width is one more transformation + one more cache write.
+    deviceSizes: [640, 828, 1200, 1920],
+    imageSizes: [96, 200, 320, 448],
+    qualities: [75, 80],
+    // AVIF doubles transformations; the WebP saving over AVIF at our display
+    // sizes isn't worth the extra cache pressure on Hobby.
+    formats: ["image/webp"],
+    // Keep optimized outputs cached for a week so repeat hits to the same
+    // source URL don't re-transform.
+    minimumCacheTTL: 60 * 60 * 24 * 7,
     remotePatterns: supabaseHostname
       ? [
           {

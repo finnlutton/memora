@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { compressImageFile } from "@/lib/file";
+import { IMAGE_SIGNED_URL_TTL_SECONDS } from "@/lib/storage";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 
@@ -19,7 +20,6 @@ import { useMemoraStore } from "@/hooks/use-memora-store";
  */
 
 const BUCKET = "gallery-images";
-const SIGNED_URL_TTL_SECONDS = 60 * 60; // 1 hour
 
 export type ClipboardLayout = "text" | "photo" | "text_photo";
 
@@ -70,7 +70,7 @@ async function resolveSignedUrls(
   const unique = Array.from(new Set(paths));
   const { data, error } = await supabase.storage
     .from(BUCKET)
-    .createSignedUrls(unique, SIGNED_URL_TTL_SECONDS);
+    .createSignedUrls(unique, IMAGE_SIGNED_URL_TTL_SECONDS);
   if (error) {
     console.error("Memora clipboard: signed URL batch failed", error);
     return map;

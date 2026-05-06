@@ -135,7 +135,7 @@ export function LightboxViewer({
                   fill
                   className="pointer-events-none object-contain"
                   sizes="100vw"
-                  quality={95}
+                  quality={80}
                   unoptimized={nextImageUnoptimizedForSrc(current.src)}
                   draggable={false}
                 />
