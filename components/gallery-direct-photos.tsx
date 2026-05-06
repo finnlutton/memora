@@ -66,21 +66,22 @@ export function GalleryDirectPhotos({ gallery }: { gallery: Gallery }) {
   const [error, setError] = useState<string | null>(null);
   const [focusDividerId, setFocusDividerId] = useState<string | null>(null);
   const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
 
   // Drag-and-drop reorder state
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [hoverId, setHoverId] = useState<string | null>(null);
 
   // Live column count, mirroring the grid breakpoints below
-  // (grid-cols-3 / sm:grid-cols-4 / lg:grid-cols-5). Used so divider
+  // (grid-cols-2 / sm:grid-cols-3 / lg:grid-cols-5). Used so divider
   // chevrons step one *visual row* at a time instead of one item.
-  const [cols, setCols] = useState(3);
+  const [cols, setCols] = useState(2);
   useEffect(() => {
     if (typeof window === "undefined") return;
     const compute = () => {
       if (window.matchMedia("(min-width: 1024px)").matches) return 5;
-      if (window.matchMedia("(min-width: 640px)").matches) return 4;
-      return 3;
+      if (window.matchMedia("(min-width: 640px)").matches) return 3;
+      return 2;
     };
     setCols(compute());
     const onResize = () => setCols(compute());
@@ -247,85 +248,106 @@ export function GalleryDirectPhotos({ gallery }: { gallery: Gallery }) {
   return (
     <section className="mt-auto pt-12">
       {!isEmpty ? (
-        <div className="mb-8 grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-5">
-          {items.map((item, idx) => {
-            const isDragging = draggingId === item.data.id;
-            const isHover = hoverId === item.data.id;
-            // Dividers can only step over photos (one row at a time), so
-            // their chevrons disable when the immediate neighbour is
-            // another divider or a list edge. Photos step one slot.
-            const canMovePrev =
-              item.kind === "divider"
-                ? idx > 0 && items[idx - 1].kind === "photo"
-                : idx > 0;
-            const canMoveNext =
-              item.kind === "divider"
-                ? idx < items.length - 1 && items[idx + 1].kind === "photo"
-                : idx < items.length - 1;
-            const dndProps = {
-              draggable: true,
-              onDragStart: onDragStartItem(item.data.id),
-              onDragOver: onDragOverItem(item.data.id),
-              onDrop: () => void onDropOnItem(item.data.id)(),
-              onDragEnd: () => {
-                setDraggingId(null);
-                setHoverId(null);
-              },
-            };
-            if (item.kind === "divider") {
+        <>
+          <div className="mb-3 flex items-center justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                setEditMode((v) => !v);
+                if (editMode) setEditingPhotoId(null);
+              }}
+              className="px-2 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-[color:var(--ink-soft)] transition hover:text-[color:var(--ink)]"
+              aria-pressed={editMode}
+            >
+              {editMode ? "Done" : "Edit"}
+            </button>
+          </div>
+          <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {items.map((item, idx) => {
+              const isDragging = draggingId === item.data.id;
+              const isHover = hoverId === item.data.id;
+              // Dividers can only step over photos (one row at a time), so
+              // their chevrons disable when the immediate neighbour is
+              // another divider or a list edge. Photos step one slot.
+              const canMovePrev =
+                item.kind === "divider"
+                  ? idx > 0 && items[idx - 1].kind === "photo"
+                  : idx > 0;
+              const canMoveNext =
+                item.kind === "divider"
+                  ? idx < items.length - 1 && items[idx + 1].kind === "photo"
+                  : idx < items.length - 1;
+              const dndProps = editMode
+                ? {
+                    draggable: true,
+                    onDragStart: onDragStartItem(item.data.id),
+                    onDragOver: onDragOverItem(item.data.id),
+                    onDrop: () => void onDropOnItem(item.data.id)(),
+                    onDragEnd: () => {
+                      setDraggingId(null);
+                      setHoverId(null);
+                    },
+                  }
+                : {};
+              if (item.kind === "divider") {
+                return (
+                  <div
+                    key={item.data.id}
+                    {...dndProps}
+                    className={`col-span-full transition ${
+                      isDragging ? "opacity-50" : ""
+                    } ${isHover ? "translate-y-[1px]" : ""}`}
+                  >
+                    <DividerRow
+                      divider={item.data}
+                      autoFocus={focusDividerId === item.data.id}
+                      editMode={editMode}
+                      canMovePrev={canMovePrev}
+                      canMoveNext={canMoveNext}
+                      onAutoFocusHandled={() => setFocusDividerId(null)}
+                      onMovePrev={() => moveItem(item.data.id, -1)}
+                      onMoveNext={() => moveItem(item.data.id, 1)}
+                      onAddFiles={(files) =>
+                        onFilesAfterDivider(item.data.id, files)
+                      }
+                      onUpdate={(label) =>
+                        updateDivider(gallery.id, item.data.id, label)
+                      }
+                      onRemove={() => removeDivider(gallery.id, item.data.id)}
+                    />
+                  </div>
+                );
+              }
               return (
                 <div
                   key={item.data.id}
                   {...dndProps}
-                  className={`col-span-full transition ${
-                    isDragging ? "opacity-50" : ""
-                  } ${isHover ? "translate-y-[1px]" : ""}`}
+                  className={`transition ${isDragging ? "opacity-50" : ""} ${
+                    isHover ? "ring-2 ring-[color:var(--ink-soft)]/30" : ""
+                  }`}
                 >
-                  <DividerRow
-                    divider={item.data}
-                    autoFocus={focusDividerId === item.data.id}
+                  <PhotoCard
+                    photo={item.data}
+                    editMode={editMode}
+                    editing={editingPhotoId === item.data.id}
                     canMovePrev={canMovePrev}
                     canMoveNext={canMoveNext}
-                    onAutoFocusHandled={() => setFocusDividerId(null)}
                     onMovePrev={() => moveItem(item.data.id, -1)}
                     onMoveNext={() => moveItem(item.data.id, 1)}
-                    onAddFiles={(files) =>
-                      onFilesAfterDivider(item.data.id, files)
+                    onStartEdit={() => setEditingPhotoId(item.data.id)}
+                    onCloseEdit={() => setEditingPhotoId(null)}
+                    onUpdate={(fields) =>
+                      updateGalleryPhoto(gallery.id, item.data.id, fields)
                     }
-                    onUpdate={(label) =>
-                      updateDivider(gallery.id, item.data.id, label)
+                    onRemove={() =>
+                      removeGalleryPhoto(gallery.id, item.data.id)
                     }
-                    onRemove={() => removeDivider(gallery.id, item.data.id)}
                   />
                 </div>
               );
-            }
-            return (
-              <div
-                key={item.data.id}
-                {...dndProps}
-                className={`transition ${isDragging ? "opacity-50" : ""} ${
-                  isHover ? "ring-2 ring-[color:var(--ink-soft)]/30" : ""
-                }`}
-              >
-                <PhotoCard
-                  photo={item.data}
-                  editing={editingPhotoId === item.data.id}
-                  canMovePrev={canMovePrev}
-                  canMoveNext={canMoveNext}
-                  onMovePrev={() => moveItem(item.data.id, -1)}
-                  onMoveNext={() => moveItem(item.data.id, 1)}
-                  onStartEdit={() => setEditingPhotoId(item.data.id)}
-                  onCloseEdit={() => setEditingPhotoId(null)}
-                  onUpdate={(fields) =>
-                    updateGalleryPhoto(gallery.id, item.data.id, fields)
-                  }
-                  onRemove={() => removeGalleryPhoto(gallery.id, item.data.id)}
-                />
-              </div>
-            );
-          })}
-        </div>
+            })}
+          </div>
+        </>
       ) : null}
 
       <p className="text-[12px] leading-6 text-[color:var(--ink-soft)]">
@@ -373,6 +395,7 @@ export function GalleryDirectPhotos({ gallery }: { gallery: Gallery }) {
 function DividerRow({
   divider,
   autoFocus,
+  editMode,
   canMovePrev,
   canMoveNext,
   onAutoFocusHandled,
@@ -384,6 +407,7 @@ function DividerRow({
 }: {
   divider: GalleryDivider;
   autoFocus?: boolean;
+  editMode: boolean;
   canMovePrev: boolean;
   canMoveNext: boolean;
   onAutoFocusHandled?: () => void;
@@ -431,10 +455,10 @@ function DividerRow({
           className="mt-1 h-px w-12 bg-[color:var(--border-strong)]"
         />
       </div>
-      {/* Hover/touch tools — reorder chevrons, insert-photos here, trash.
-          Always visible on touch, hover-revealed on pointer devices to
-          keep the divider row visually quiet by default. */}
-      <div className="ml-1 inline-flex items-center gap-2 transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100">
+      {/* Reorder chevrons, insert-photos here, trash. Only rendered in
+          edit mode so the divider row stays visually quiet by default. */}
+      {editMode ? (
+      <div className="ml-1 inline-flex items-center gap-2">
         <div className="inline-flex items-center">
           <button
             type="button"
@@ -484,6 +508,7 @@ function DividerRow({
           <Trash2 className="h-3 w-3" />
         </button>
       </div>
+      ) : null}
     </div>
   );
 }
@@ -492,6 +517,7 @@ function DividerRow({
 
 function PhotoCard({
   photo,
+  editMode,
   editing,
   canMovePrev,
   canMoveNext,
@@ -503,6 +529,7 @@ function PhotoCard({
   onRemove,
 }: {
   photo: MemoryPhoto;
+  editMode: boolean;
   editing: boolean;
   canMovePrev: boolean;
   canMoveNext: boolean;
@@ -538,55 +565,53 @@ function PhotoCard({
             />
           ) : null}
         </div>
+      </div>
 
-        {/* Reorder pill — prev/next chevrons sharing one rounded shell.
-            Mirrors the hover/touch pattern of edit + delete: always
-            visible on touch, hover-revealed on pointer devices. */}
-        {!editing ? (
-          <div className="absolute left-2 top-2 inline-flex items-center rounded-full bg-white/90 shadow-[0_3px_8px_rgba(14,22,34,0.18)] transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100">
+      {/* Edit toolbar — sleek icon row beneath the frame, only rendered
+          in edit mode so the photo reads cleanly otherwise. Move arrows
+          on the left, action buttons on the right. */}
+      {editMode && !editing ? (
+        <div className="flex items-center justify-between gap-2 pt-0.5">
+          <div className="inline-flex items-center">
             <button
               type="button"
               onClick={() => void onMovePrev()}
               disabled={!canMovePrev}
               aria-label="Move photo earlier"
-              className="inline-flex h-6 w-6 items-center justify-center rounded-l-full text-[color:var(--ink)] transition hover:bg-white disabled:cursor-not-allowed disabled:text-[color:var(--ink-faint)] disabled:opacity-50 sm:h-5 sm:w-5"
+              className="inline-flex h-9 w-9 items-center justify-center text-[color:var(--ink-soft)] transition hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-30"
             >
-              <ChevronLeft className="h-2.5 w-2.5" strokeWidth={1.8} />
+              <ChevronLeft className="h-4 w-4" strokeWidth={1.6} />
             </button>
-            <span aria-hidden className="h-3 w-px bg-[color:var(--border)]" />
             <button
               type="button"
               onClick={() => void onMoveNext()}
               disabled={!canMoveNext}
               aria-label="Move photo later"
-              className="inline-flex h-6 w-6 items-center justify-center rounded-r-full text-[color:var(--ink)] transition hover:bg-white disabled:cursor-not-allowed disabled:text-[color:var(--ink-faint)] disabled:opacity-50 sm:h-5 sm:w-5"
+              className="inline-flex h-9 w-9 items-center justify-center text-[color:var(--ink-soft)] transition hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-30"
             >
-              <ChevronRight className="h-2.5 w-2.5" strokeWidth={1.8} />
+              <ChevronRight className="h-4 w-4" strokeWidth={1.6} />
             </button>
           </div>
-        ) : null}
-
-        {!editing ? (
-          <div className="absolute right-2 top-2 flex gap-1 transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100">
+          <div className="inline-flex items-center">
             <button
               type="button"
               onClick={onStartEdit}
-              aria-label="Edit details"
-              className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-[color:var(--ink)] shadow-[0_3px_8px_rgba(14,22,34,0.18)] transition hover:bg-white sm:h-5 sm:w-5"
+              aria-label="Edit caption"
+              className="inline-flex h-9 w-9 items-center justify-center text-[color:var(--ink-soft)] transition hover:text-[color:var(--ink)]"
             >
-              <Pencil className="h-2.5 w-2.5" strokeWidth={1.8} />
+              <Pencil className="h-3.5 w-3.5" strokeWidth={1.6} />
             </button>
             <button
               type="button"
               onClick={() => void onRemove()}
               aria-label="Remove photo"
-              className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-[color:var(--ink)] shadow-[0_3px_8px_rgba(14,22,34,0.18)] transition hover:bg-white hover:text-[color:var(--accent-strong)] sm:h-5 sm:w-5"
+              className="inline-flex h-9 w-9 items-center justify-center text-[color:var(--ink-soft)] transition hover:text-[color:var(--accent-strong)]"
             >
-              <Trash2 className="h-2.5 w-2.5" strokeWidth={1.8} />
+              <Trash2 className="h-3.5 w-3.5" strokeWidth={1.6} />
             </button>
           </div>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       {/* Mono caption (+ optional location) below the frame, matching
           the editorial scene style used in subgallery photo grids. */}
