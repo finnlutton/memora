@@ -4,7 +4,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { memo, useEffect, useRef, useState } from "react";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
-import { cn } from "@/lib/utils";
+import { cn, nextImageUnoptimizedForSrc } from "@/lib/utils";
 import type {
   ClipboardItem,
   ClipboardPhotoSize,
@@ -349,6 +349,7 @@ export const ClipboardCard = memo(function ClipboardCard({
               quality={75}
               priority={priority}
               draggable={false}
+              unoptimized={nextImageUnoptimizedForSrc(item.photoUrl)}
               className="object-cover"
             />
           ) : null}
@@ -563,6 +564,7 @@ const CompactClipboardCard = memo(function CompactClipboardCard({
             quality={75}
             priority={priority}
             draggable={false}
+            unoptimized={nextImageUnoptimizedForSrc(item.photoUrl)}
             className="object-cover"
           />
         </div>

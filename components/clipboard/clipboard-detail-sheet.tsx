@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { PhotoSizePicker } from "@/components/clipboard/clipboard-card";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
+import { nextImageUnoptimizedForSrc } from "@/lib/utils";
 import type {
   ClipboardItem,
   ClipboardPhotoSize,
@@ -133,6 +134,7 @@ export function ClipboardDetailSheet({
                 fill
                 sizes="100vw"
                 quality={75}
+                unoptimized={nextImageUnoptimizedForSrc(item.photoUrl)}
                 className="object-cover"
               />
             </div>

@@ -1,9 +1,22 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-/** Next.js `Image` does not optimize data/blob URLs; pass `unoptimized` to avoid runtime errors. */
-export function nextImageUnoptimizedForSrc(src: string) {
-  return src.startsWith("data:") || src.startsWith("blob:");
+/**
+ * Whether to pass `unoptimized` to next/image for a given user-supplied src.
+ *
+ * Always true for any non-empty src. Callers are render sites for
+ * user-uploaded photos (gallery covers, scene covers, photo grids,
+ * clipboard, lightbox, etc.) — Vercel image optimization is bypassed for
+ * these so the optimizer doesn't keep writing fresh entries for the same
+ * Supabase content (signed URLs that change, proxy bytes that don't
+ * benefit from re-encoding). Static marketing assets in `/public` use
+ * `next/image` without this helper and stay optimized.
+ *
+ * Also covers the original purpose: data:/blob: previews from upload
+ * forms can't be run through the optimizer at all.
+ */
+export function nextImageUnoptimizedForSrc(src: string | null | undefined) {
+  return Boolean(src);
 }
 
 export function cn(...inputs: ClassValue[]) {
