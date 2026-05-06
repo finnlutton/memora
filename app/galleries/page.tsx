@@ -226,7 +226,7 @@ export default function GalleriesPage() {
         />
       </div>
 
-      <section className="hidden border-t border-b border-[color:var(--border)] md:mb-8 md:my-8 md:grid md:grid-cols-3 md:gap-6 md:py-5">
+      <section className="hidden border-t border-b border-[color:var(--border)] md:mb-8 md:my-8 md:hidden md:grid-cols-3 md:gap-6 md:py-5">
         {/*
           Membership stat doubles as the dashboard's plan affordance — a
           single small link to Settings → Membership. Keeps the dashboard
@@ -278,11 +278,11 @@ export default function GalleriesPage() {
       ) : null}
 
       {!hydrated ? (
-        <section className="mt-5 md:mt-7">
+        <section className="mt-5 md:mt-14">
           <GalleryCardSkeletonGrid count={2} />
         </section>
       ) : sortedGalleries.length ? (
-        <section className="mt-5 space-y-3 md:mt-7 md:space-y-4">
+        <section className="mt-5 space-y-3 md:mt-14 md:space-y-4">
           {shareMode ? (
             <div className="flex items-center justify-between rounded-xl border border-[color:var(--border)] bg-[color:var(--chrome)] px-2.5 py-1.5 text-xs text-[color:var(--ink-soft)] md:px-3 md:py-2 md:text-sm">
               <span>
