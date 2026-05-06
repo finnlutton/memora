@@ -150,11 +150,15 @@ export default function GalleriesPage() {
               : "My Galleries"
           }
           subtitle="Curate, preserve, and share your experiences here."
-          hideTitleOnMobile
-          // Desktop: stack actions vertically and center the stack
-          // against the page title's vertical mid-line. Mobile keeps
-          // the original side-by-side row.
-          actionsClassName="md:flex-col md:items-stretch md:self-center md:gap-2.5 md:pt-0"
+          showSubtitleOnMobile
+          // Mobile recreates the desktop editorial header: 2-col layout
+          // (title block left, actions stacked right) and a chunkier serif
+          // title than the global mobile default.
+          className="flex-row items-start justify-between gap-3"
+          titleClassName="text-[44px] leading-[1]"
+          // Stack actions vertically and center the stack against the
+          // page title's vertical mid-line — same on mobile and desktop.
+          actionsClassName="flex-col items-stretch self-center gap-1.5 pt-0 md:gap-2.5"
           actions={
             <>
               {sortedGalleries.length > 1 ? (
@@ -163,7 +167,7 @@ export default function GalleriesPage() {
                   variant="ghost"
                   aria-label="Reorder galleries"
                   title="Reorder galleries"
-                  className="h-10 w-10 shrink-0 px-0 text-[color:var(--ink-soft)] hover:text-[color:var(--ink)] md:h-auto md:w-auto md:px-2 md:py-2"
+                  className="h-7 w-full self-end px-1.5 text-[color:var(--ink-soft)] hover:text-[color:var(--ink)] md:h-auto md:w-auto md:px-2 md:py-2"
                   onClick={() => {
                     setReorderMode(true);
                     setShareMode(false);
@@ -179,7 +183,7 @@ export default function GalleriesPage() {
                 type="button"
                 variant="ghost"
                 data-tour-id="gallery-share"
-                className="h-10 gap-1.5 whitespace-nowrap px-3 text-[11px] tracking-[0.14em] text-[color:var(--ink)] md:h-auto md:px-3 md:py-2 md:text-xs"
+                className="h-7 gap-1 whitespace-nowrap px-2 text-[9.5px] tracking-[0.12em] text-[color:var(--ink)] md:h-auto md:gap-1.5 md:px-3 md:py-2 md:text-xs md:tracking-[0.14em]"
                 disabled={shareLimitReached}
                 onClick={() => {
                   setShareMode(true);
@@ -192,19 +196,17 @@ export default function GalleriesPage() {
                 }}
               >
                 <Share2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
-                <span className="md:hidden">Share</span>
-                <span className="hidden md:inline">Share Galleries</span>
+                <span>Share Galleries</span>
               </Button>
               {hasReachedGalleryLimit ? (
                 <Button
                   asChild
                   variant="secondary"
                   data-tour-id="gallery-create"
-                  className="h-10 gap-1.5 whitespace-nowrap px-3 text-[11px] tracking-[0.14em] md:h-auto md:px-3 md:py-2 md:text-xs"
+                  className="h-7 gap-1 whitespace-nowrap px-2 text-[9.5px] tracking-[0.12em] md:h-auto md:gap-1.5 md:px-3 md:py-2 md:text-xs md:tracking-[0.14em]"
                 >
                   <Link href="/galleries/settings/membership?source=gallery-limit">
-                    <span className="md:hidden">Upgrade</span>
-                    <span className="hidden md:inline">Upgrade plan</span>
+                    <span>Upgrade plan</span>
                   </Link>
                 </Button>
               ) : (
@@ -212,12 +214,11 @@ export default function GalleriesPage() {
                   asChild
                   variant="secondary"
                   data-tour-id="gallery-create"
-                  className="h-10 gap-1.5 whitespace-nowrap px-3 text-[11px] tracking-[0.14em] md:h-auto md:px-3 md:py-2 md:text-xs"
+                  className="h-7 gap-1 whitespace-nowrap px-2 text-[9.5px] tracking-[0.12em] md:h-auto md:gap-1.5 md:px-3 md:py-2 md:text-xs md:tracking-[0.14em]"
                 >
                   <Link href="/galleries/new">
                     <Plus className="h-3 w-3 md:h-3 md:w-3" />
-                    <span className="md:hidden">Create</span>
-                    <span className="hidden md:inline">Create gallery</span>
+                    <span>Create gallery</span>
                   </Link>
                 </Button>
               )}
@@ -303,7 +304,7 @@ export default function GalleriesPage() {
             cadence (archive, not catalog). No xl:grid-cols-3 — a single
             decisive layout is the curated choice.
           */}
-          <div className="grid grid-cols-2 gap-x-3 gap-y-7 md:gap-x-8 md:gap-y-14 lg:grid-cols-2 lg:gap-x-10 lg:gap-y-16">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-9 md:gap-x-8 md:gap-y-14 lg:grid-cols-2 lg:gap-x-10 lg:gap-y-16">
           {sortedGalleries.map((gallery, index) => (
             <GalleryCard
               key={gallery.id}

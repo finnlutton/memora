@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { LogOut, PanelLeft } from "lucide-react";
+import { LogOut, Menu, PanelLeft, X } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MemoraTour } from "@/components/memora-tour";
 import { ClipboardIcon } from "@/components/icons/ClipboardIcon";
 import { GlobeIcon } from "@/components/icons/GlobeIcon";
@@ -24,32 +24,38 @@ const SIDEBAR_STORAGE_KEY = "memora::workspace-sidebar-collapsed:v1";
 
 const SIDEBAR_WIDTH_EXPANDED = 208;
 const SIDEBAR_WIDTH_COLLAPSED = 56;
-const MOBILE_CHROME_HEIGHT = 48;
+// Mobile gives the page the full viewport width — no permanent rail.
+// Nav lives behind a small floating hamburger that opens a drawer
+// overlay on tap.
+const MOBILE_DRAWER_WIDTH = 232;
 
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 const DURATION_MS = 320;
 
 export function WorkspaceShell({ children, onSignOut, email: _email = "" }: WorkspaceShellProps) {
   const pathname = usePathname();
-  const mobileStripRef = useRef<HTMLDivElement | null>(null);
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "1";
   });
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
-  // Mobile nav strip is overflow-x-auto; on every route change it remounts
-  // with scrollLeft=0 — so tapping Help or Settings (off-screen right) snaps
-  // the strip back to Galleries. Auto-scroll the active item into view so
-  // the strip self-orients on each navigation.
+  // Auto-close the mobile drawer whenever the route changes — otherwise it
+  // stays pinned over the new page after a nav tap.
   useEffect(() => {
-    const strip = mobileStripRef.current;
-    if (!strip) return;
-    const active = strip.querySelector<HTMLElement>('[aria-current="page"]');
-    if (!active) return;
-    const target =
-      active.offsetLeft - strip.clientWidth / 2 + active.clientWidth / 2;
-    strip.scrollTo({ left: Math.max(0, target), behavior: "auto" });
+    setMobileDrawerOpen(false);
   }, [pathname]);
+
+  // While the drawer is open, lock body scroll so swipes don't drag the
+  // page underneath.
+  useEffect(() => {
+    if (!mobileDrawerOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [mobileDrawerOpen]);
 
   // Publish shell dimensions to :root so full-bleed pages (e.g. Memory Map)
   // can align to the sidebar/top-chrome without duplicating layout math.
@@ -61,10 +67,7 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
         "--workspace-sidebar-width",
         mdUp ? `${collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED}px` : "0px",
       );
-      root.style.setProperty(
-        "--workspace-chrome-top",
-        mdUp ? "0px" : `${MOBILE_CHROME_HEIGHT}px`,
-      );
+      root.style.setProperty("--workspace-chrome-top", "0px");
     };
     apply();
     const mql = window.matchMedia("(min-width: 768px)");
@@ -285,59 +288,141 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
       </aside>
 
       <div className="min-w-0 flex-1">
-        {/* Mobile chrome — consistent height, rounded-md, matches desktop language.
-            mask-image fades the right edge so users can see the strip is
-            scrollable; the strip auto-scrolls the active item into view on
-            route change (see useEffect above). */}
-        <div
-          ref={mobileStripRef}
-          style={{
-            height: `${MOBILE_CHROME_HEIGHT}px`,
-            maskImage:
-              "linear-gradient(to right, #000 0, #000 92%, transparent 100%)",
-            WebkitMaskImage:
-              "linear-gradient(to right, #000 0, #000 92%, transparent 100%)",
-          }}
-          className="flex items-center gap-1.5 overflow-x-auto border-b border-[color:var(--border)] bg-[color:var(--chrome)] px-3 backdrop-blur-xl md:hidden"
+        {/* Mobile-only floating hamburger — opens the nav drawer overlay.
+            Sits over the page so the content can use the full viewport
+            width without a permanent rail eating into it. md:hidden so
+            desktop is untouched. */}
+        <button
+          type="button"
+          onClick={() => setMobileDrawerOpen(true)}
+          aria-label="Open navigation"
+          aria-expanded={mobileDrawerOpen}
+          style={{ top: "calc(env(safe-area-inset-top, 0px) + 12px)" }}
+          className="fixed left-3 z-30 flex h-9 w-9 items-center justify-center rounded-md border border-[color:var(--border)] bg-[color:var(--chrome)] text-[color:var(--ink-soft)] shadow-[0_2px_8px_rgba(10,20,35,0.06)] backdrop-blur transition-colors hover:bg-[color:var(--hover-tint)] hover:text-[color:var(--ink)] md:hidden"
         >
-          {/* Primary destinations + utility links (Help, Settings)
-              appended at the end so they tag along with the strip
-              without claiming primary slots. Sign out lives at the
-              tail so it's reachable without leaving the page — the
-              desktop sidebar's bottom-block button has no analog on
-              mobile otherwise. */}
-          {[...navItems, ...utilityItems].map((item) => {
-            const active = isItemActive(item.href);
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                data-tour-nav={item.tourNav}
-                className={cn(
-                  "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium uppercase tracking-[0.14em] transition-colors",
-                  active
-                    ? "bg-[color:var(--active-tint)] text-[color:var(--ink)]"
-                    : "text-[color:var(--ink-soft)] hover:bg-[color:var(--hover-tint)] hover:text-[color:var(--ink)]",
-                )}
-              >
-                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span className="whitespace-nowrap">{item.label}</span>
-              </Link>
-            );
-          })}
+          <Menu className="h-[18px] w-[18px]" strokeWidth={1.6} />
+        </button>
+        <main className="mx-auto w-full max-w-[1520px] px-5 pt-14 pb-8 md:px-10 md:py-10">{children}</main>
+      </div>
+
+      {/* Mobile drawer overlay — slides in from the left when the rail's
+          menu toggle is tapped. Keeps the same nav items as the rail, just
+          with labels visible. md:hidden so it never paints on desktop. */}
+      {mobileDrawerOpen ? (
+        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
           <button
             type="button"
-            onClick={onSignOut}
-            className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--ink-soft)] transition-colors hover:bg-[rgba(200,130,130,0.1)] hover:text-[color:var(--error-text)]"
+            aria-label="Close navigation"
+            onClick={() => setMobileDrawerOpen(false)}
+            className="absolute inset-0 bg-black/40"
+          />
+          <aside
+            style={{ width: `${MOBILE_DRAWER_WIDTH}px` }}
+            className="absolute inset-y-0 left-0 flex h-full flex-col border-r border-[color:var(--border)] bg-[color:var(--chrome)] pt-3 pb-3 shadow-[0_0_40px_rgba(0,0,0,0.18)] backdrop-blur-xl"
           >
-            <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span className="whitespace-nowrap">Sign out</span>
-          </button>
+            <div className="flex h-10 items-center px-2">
+              <Link
+                href="/galleries"
+                className="block min-w-0 flex-1 overflow-hidden"
+                aria-label="Memora dashboard"
+                onClick={() => setMobileDrawerOpen(false)}
+              >
+                <Image
+                  src={memoraLogo}
+                  alt="Memora"
+                  width={360}
+                  height={82}
+                  className="h-auto max-w-[150px] object-contain object-left"
+                />
+              </Link>
+              <button
+                type="button"
+                onClick={() => setMobileDrawerOpen(false)}
+                aria-label="Close navigation"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[color:var(--ink-soft)] transition-colors hover:bg-[color:var(--hover-tint)] hover:text-[color:var(--ink)]"
+              >
+                <X className="h-[18px] w-[18px]" strokeWidth={1.6} />
+              </button>
+            </div>
+            <nav className="mt-5 flex flex-col gap-0.5 px-2">
+              {navItems.map((item) => {
+                const active = isItemActive(item.href);
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-current={active ? "page" : undefined}
+                    onClick={() => setMobileDrawerOpen(false)}
+                    className={cn(
+                      "group relative flex h-10 items-center gap-3 rounded-md pr-2 text-[13px] transition-colors",
+                      active
+                        ? "text-[color:var(--ink)]"
+                        : "text-[color:var(--ink-soft)] hover:bg-[color:var(--hover-tint)] hover:text-[color:var(--ink)]",
+                    )}
+                  >
+                    {active ? (
+                      <span
+                        aria-hidden="true"
+                        className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-[color:var(--ink)]"
+                      />
+                    ) : null}
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center">
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 truncate">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+            <div className="mt-auto px-2 pt-2">
+              <div className="mb-2 h-px bg-[color:var(--border)]" aria-hidden="true" />
+              {utilityItems.map((item) => {
+                const active = isItemActive(item.href);
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-current={active ? "page" : undefined}
+                    onClick={() => setMobileDrawerOpen(false)}
+                    className={cn(
+                      "group relative mb-1 flex h-10 items-center gap-3 rounded-md pr-2 text-[13px] transition-colors",
+                      active
+                        ? "text-[color:var(--ink)]"
+                        : "text-[color:var(--ink-soft)] hover:bg-[color:var(--hover-tint)] hover:text-[color:var(--ink)]",
+                    )}
+                  >
+                    {active ? (
+                      <span
+                        aria-hidden="true"
+                        className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-[color:var(--ink)]"
+                      />
+                    ) : null}
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center">
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 truncate">{item.label}</span>
+                  </Link>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileDrawerOpen(false);
+                  onSignOut();
+                }}
+                className="flex h-10 w-full items-center gap-3 rounded-md pr-2 text-left text-[13px] text-[color:var(--ink-soft)] transition-colors hover:bg-[rgba(200,130,130,0.1)] hover:text-[color:var(--error-text)]"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center">
+                  <LogOut className="h-[18px] w-[18px]" strokeWidth={1.6} aria-hidden="true" />
+                </span>
+                <span className="min-w-0 truncate">Sign out</span>
+              </button>
+            </div>
+          </aside>
         </div>
-        <main className="mx-auto w-full max-w-[1520px] px-4 py-6 md:px-10 md:py-10">{children}</main>
-      </div>
+      ) : null}
       <MemoraTour />
     </div>
   );

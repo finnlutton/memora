@@ -9,7 +9,9 @@ export function WorkspaceTopbar({
   actions,
   className,
   actionsClassName,
+  titleClassName,
   hideTitleOnMobile = false,
+  showSubtitleOnMobile = false,
 }: {
   eyebrow?: string;
   title: string;
@@ -24,11 +26,23 @@ export function WorkspaceTopbar({
    */
   actionsClassName?: string;
   /**
+   * Extra classes appended to the title element. Lets a page bump the
+   * mobile title size without touching the global default used by every
+   * other workspace page.
+   */
+  titleClassName?: string;
+  /**
    * Hide the page title on mobile only. Useful when the active nav strip
    * already names the page (e.g. galleries dashboard) and the giant serif
    * title becomes redundant clutter at small widths.
    */
   hideTitleOnMobile?: boolean;
+  /**
+   * Show the subtitle on mobile too. Default behavior keeps it desktop-only
+   * to save vertical real estate, but pages that re-create the desktop
+   * editorial header on mobile (e.g. the galleries dashboard) want it.
+   */
+  showSubtitleOnMobile?: boolean;
 }) {
   return (
     <header
@@ -54,12 +68,18 @@ export function WorkspaceTopbar({
           className={cn(
             "mt-1.5 font-serif text-[28px] leading-[1] text-[color:var(--ink)] md:mt-3 md:text-[64px] md:leading-[0.94]",
             hideTitleOnMobile && "hidden md:block",
+            titleClassName,
           )}
         >
           {title}
         </h1>
         {subtitle ? (
-          <p className="hidden max-w-[520px] border-l border-[color:var(--border-strong)] pl-3.5 font-serif text-[15px] italic leading-[1.7] text-[color:var(--ink-soft)] md:mt-6 md:block md:text-[17px]">
+          <p
+            className={cn(
+              "max-w-[520px] border-l border-[color:var(--border-strong)] pl-3.5 font-serif text-[14px] italic leading-[1.6] text-[color:var(--ink-soft)] md:mt-6 md:text-[17px] md:leading-[1.7]",
+              showSubtitleOnMobile ? "mt-4 block" : "hidden md:block",
+            )}
+          >
             {subtitle}
           </p>
         ) : null}
