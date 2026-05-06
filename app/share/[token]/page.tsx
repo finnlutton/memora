@@ -116,13 +116,19 @@ export default async function PublicSharePage({
   const { token } = await params;
   const admin = createSupabaseAdminClient();
 
-  const { data: share, error: shareError } = await admin
-    .from("shares")
-    .select(
-      "id, message, revoked_at, recipient_group_name, recipient_member_labels, theme_id, created_at",
-    )
-    .eq("token", token)
-    .maybeSingle<ShareRow>();
+  // Sender context only needs the token, so it can run in parallel with
+  // the share row fetch. The result is cached via React `cache()` so
+  // generateMetadata + the page handler share a single round trip.
+  const [{ data: share, error: shareError }, senderCtx] = await Promise.all([
+    admin
+      .from("shares")
+      .select(
+        "id, message, revoked_at, recipient_group_name, recipient_member_labels, theme_id, created_at",
+      )
+      .eq("token", token)
+      .maybeSingle<ShareRow>(),
+    getShareMetaContext(token),
+  ]);
 
   if (shareError || !share || share.revoked_at) {
     const isRevoked = !!share?.revoked_at;
@@ -179,7 +185,7 @@ export default async function PublicSharePage({
     redirect(`/share/${token}/gallery/${galleryRows[0].id}`);
   }
 
-  const senderCtx = await getShareMetaContext(token);
+  // senderCtx was fetched in parallel with `share` above.
   const senderName = senderCtx?.senderName ?? "Someone";
   const sharedDate = formatShareDate(share.created_at);
 
@@ -237,11 +243,15 @@ export default async function PublicSharePage({
 
         {galleryRows?.length ? (
           <section className="grid gap-5 md:grid-cols-2">
-            {galleryRows.map((gallery) => {
+            {galleryRows.map((gallery, index) => {
               const coverPath = gallery.cover_image_path ?? "";
               const coverImage = isLikelyStoragePath(coverPath)
                 ? imageProxyUrlForPath(coverPath)
                 : coverPath;
+              // First tile is the LCP candidate — flag it for the
+              // browser's preload scanner. Everything below the fold can
+              // wait until it nears the viewport.
+              const isLcpCandidate = index === 0;
 
               return (
                 <Link
@@ -253,7 +263,14 @@ export default async function PublicSharePage({
                     <div className="relative aspect-[16/10] overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)]">
                       {coverImage ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={coverImage} alt={gallery.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.015]" />
+                        <img
+                          src={coverImage}
+                          alt={gallery.title}
+                          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.015]"
+                          loading={isLcpCandidate ? "eager" : "lazy"}
+                          decoding="async"
+                          fetchPriority={isLcpCandidate ? "high" : "auto"}
+                        />
                       ) : null}
                     </div>
                   </div>

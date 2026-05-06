@@ -122,27 +122,28 @@ export async function generateMetadata({
   const ctx = await getShareMetaContext(token);
   if (!ctx || ctx.revoked) return INVALID_SHARE_METADATA;
 
+  // Access check + gallery row only depend on (shareId, galleryId) and
+  // (galleryId) respectively — fan them out instead of awaiting in series.
   const admin = createSupabaseAdminClient();
-  const { data: linkRow } = await admin
-    .from("share_galleries")
-    .select("gallery_id")
-    .eq("share_id", ctx.shareId)
-    .eq("gallery_id", galleryId)
-    .maybeSingle<{ gallery_id: string }>();
+  const [{ data: linkRow }, { data: gallery }] = await Promise.all([
+    admin
+      .from("share_galleries")
+      .select("gallery_id")
+      .eq("share_id", ctx.shareId)
+      .eq("gallery_id", galleryId)
+      .maybeSingle<{ gallery_id: string }>(),
+    admin
+      .from("galleries")
+      .select("title, description, cover_image_path")
+      .eq("id", galleryId)
+      .maybeSingle<{
+        title: string;
+        description: string | null;
+        cover_image_path: string | null;
+      }>(),
+  ]);
 
-  if (!linkRow) return INVALID_SHARE_METADATA;
-
-  const { data: gallery } = await admin
-    .from("galleries")
-    .select("title, description, cover_image_path")
-    .eq("id", galleryId)
-    .maybeSingle<{
-      title: string;
-      description: string | null;
-      cover_image_path: string | null;
-    }>();
-
-  if (!gallery) return INVALID_SHARE_METADATA;
+  if (!linkRow || !gallery) return INVALID_SHARE_METADATA;
 
   const coverUrl = await signCoverUrlForOg(gallery.cover_image_path);
   return buildShareMetadata({
@@ -185,40 +186,32 @@ export default async function PublicSharedGalleryPage({
     );
   }
 
-  const { data: shareGalleryRows } = await admin
-    .from("share_galleries")
-    .select("gallery_id")
-    .eq("share_id", share.id)
-    .eq("gallery_id", galleryId)
-    .returns<ShareGalleryRow[]>();
-
-  if (!shareGalleryRows?.length) {
-    return (
-      <InvalidShareState
-        token={token}
-        message="This gallery is not available in the current share link."
-        themeId={share.theme_id}
-      />
-    );
-  }
-
-  const { data: gallery } = await admin
-    .from("galleries")
-    .select("id, title, description, cover_image_path, start_date, end_date")
-    .eq("id", galleryId)
-    .maybeSingle<GalleryRow>();
-
-  if (!gallery) {
-    return (
-      <InvalidShareState
-        token={token}
-        message="This gallery is no longer available."
-        themeId={share.theme_id}
-      />
-    );
-  }
-
-  const [{ data: subgalleries }, { data: directPhotoRows }, { data: dividerRows }, { count: totalGalleryCount }, senderCtx] = await Promise.all([
+  // Once `share` is validated, every remaining read only depends on
+  // `share.id` and/or the URL `galleryId` — fan them all out so the
+  // page's TTFB is gated on the slowest single query, not their sum.
+  // The access check + gallery row are validated after the parallel
+  // batch resolves; if either is missing we render the invalid state
+  // and the rest of the data is simply unused.
+  const [
+    { data: shareGalleryRows },
+    { data: gallery },
+    { data: subgalleries },
+    { data: directPhotoRows },
+    { data: dividerRows },
+    { count: totalGalleryCount },
+    senderCtx,
+  ] = await Promise.all([
+    admin
+      .from("share_galleries")
+      .select("gallery_id")
+      .eq("share_id", share.id)
+      .eq("gallery_id", galleryId)
+      .returns<ShareGalleryRow[]>(),
+    admin
+      .from("galleries")
+      .select("id, title, description, cover_image_path, start_date, end_date")
+      .eq("id", galleryId)
+      .maybeSingle<GalleryRow>(),
     admin
       .from("subgalleries")
       .select("id, title, description, cover_image_path, location, date_label, start_date, end_date")
@@ -244,6 +237,26 @@ export default async function PublicSharedGalleryPage({
       .eq("share_id", share.id),
     getShareMetaContext(token),
   ]);
+
+  if (!shareGalleryRows?.length) {
+    return (
+      <InvalidShareState
+        token={token}
+        message="This gallery is not available in the current share link."
+        themeId={share.theme_id}
+      />
+    );
+  }
+
+  if (!gallery) {
+    return (
+      <InvalidShareState
+        token={token}
+        message="This gallery is no longer available."
+        themeId={share.theme_id}
+      />
+    );
+  }
 
   // When the sender attached only one gallery to this share, the landing
   // page redirects straight here — so this gallery view stands in for the
@@ -323,13 +336,16 @@ export default async function PublicSharedGalleryPage({
 
         {hasSubgalleries ? (
           <section className="grid gap-x-3 gap-y-7 sm:grid-cols-2 md:gap-x-8 md:gap-y-12">
-            {(subgalleries ?? []).map((subgallery) => {
+            {(subgalleries ?? []).map((subgallery, index) => {
               const cover = isLikelyStoragePath(subgallery.cover_image_path ?? "")
                 ? imageProxyUrlForPath(subgallery.cover_image_path ?? "")
                 : (subgallery.cover_image_path ?? "");
               const formattedLocation = formatLocationForCard(subgallery.location);
               const dateText = dateLabelForSubgallery(subgallery);
               const metaParts = [formattedLocation, dateText].filter(Boolean) as string[];
+              // First subgallery cover is the LCP candidate on this view;
+              // subsequent rows wait until the user scrolls.
+              const isLcpCandidate = index === 0;
 
               return (
                 <Link
@@ -341,7 +357,14 @@ export default async function PublicSharedGalleryPage({
                     <div className="relative aspect-[5/3] overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)]">
                       {cover ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={cover} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.015]" />
+                        <img
+                          src={cover}
+                          alt=""
+                          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.015]"
+                          loading={isLcpCandidate ? "eager" : "lazy"}
+                          decoding="async"
+                          fetchPriority={isLcpCandidate ? "high" : "auto"}
+                        />
                       ) : null}
                     </div>
                   </div>
