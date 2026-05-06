@@ -456,28 +456,32 @@ function DisplayNameRow() {
 
   if (!editing) {
     return (
-      <div className="mt-3 flex items-center gap-2">
-        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
+      <div className="mt-4">
+        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
           Name
         </p>
-        <p className="flex-1 truncate text-sm text-[color:var(--ink)]">
-          {currentName || "Not set"}
-        </p>
-        <button
-          type="button"
-          onClick={beginEdit}
-          aria-label="Edit your name"
-          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[color:var(--ink-soft)] transition hover:bg-[rgba(22,35,56,0.06)] hover:text-[color:var(--ink)]"
-        >
-          <Pencil className="h-3.5 w-3.5" />
-        </button>
+        <div className="mt-1 flex items-baseline gap-2">
+          <p className="flex-1 truncate font-serif text-[22px] leading-tight text-[color:var(--ink)]">
+            {currentName || (
+              <span className="text-[color:var(--ink-faint)]">Not set</span>
+            )}
+          </p>
+          <button
+            type="button"
+            onClick={beginEdit}
+            aria-label="Edit your name"
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[color:var(--ink-soft)] transition hover:bg-[rgba(22,35,56,0.06)] hover:text-[color:var(--ink)]"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mt-3 space-y-2">
-      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">
+    <div className="mt-4 space-y-2">
+      <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-[color:var(--ink-soft)]">
         Name
       </p>
       <div className="flex items-center gap-2">

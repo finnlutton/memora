@@ -38,14 +38,14 @@ export function AppearancePicker() {
             onClick={() => setTheme(id)}
             aria-pressed={isActive}
             aria-label={`Set theme to ${def.name}`}
-            className={`group relative flex flex-col gap-3 border bg-[color:var(--background)] p-4 text-left transition ${
+            className={`group relative flex flex-col gap-2 border bg-[color:var(--background)] p-3 text-left transition sm:gap-3 sm:p-4 ${
               isActive
                 ? "border-[color:var(--ink)] shadow-[0_6px_18px_rgba(14,22,34,0.08)]"
                 : "border-[color:var(--border-strong)] hover:border-[color:var(--ink-soft)]"
             }`}
           >
             <div className="flex items-baseline justify-between gap-3">
-              <p className="font-serif text-[19px] leading-tight text-[color:var(--ink)]">
+              <p className="font-serif text-[16px] leading-tight text-[color:var(--ink)] sm:text-[19px]">
                 {def.name}
               </p>
               {/* Reserve a consistent footprint so the name doesn't shift when
@@ -59,7 +59,7 @@ export function AppearancePicker() {
                 <Check className="h-4 w-4 text-[color:var(--ink)]" strokeWidth={2} />
               </span>
             </div>
-            <p className="min-h-[2.5rem] text-[12.5px] leading-5 text-[color:var(--ink-soft)]">
+            <p className="text-[12px] leading-[1.4] text-[color:var(--ink-soft)] sm:min-h-[2.5rem] sm:text-[12.5px] sm:leading-5">
               {def.description}
             </p>
             <div
