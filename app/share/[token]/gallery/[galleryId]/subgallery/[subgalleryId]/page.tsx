@@ -10,12 +10,10 @@ import {
   INVALID_SHARE_METADATA,
   signCoverUrlForOg,
 } from "@/lib/share-metadata";
-import { IMAGE_SIGNED_URL_TTL_SECONDS } from "@/lib/storage";
+import { imageProxyUrlForPath } from "@/lib/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { formatLocationForCard } from "@/lib/utils";
 import type { MemoryPhoto } from "@/types/memora";
-
-const STORAGE_BUCKET = "gallery-images";
 
 type ShareRow = {
   id: string;
@@ -228,20 +226,9 @@ export default async function PublicSharedSubgalleryPage({
   const senderName = senderCtx?.senderName ?? "Someone";
   const sharedDate = formatShareDate(share.created_at);
 
-  const imagePaths = (photoRows ?? []).map((photo) => photo.storage_path).filter((path) => path && isLikelyStoragePath(path));
-
-  const signedUrlByPath = new Map<string, string>();
-  if (imagePaths.length) {
-    const uniquePaths = Array.from(new Set(imagePaths));
-    const { data } = await admin.storage.from(STORAGE_BUCKET).createSignedUrls(uniquePaths, IMAGE_SIGNED_URL_TTL_SECONDS);
-    (data ?? []).forEach((entry, index) => {
-      if (entry.signedUrl) signedUrlByPath.set(uniquePaths[index], entry.signedUrl);
-    });
-  }
-
   const photos: MemoryPhoto[] = (photoRows ?? []).map((photo, index) => {
     const src = isLikelyStoragePath(photo.storage_path)
-      ? signedUrlByPath.get(photo.storage_path) ?? photo.storage_path
+      ? imageProxyUrlForPath(photo.storage_path)
       : photo.storage_path;
 
     return {

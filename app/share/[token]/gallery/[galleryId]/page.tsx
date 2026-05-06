@@ -10,12 +10,10 @@ import {
   INVALID_SHARE_METADATA,
   signCoverUrlForOg,
 } from "@/lib/share-metadata";
-import { IMAGE_SIGNED_URL_TTL_SECONDS } from "@/lib/storage";
+import { imageProxyUrlForPath } from "@/lib/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { formatLocationForCard } from "@/lib/utils";
 import type { MemoryPhoto } from "@/types/memora";
-
-const STORAGE_BUCKET = "gallery-images";
 
 type ShareRow = {
   id: string;
@@ -249,30 +247,9 @@ export default async function PublicSharedGalleryPage({
     ? memberLabels.join(" · ")
     : "Memora";
 
-  // The gallery cover used to render as a hero banner here, but
-  // recipients found it redundant with the cover that already shows
-  // on the share landing page tile. We sign covers for subgallery
-  // tiles plus paths for any direct gallery photos rendered below.
-  const coverPaths = (subgalleries ?? [])
-    .map((subgallery) => subgallery.cover_image_path ?? "")
-    .filter((path) => path && isLikelyStoragePath(path));
-  const directPhotoPaths = (directPhotoRows ?? [])
-    .map((photo) => photo.storage_path)
-    .filter((path) => path && isLikelyStoragePath(path));
-
-  const signedUrlByPath = new Map<string, string>();
-  const allPaths = [...coverPaths, ...directPhotoPaths];
-  if (allPaths.length) {
-    const uniquePaths = Array.from(new Set(allPaths));
-    const { data } = await admin.storage.from(STORAGE_BUCKET).createSignedUrls(uniquePaths, IMAGE_SIGNED_URL_TTL_SECONDS);
-    (data ?? []).forEach((entry, index) => {
-      if (entry.signedUrl) signedUrlByPath.set(uniquePaths[index], entry.signedUrl);
-    });
-  }
-
   const directPhotos: MemoryPhoto[] = (directPhotoRows ?? []).map((photo, index) => {
     const src = isLikelyStoragePath(photo.storage_path)
-      ? signedUrlByPath.get(photo.storage_path) ?? photo.storage_path
+      ? imageProxyUrlForPath(photo.storage_path)
       : photo.storage_path;
     return {
       id: photo.id,
@@ -327,7 +304,7 @@ export default async function PublicSharedGalleryPage({
           <section className="grid gap-x-3 gap-y-7 sm:grid-cols-2 md:gap-x-8 md:gap-y-12">
             {(subgalleries ?? []).map((subgallery) => {
               const cover = isLikelyStoragePath(subgallery.cover_image_path ?? "")
-                ? signedUrlByPath.get(subgallery.cover_image_path ?? "") ?? ""
+                ? imageProxyUrlForPath(subgallery.cover_image_path ?? "")
                 : (subgallery.cover_image_path ?? "");
               const formattedLocation = formatLocationForCard(subgallery.location);
               const dateText = dateLabelForSubgallery(subgallery);

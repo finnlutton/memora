@@ -30,7 +30,7 @@ import {
   type MembershipPlanId,
   type PlanResource,
 } from "@/lib/plans";
-import { IMAGE_SIGNED_URL_TTL_SECONDS } from "@/lib/storage";
+import { imageProxyUrlForPath } from "@/lib/storage";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { createId } from "@/lib/utils";
 import type {
@@ -536,64 +536,22 @@ async function uploadImageSourceIfNeeded(
 }
 
 async function resolveImageUrls(
-  supabase: ReturnType<typeof createSupabaseBrowserClient>,
+  _supabase: ReturnType<typeof createSupabaseBrowserClient>,
   paths: string[],
 ) {
+  // Routed through the stable /api/img proxy. Same path → same URL on
+  // every render, so next/image's optimizer cache hits instead of
+  // re-transforming on each load (which is what historically chewed
+  // through the Vercel image cache write quota).
   const map = new Map<string, string>();
-  const normalizedPaths = paths.map((path) => normalizeToStoragePath(path));
-  const storagePaths = normalizedPaths.filter((path) => isLikelyStoragePath(path));
-  const directPaths = normalizedPaths.filter((path) => !isLikelyStoragePath(path));
-
-  directPaths.forEach((path) => map.set(path, path));
-
-  if (storagePaths.length === 0) return map;
-
-  const uniqueStoragePaths = Array.from(new Set(storagePaths));
-  const { data, error } = await supabase.storage
-    .from(STORAGE_BUCKET)
-    .createSignedUrls(uniqueStoragePaths, IMAGE_SIGNED_URL_TTL_SECONDS);
-
-  if (error) {
-    console.error("Memora: batch signed URL generation failed", {
-      bucket: STORAGE_BUCKET,
-      paths: uniqueStoragePaths,
-      error,
-    });
-
-    await Promise.all(
-      uniqueStoragePaths.map(async (path) => {
-        const { data: fallbackData, error: fallbackError } = await supabase.storage
-          .from(STORAGE_BUCKET)
-          .createSignedUrl(path, IMAGE_SIGNED_URL_TTL_SECONDS);
-
-        if (fallbackError) {
-          console.error("Memora: fallback signed URL generation failed", {
-            bucket: STORAGE_BUCKET,
-            path,
-            error: fallbackError,
-          });
-          map.set(path, path);
-          return;
-        }
-
-        map.set(path, fallbackData.signedUrl ?? path);
-      }),
-    );
-    return map;
-  }
-
-  (data as Array<{ signedUrl?: string | null }>).forEach((entry, index) => {
-    const originalPath = uniqueStoragePaths[index];
-    if (!entry.signedUrl) {
-      console.warn("Memora: signed URL missing for storage path", {
-        bucket: STORAGE_BUCKET,
-        path: originalPath,
-        entry,
-      });
+  paths.forEach((path) => {
+    const normalized = normalizeToStoragePath(path);
+    if (isLikelyStoragePath(normalized)) {
+      map.set(normalized, imageProxyUrlForPath(normalized));
+    } else {
+      map.set(normalized, normalized);
     }
-    map.set(originalPath, entry.signedUrl ?? originalPath);
   });
-
   return map;
 }
 

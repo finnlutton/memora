@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LegalLinks } from "@/components/legal-links";
 import { ShareThemeFrame } from "@/components/share/share-theme-frame";
-import { IMAGE_SIGNED_URL_TTL_SECONDS } from "@/lib/storage";
+import { imageProxyUrlForPath } from "@/lib/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   extractHandleFromSegment,
@@ -12,8 +12,6 @@ import {
   type PublicGalleryRow,
 } from "@/lib/public-profile-fetch";
 import { formatDateRangeCompact, formatLocationForCard } from "@/lib/utils";
-
-const STORAGE_BUCKET = "gallery-images";
 
 async function loadPublicGalleries(userId: string): Promise<PublicGalleryRow[]> {
   const admin = createSupabaseAdminClient();
@@ -98,21 +96,6 @@ export default async function PublicProfilePage({
 
   const galleries = await loadPublicGalleries(profile.id);
 
-  // Sign cover URLs in one batch — same approach as /share/[token].
-  const coverPaths = galleries
-    .map((gallery) => gallery.cover_image_path ?? "")
-    .filter((path) => path && isLikelyStoragePath(path));
-  const signedUrlByPath = new Map<string, string>();
-  if (coverPaths.length) {
-    const uniquePaths = Array.from(new Set(coverPaths));
-    const { data: signedData } = await createSupabaseAdminClient()
-      .storage.from(STORAGE_BUCKET)
-      .createSignedUrls(uniquePaths, IMAGE_SIGNED_URL_TTL_SECONDS);
-    (signedData ?? []).forEach((entry, index) => {
-      if (entry.signedUrl) signedUrlByPath.set(uniquePaths[index], entry.signedUrl);
-    });
-  }
-
   const displayName = profile.displayName?.trim() || `@${profile.handle}`;
 
   return (
@@ -154,7 +137,7 @@ export default async function PublicProfilePage({
           {galleries.map((gallery) => {
             const coverPath = gallery.cover_image_path ?? "";
             const cover = isLikelyStoragePath(coverPath)
-              ? signedUrlByPath.get(coverPath) ?? ""
+              ? imageProxyUrlForPath(coverPath)
               : coverPath;
             const primaryLocation = formatLocationForCard(
               gallery.location ?? gallery.locations?.[0] ?? null,

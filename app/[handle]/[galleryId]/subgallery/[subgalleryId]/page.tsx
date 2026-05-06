@@ -5,7 +5,7 @@ import { CollapsibleEntry } from "@/components/collapsible-entry";
 import { LegalLinks } from "@/components/legal-links";
 import { PhotoGrid } from "@/components/photo-grid";
 import { ShareThemeFrame } from "@/components/share/share-theme-frame";
-import { IMAGE_SIGNED_URL_TTL_SECONDS } from "@/lib/storage";
+import { imageProxyUrlForPath } from "@/lib/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   extractHandleFromSegment,
@@ -16,8 +16,6 @@ import {
 } from "@/lib/public-profile-fetch";
 import { formatLocationForCard } from "@/lib/utils";
 import type { MemoryPhoto } from "@/types/memora";
-
-const STORAGE_BUCKET = "gallery-images";
 
 function formatDateRange(startDate: string | null, endDate: string | null) {
   const formatter = new Intl.DateTimeFormat("en-US", {
@@ -100,24 +98,9 @@ export default async function PublicSubgalleryPage({
     .order("display_order", { ascending: true })
     .returns<PublicPhotoRow[]>();
 
-  const imagePaths = (photoRows ?? [])
-    .map((p) => p.storage_path)
-    .filter((p) => p && isLikelyStoragePath(p));
-
-  const signedUrlByPath = new Map<string, string>();
-  if (imagePaths.length) {
-    const uniquePaths = Array.from(new Set(imagePaths));
-    const { data } = await admin.storage
-      .from(STORAGE_BUCKET)
-      .createSignedUrls(uniquePaths, IMAGE_SIGNED_URL_TTL_SECONDS);
-    (data ?? []).forEach((entry, index) => {
-      if (entry.signedUrl) signedUrlByPath.set(uniquePaths[index], entry.signedUrl);
-    });
-  }
-
   const photos: MemoryPhoto[] = (photoRows ?? []).map((photo, index) => {
     const src = isLikelyStoragePath(photo.storage_path)
-      ? signedUrlByPath.get(photo.storage_path) ?? photo.storage_path
+      ? imageProxyUrlForPath(photo.storage_path)
       : photo.storage_path;
     return {
       id: photo.id,

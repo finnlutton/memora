@@ -9,10 +9,8 @@ import {
   INVALID_SHARE_METADATA,
   signCoverUrlForOg,
 } from "@/lib/share-metadata";
-import { IMAGE_SIGNED_URL_TTL_SECONDS } from "@/lib/storage";
+import { imageProxyUrlForPath } from "@/lib/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-
-const STORAGE_BUCKET = "gallery-images";
 
 type ShareRow = {
   id: string;
@@ -185,24 +183,6 @@ export default async function PublicSharePage({
   const senderName = senderCtx?.senderName ?? "Someone";
   const sharedDate = formatShareDate(share.created_at);
 
-  const coverPaths = (galleryRows ?? [])
-    .map((gallery) => gallery.cover_image_path ?? "")
-    .filter((path) => path && isLikelyStoragePath(path));
-
-  const signedUrlByPath = new Map<string, string>();
-  if (coverPaths.length) {
-    const uniquePaths = Array.from(new Set(coverPaths));
-    const { data: signedData } = await admin.storage
-      .from(STORAGE_BUCKET)
-      .createSignedUrls(uniquePaths, IMAGE_SIGNED_URL_TTL_SECONDS);
-
-    (signedData ?? []).forEach((entry, index) => {
-      if (entry.signedUrl) {
-        signedUrlByPath.set(uniquePaths[index], entry.signedUrl);
-      }
-    });
-  }
-
   return (
     <ShareThemeFrame themeId={share.theme_id}>
     <main className="flex min-h-screen flex-col bg-[color:var(--background)] px-4 py-6 text-[color:var(--ink)] md:px-8 md:py-8">
@@ -260,7 +240,7 @@ export default async function PublicSharePage({
             {galleryRows.map((gallery) => {
               const coverPath = gallery.cover_image_path ?? "";
               const coverImage = isLikelyStoragePath(coverPath)
-                ? signedUrlByPath.get(coverPath) ?? ""
+                ? imageProxyUrlForPath(coverPath)
                 : coverPath;
 
               return (

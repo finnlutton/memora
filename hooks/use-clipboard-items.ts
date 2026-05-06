@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { compressImageFile } from "@/lib/file";
-import { IMAGE_SIGNED_URL_TTL_SECONDS } from "@/lib/storage";
+import { imageProxyUrlForPath } from "@/lib/storage";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 
@@ -38,7 +38,7 @@ export type ClipboardItem = {
   content: string | null;
   /** Original storage path, e.g. "{userId}/clipboard/{id}-{ts}.jpg". */
   photoPath: string | null;
-  /** Short-lived signed URL for display. Refreshed on each load. */
+  /** Stable proxy URL (`/api/img/{path}`) — same on every render. */
   photoUrl: string | null;
   xPosition: number | null;
   yPosition: number | null;
@@ -61,37 +61,12 @@ type ClipboardItemRow = {
   updated_at: string;
 };
 
-async function resolveSignedUrls(
-  supabase: ReturnType<typeof createSupabaseBrowserClient>,
-  paths: string[],
-) {
-  const map = new Map<string, string>();
-  if (paths.length === 0) return map;
-  const unique = Array.from(new Set(paths));
-  const { data, error } = await supabase.storage
-    .from(BUCKET)
-    .createSignedUrls(unique, IMAGE_SIGNED_URL_TTL_SECONDS);
-  if (error) {
-    console.error("Memora clipboard: signed URL batch failed", error);
-    return map;
-  }
-  data?.forEach((entry: { path: string | null; signedUrl: string | null }) => {
-    if (entry.path && entry.signedUrl) {
-      map.set(entry.path, entry.signedUrl);
-    }
-  });
-  return map;
-}
-
-function rowToItem(
-  row: ClipboardItemRow,
-  signedUrls: Map<string, string>,
-): ClipboardItem {
+function rowToItem(row: ClipboardItemRow): ClipboardItem {
   return {
     id: row.id,
     content: row.content,
     photoPath: row.photo_path,
-    photoUrl: row.photo_path ? signedUrls.get(row.photo_path) ?? null : null,
+    photoUrl: row.photo_path ? imageProxyUrlForPath(row.photo_path) : null,
     xPosition: row.x_position,
     yPosition: row.y_position,
     layoutType: row.layout_type,
@@ -144,12 +119,8 @@ export function useClipboardItems() {
           .order("created_at", { ascending: false });
         if (queryError) throw queryError;
         const rows = (data ?? []) as ClipboardItemRow[];
-        const photoPaths = rows
-          .map((row) => row.photo_path)
-          .filter((p): p is string => Boolean(p));
-        const signedUrls = await resolveSignedUrls(supabase, photoPaths);
         if (cancelled) return;
-        setItems(rows.map((row) => rowToItem(row, signedUrls)));
+        setItems(rows.map((row) => rowToItem(row)));
       } catch (err) {
         if (cancelled) return;
         console.error("Memora clipboard: load failed", err);
@@ -227,10 +198,7 @@ export function useClipboardItems() {
       }
 
       const row = data as ClipboardItemRow;
-      const signedUrls = photoPath
-        ? await resolveSignedUrls(supabase, [photoPath])
-        : new Map<string, string>();
-      const created = rowToItem(row, signedUrls);
+      const created = rowToItem(row);
       setItems((prev) => [created, ...prev]);
       return created;
     },

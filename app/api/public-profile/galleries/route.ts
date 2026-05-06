@@ -1,17 +1,12 @@
 import { NextResponse } from "next/server";
-import { IMAGE_SIGNED_URL_TTL_SECONDS } from "@/lib/storage";
+import { imageProxyUrlForPath } from "@/lib/storage";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 // GET /api/public-profile/galleries
 //
 // Returns the caller's galleries with their is_on_public_profile flag
-// and a signed cover URL, so the Settings picker can render thumbnails
-// without a second round trip. Everything stays on the user's auth
-// client — owner-scoped read for the rows, and the existing storage
-// RLS lets the same session sign URLs for its own files. (No admin
-// client here because the data is per-user, not public.)
-
-const STORAGE_BUCKET = "gallery-images";
+// and a stable proxy cover URL, so the Settings picker can render
+// thumbnails without a second round trip.
 
 type GalleryRow = {
   id: string;
@@ -56,20 +51,6 @@ export async function GET() {
   }
 
   const rows = data ?? [];
-  const coverPaths = rows
-    .map((row) => row.cover_image_path)
-    .filter((path): path is string => path !== null && isLikelyStoragePath(path));
-
-  const signedByPath = new Map<string, string>();
-  if (coverPaths.length) {
-    const unique = Array.from(new Set(coverPaths));
-    const { data: signed } = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .createSignedUrls(unique, IMAGE_SIGNED_URL_TTL_SECONDS);
-    (signed ?? []).forEach((entry, i) => {
-      if (entry.signedUrl) signedByPath.set(unique[i], entry.signedUrl);
-    });
-  }
 
   return NextResponse.json({
     galleries: rows.map((row) => ({
@@ -77,7 +58,7 @@ export async function GET() {
       title: row.title,
       coverImageUrl:
         row.cover_image_path && isLikelyStoragePath(row.cover_image_path)
-          ? signedByPath.get(row.cover_image_path) ?? null
+          ? imageProxyUrlForPath(row.cover_image_path)
           : row.cover_image_path,
       startDate: row.start_date,
       endDate: row.end_date,

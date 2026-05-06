@@ -1,12 +1,7 @@
 import { cache } from "react";
 import type { Metadata } from "next";
+import { imageProxyUrlForPath } from "@/lib/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-
-const STORAGE_BUCKET = "gallery-images";
-// Long-lived signed URL for OG images. Once an unfurl-bot fetches the
-// preview it usually caches indefinitely, but giving it 30 days of headroom
-// covers reposts, cache busts, and platforms that re-scrape periodically.
-const OG_SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 30;
 
 export type ShareMetaContext = {
   shareId: string;
@@ -88,11 +83,9 @@ export async function signCoverUrlForOg(
 ): Promise<string | null> {
   if (!coverImagePath) return null;
   if (!isLikelyStoragePath(coverImagePath)) return coverImagePath;
-  const admin = createSupabaseAdminClient();
-  const { data } = await admin.storage
-    .from(STORAGE_BUCKET)
-    .createSignedUrl(coverImagePath, OG_SIGNED_URL_TTL_SECONDS);
-  return data?.signedUrl ?? null;
+  // Relative proxy URL — Next.js metadataBase resolves it to an absolute
+  // URL for unfurl bots. Stable across re-scrapes, no signed-URL churn.
+  return imageProxyUrlForPath(coverImagePath);
 }
 
 export type BuildShareMetadataInput = {
