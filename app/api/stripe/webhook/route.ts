@@ -1,6 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type Stripe from "stripe";
 import {
+  findActiveAmbassadorByPromotionCode,
+  getCheckoutSessionPromotionCode,
+  getInvoicePromotionCode,
+  lookupProfileIdByCustomer,
+  markCommissionsRefundedForCharge,
+  recordPendingCommission,
+} from "@/lib/ambassadors";
+import {
   computeOneTimePlanExpiry,
   isOneTimePlan,
   isPaidPlan,
@@ -172,6 +180,124 @@ async function handleSubscription(subscription: Stripe.Subscription) {
   });
 }
 
+async function recordCommissionFromCheckoutSession(
+  eventId: string,
+  session: Stripe.Checkout.Session,
+): Promise<void> {
+  // Only one-time payments are recorded here. Subscription-mode sessions
+  // are commissioned from invoice.paid (which fires for both first
+  // payment and renewals), so we don't double-count.
+  if (session.mode !== "payment") return;
+  if (!session.id) return;
+  const customerId =
+    typeof session.customer === "string"
+      ? session.customer
+      : session.customer?.id ?? null;
+  const stripe = getStripeClient();
+  const promo = await getCheckoutSessionPromotionCode(stripe, session.id);
+  if (!promo) return;
+  const admin = createSupabaseAdminClient();
+  const ambassador = await findActiveAmbassadorByPromotionCode(admin, promo.code);
+  if (!ambassador) return;
+
+  const paymentIntentId =
+    typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : session.payment_intent?.id ?? null;
+  const amountTotal = session.amount_total ?? 0;
+  if (amountTotal <= 0) return;
+
+  const buyerUserId = customerId
+    ? await lookupProfileIdByCustomer(admin, customerId)
+    : null;
+  const planId = session.metadata?.plan_id ?? null;
+
+  await recordPendingCommission(admin, {
+    ambassador,
+    stripeEventId: eventId,
+    source: "one_time",
+    paymentAmountCents: amountTotal,
+    currency: session.currency ?? "usd",
+    buyerUserId,
+    planId,
+    stripeSessionId: session.id,
+    stripePaymentIntentId: paymentIntentId,
+  });
+}
+
+async function handleInvoicePaid(eventId: string, invoice: Stripe.Invoice): Promise<void> {
+  // Read fields that have moved between Stripe SDK versions through a
+  // narrowed shape rather than the public Invoice type, which has
+  // shifted around in recent API revisions.
+  const ext = invoice as unknown as {
+    subscription?: string | { id?: string } | null;
+    payment_intent?: string | { id?: string } | null;
+    charge?: string | { id?: string } | null;
+    lines?: { data?: Array<{ price?: { id?: string } | null }> } | null;
+  };
+  if (!ext.subscription) return;
+  if (!invoice.id) return;
+  // billing_reason distinguishes the first invoice on a sub
+  // (subscription_create) from renewals (subscription_cycle). Other
+  // values like subscription_update (proration) also produce paid
+  // invoices we want to commission on.
+  const isInitial = invoice.billing_reason === "subscription_create";
+  const customerId =
+    typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id ?? null;
+
+  const stripe = getStripeClient();
+  const promo = await getInvoicePromotionCode(stripe, invoice);
+  if (!promo) return;
+  const admin = createSupabaseAdminClient();
+  const ambassador = await findActiveAmbassadorByPromotionCode(admin, promo.code);
+  if (!ambassador) return;
+
+  // amount_paid is the actual money collected after discount; that's
+  // what the commission is computed against.
+  const amountPaid = invoice.amount_paid ?? 0;
+  if (amountPaid <= 0) return;
+
+  const paymentIntentId =
+    typeof ext.payment_intent === "string"
+      ? ext.payment_intent
+      : ext.payment_intent?.id ?? null;
+  const chargeId =
+    typeof ext.charge === "string" ? ext.charge : ext.charge?.id ?? null;
+  const buyerUserId = customerId
+    ? await lookupProfileIdByCustomer(admin, customerId)
+    : null;
+  const priceId = ext.lines?.data?.[0]?.price?.id ?? null;
+  const planId = priceId ? mapStripePriceIdToPlan(priceId) : null;
+
+  await recordPendingCommission(admin, {
+    ambassador,
+    stripeEventId: eventId,
+    source: isInitial ? "subscription_initial" : "subscription_renewal",
+    paymentAmountCents: amountPaid,
+    currency: invoice.currency ?? "usd",
+    buyerUserId,
+    planId,
+    stripeInvoiceId: invoice.id,
+    stripePaymentIntentId: paymentIntentId,
+    stripeChargeId: chargeId,
+  });
+}
+
+async function handleChargeRefunded(charge: Stripe.Charge): Promise<void> {
+  const admin = createSupabaseAdminClient();
+  const updated = await markCommissionsRefundedForCharge(admin, charge);
+  if (updated > 0) {
+    console.info("Memora ambassadors: marked refunded", {
+      chargeId: charge.id,
+      paymentIntentId:
+        typeof charge.payment_intent === "string"
+          ? charge.payment_intent
+          : charge.payment_intent?.id,
+      rows: updated,
+    });
+  }
+}
+
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const customerId =
     typeof session.customer === "string"
@@ -283,7 +409,11 @@ export async function POST(request: NextRequest) {
   try {
     switch (event.type) {
       case "checkout.session.completed": {
-        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+        const session = event.data.object as Stripe.Checkout.Session;
+        await handleCheckoutCompleted(session);
+        // One-time payments only — subscription commissions land in
+        // invoice.paid below.
+        await recordCommissionFromCheckoutSession(event.id, session);
         break;
       }
       case "customer.subscription.created":
@@ -292,10 +422,19 @@ export async function POST(request: NextRequest) {
         await handleSubscription(event.data.object as Stripe.Subscription);
         break;
       }
-      case "invoice.payment_succeeded":
+      case "invoice.paid":
+      case "invoice.payment_succeeded": {
+        // Stripe emits both `invoice.paid` (newer) and
+        // `invoice.payment_succeeded` (legacy alias) for the same
+        // event; the event-claim table already dedups at the event-id
+        // level, and the commission's payment_intent_id index dedups
+        // at the payment level — so this case is safe to handle for
+        // either type.
+        const invoice = event.data.object as Stripe.Invoice;
+        await handleInvoicePaid(event.id, invoice);
+        break;
+      }
       case "invoice.payment_failed": {
-        // The subsequent customer.subscription.updated event carries the
-        // canonical state; we just log here for audit/debugging.
         const invoice = event.data.object as Stripe.Invoice;
         console.info("Memora webhook: invoice event", {
           type: event.type,
@@ -303,6 +442,10 @@ export async function POST(request: NextRequest) {
           status: invoice.status,
           customer: invoice.customer,
         });
+        break;
+      }
+      case "charge.refunded": {
+        await handleChargeRefunded(event.data.object as Stripe.Charge);
         break;
       }
       default:

@@ -2,6 +2,7 @@
 
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import { useMemo, useState } from "react";
+import { AmbassadorCommissionsPanel } from "@/components/admin/ambassador-commissions-panel";
 import { Button } from "@/components/ui/button";
 
 type ScanResult = {
@@ -494,6 +495,8 @@ export function AdminControlPanel() {
             </Button>
           </div>
         </section>
+
+        <AmbassadorCommissionsPanel />
 
         <section className="border-b border-[rgba(34,52,79,0.08)] pb-4">
           <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[color:var(--ink)]">Support / Operations</p>
