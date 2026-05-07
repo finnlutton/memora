@@ -191,8 +191,9 @@ export async function loadProfileState(
     }
   }
 
-  // Resolve to the effective plan so an expired Founder account is
-  // treated as Free everywhere the client uses `selectedPlanId` —
+  // Resolve to the effective plan so an expired Max / Abroad Pass
+  // account is treated as Free everywhere the client uses
+  // `selectedPlanId` —
   // gallery counts, subgallery counts, share gating, etc. The DB row
   // is intentionally not mutated; the runtime check is the source of
   // truth and a future cron can clean up stale rows if we add one.

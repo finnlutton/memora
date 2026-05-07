@@ -26,17 +26,18 @@ export const runtime = "nodejs";
  * Routing by (current plan → target plan):
  *   - No active sub → 409 with redirect: "checkout"
  *     (caller falls back to /api/stripe/create-checkout-session)
- *   - Plus ↔ Max → stripe.subscriptions.update() with proration:
+ *   - Plus ↔ legacy-Max → stripe.subscriptions.update() with proration:
  *       upgrade   → proration_behavior: "always_invoice"
  *                   payment_behavior:   "error_if_incomplete"
  *                   (refuses the change if payment fails — keeps old plan)
  *       downgrade → proration_behavior: "create_prorations"
  *                   (credit appears on next regular invoice)
- *   - Plus/Max → Free → cancel_at_period_end on current sub
- *   - Plus/Max → Founder → cancel_at_period_end on current sub, return a
- *     one-time Checkout Session URL for the Founder payment
- *   - Founder → anything paid → blocked: Founder term already covers all
- *     paid features
+ *   - Plus/legacy-Max → Free → cancel_at_period_end on current sub
+ *   - Plus/legacy-Max → one-time plan (Max, Abroad Pass) →
+ *     cancel_at_period_end on current sub, return a one-time Checkout
+ *     Session URL for the lump-sum payment
+ *   - Max (lifetime) → anything paid → blocked: Max term already
+ *     covers all paid features
  *
  * Webhook (`customer.subscription.updated`) is the source of truth for
  * the DB sync; this endpoint never writes the profile directly.
@@ -145,8 +146,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 4. Block Founder → recurring during active term — they already have
-  // everything Plus/Max offer, charging again would be silly.
+  // 4. Block Max (lifetime) → recurring during active term — they
+  // already have everything Plus offers, charging again would be silly.
   if (
     effectivePlanId === "lifetime" &&
     (targetPlanId === "plus" || targetPlanId === "max")
@@ -154,7 +155,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Your Founder access already includes everything in Plus and Max. Wait until your Founder term ends to switch to a recurring plan.",
+          "Your Max access already includes everything in Plus. Wait until your Max term ends to switch to a recurring plan.",
       },
       { status: 400 },
     );
@@ -220,13 +221,13 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 7. Plus/Max → one-time plan (Founder, Abroad Pass): cancel current
-  // sub at period end, then issue a Checkout URL for the one-time
-  // payment. Slight overlap (≤ one billing period of paid time they've
-  // already covered) is intentional — see decision (2a) in the design
-  // doc / chat.
+  // 7. Plus/legacy-Max → one-time plan (Max, Abroad Pass): cancel
+  // current sub at period end, then issue a Checkout URL for the
+  // one-time payment. Slight overlap (≤ one billing period of paid
+  // time they've already covered) is intentional — see decision (2a)
+  // in the design doc / chat.
   if (isOneTimePlan(targetPlanId)) {
-    const planLabel = targetPlanId === "lifetime" ? "Founder" : "Abroad Pass";
+    const planLabel = targetPlanId === "lifetime" ? "Max" : "Abroad Pass";
     try {
       await stripe.subscriptions.update(subscriptionId, {
         cancel_at_period_end: true,
@@ -294,7 +295,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 8. Plus ↔ Max: in-place subscription update with proration.
+  // 8. Plus ↔ legacy-Max: in-place subscription update with proration.
   if (targetPlanId === "plus" || targetPlanId === "max") {
     let newPriceId: string;
     try {

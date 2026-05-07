@@ -69,8 +69,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Resolves expired Founder accounts down to Free here, so an
-    // expired customer hits the same gallery/share caps as anyone else.
+    // Resolves expired Max / Abroad Pass accounts down to Free here, so
+    // an expired customer hits the same gallery/share caps as anyone else.
     const plan = getPlan(resolveEffectivePlanId(profile ?? null));
     if (!plan) {
       return NextResponse.json({ error: "No plan configuration available." }, { status: 500 });

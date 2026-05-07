@@ -83,8 +83,9 @@ export async function DELETE(request: Request) {
     // cleanup on purpose: if Stripe is unreachable we abort early and the
     // user's data is still intact for a retry.
     //
-    // Free users (and Lifetime users — webhook stores null subscription_id
-    // for lifetime payments) skip this step entirely.
+    // Free users (and one-time-plan users — Max and Abroad Pass; the
+    // webhook stores null subscription_id for one-time payments) skip
+    // this step entirely.
     const { data: profile } = await admin
       .from("profiles")
       .select("stripe_subscription_id")

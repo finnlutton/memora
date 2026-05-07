@@ -108,7 +108,7 @@ export function BillingStatusCard() {
   const plan = getPlan(status.planId);
   const renewDate = formatDate(status.currentPeriodEnd);
 
-  // ── State 4: Internal/founder ───────────────────────────────────────
+  // ── State 4: Internal/comped ────────────────────────────────────────
   if (status.isInternal) {
     return (
       <div className="border border-[color:var(--border)] bg-white px-4 py-4">
@@ -134,7 +134,7 @@ export function BillingStatusCard() {
   if (status.planId === "free") {
     // Distinguish a never-paid Free account from one that lapsed out of
     // a one-time plan so the user understands why their limits dropped.
-    const expiredFounder = status.founderExpired;
+    const expiredMax = status.maxExpired;
     const expiredAbroad = status.abroadPassExpired;
     let title = "Current plan: Free";
     let body: string | null = null;
@@ -144,10 +144,10 @@ export function BillingStatusCard() {
       body =
         "Your Abroad Pass creation period has ended. Your galleries are still viewable and shareable. Upgrade to Plus to create new galleries or upload more photos.";
       cta = "Choose a new plan";
-    } else if (expiredFounder) {
-      title = "Founder access ended";
+    } else if (expiredMax) {
+      title = "Max access ended";
       body =
-        "Your 3-year Founder term has ended. Your archive is safe and still viewable; new uploads and shares now follow Free-plan limits.";
+        "Your 3-year Max term has ended. Your archive is safe and still viewable; new uploads and shares now follow Free-plan limits.";
       cta = "Choose a new plan";
     }
     return (
@@ -201,7 +201,7 @@ export function BillingStatusCard() {
   }
 
   // ── State 1: Active paid plan, not canceled ─────────────────────────
-  // Founder is a one-time purchase — no renewal during the 3-year term.
+  // Max is a one-time purchase — no renewal during the 3-year term.
   if (status.planId === "lifetime") {
     return (
       <div className="border border-[color:var(--border)] bg-white px-4 py-4">
@@ -209,14 +209,14 @@ export function BillingStatusCard() {
           Billing
         </p>
         <p className="mt-3 font-serif text-[20px] leading-tight text-[color:var(--ink)]">
-          Current plan: Founder
+          Current plan: Max
         </p>
         <p className="mt-2 text-[13px] leading-6 text-[color:var(--ink-soft)]">
           Paid once. Three years of premium access, no monthly billing.
         </p>
         {renewDate ? (
           <p className="mt-1 text-[12.5px] leading-6 text-[color:var(--ink-soft)]">
-            Founder access until {renewDate}.
+            Max access until {renewDate}.
           </p>
         ) : null}
         {status.hasStripeCustomer ? (

@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Internal/founder accounts: graceful no-op response instead of an error.
+  // Internal/comped accounts: graceful no-op response instead of an error.
   if (profile?.is_internal_account && !profile.stripe_customer_id) {
     return NextResponse.json(
       {

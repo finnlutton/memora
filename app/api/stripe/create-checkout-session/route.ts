@@ -157,8 +157,9 @@ export async function POST(request: NextRequest) {
     origin,
   );
 
-  // 6. Create the Checkout Session. Subscription mode for Plus/Max,
-  // payment mode (one-time) for Founder and Abroad Pass.
+  // 6. Create the Checkout Session. Subscription mode for Plus and
+  // legacy Max, payment mode (one-time) for Max (lifetime) and Abroad
+  // Pass.
   const mode = known.stripeMode ?? "subscription";
   try {
     const session = await stripe.checkout.sessions.create({
@@ -175,9 +176,9 @@ export async function POST(request: NextRequest) {
             },
           }
         : {
-            // For one-time payments (Founder, Abroad Pass) attach
-            // metadata to the resulting payment intent so the webhook
-            // can identify which plan was purchased.
+            // For one-time payments (Max, Abroad Pass) attach metadata
+            // to the resulting payment intent so the webhook can
+            // identify which plan was purchased.
             payment_intent_data: {
               metadata: { user_id: user.id, plan_id: planId },
             },

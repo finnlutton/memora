@@ -13,16 +13,20 @@ Settings → Environment Variables** for preview/production.
 | `STRIPE_SECRET_KEY` | server only | `sk_test_…` (test) or `sk_live_…` (live) |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | client | reserved for future client-side use; not currently read by any route |
 | `STRIPE_PRICE_PLUS_MONTHLY` | server | recurring price for the Plus plan |
-| `STRIPE_PRICE_MAX_MONTHLY` | server | recurring price for the Max plan |
-| `STRIPE_PRICE_LIFETIME` | server | one-time price for the Founder Plan ($59.99 / 3 yrs). Env var keeps the legacy `LIFETIME` name; the Stripe price object behind it is now the Founder price. |
+| `STRIPE_PRICE_MAX_MONTHLY` | server | recurring price for the legacy Max plan (kept for existing subscribers; not offered to new users) |
+| `STRIPE_PRICE_LIFETIME` | server | one-time price for the Max plan ($39.99 / 3 yrs). Env var keeps the historical `LIFETIME` name to avoid a Vercel env-var rename; the Stripe price object behind it is now the Max price. |
+| `STRIPE_ABROAD_PASS_PRICE_ID` | server | one-time price for the Abroad Pass ($12.99 / 6 months) |
 | `STRIPE_WEBHOOK_SECRET` | server | `whsec_…` from Stripe Dashboard or CLI |
 | `NEXT_PUBLIC_SITE_URL` | client | canonical site origin (e.g. `https://memoragallery.com`) |
 | `SUPABASE_SERVICE_ROLE_KEY` | server | already required for admin Supabase writes |
 
 The price IDs are intentionally **not** prefixed `NEXT_PUBLIC_*` — the
-client only ever sends a `planId` (`plus` / `max` / `lifetime`) and the
-server resolves the price ID from env vars. The `lifetime` plan id is
-the internal key for what's branded publicly as the Founder Plan.
+client only ever sends a `planId` (`plus` / `max` / `lifetime` /
+`abroad_pass`) and the server resolves the price ID from env vars. The
+`lifetime` plan id is the internal key for what's branded publicly as
+the **Max** plan (one-time $39.99 / 3 yrs); the legacy recurring `max`
+plan id is kept only for users who subscribed before that rename and is
+hidden from the public picker.
 
 The free and internal full-access plans never touch Stripe.
 
@@ -75,7 +79,7 @@ In test mode, use Stripe's [test card](https://stripe.com/docs/testing)
 
 1. Sign in.
 2. Go to **Settings → Choose membership**.
-3. Click a paid plan (Plus, Max, or Founder).
+3. Click a paid plan (Plus, Max, or Abroad Pass).
 4. Complete checkout in the hosted Stripe page.
 5. You'll land on `/galleries?checkout=success`.
 6. The webhook updates the profile's `selected_plan`,
@@ -108,8 +112,8 @@ Test mode env vars stay on **Preview** so previews don't charge real cards.
 ## Internal full-access accounts
 
 The `internal` plan is full-access, never billed, never shown publicly.
-(Distinct from the public Founder Plan, which is a paid one-time
-purchase backed by Stripe.)
+(Distinct from the public Max plan, which is a paid one-time purchase
+backed by Stripe.)
 After running the migration, mark accounts as internal with:
 
 ```sql

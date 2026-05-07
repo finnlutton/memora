@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   isAbroadPassExpired,
-  isFounderExpired,
+  isMaxExpired,
   resolveEffectivePlanId,
   type MembershipPlanId,
 } from "@/lib/plans";
@@ -17,19 +17,19 @@ export type BillingStatusResponse = {
   subscriptionStatus: string | null;
   /**
    * For monthly subs:        next renewal date.
-   * For an active Founder:   when 3-year access ends.
+   * For an active Max:       when 3-year access ends.
    * For an active Abroad:    when the 6-month creation window ends.
-   * Null for Free, internal, expired Founder, or expired Abroad Pass.
+   * Null for Free, internal, expired Max, or expired Abroad Pass.
    */
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
   /**
-   * True when the stored plan is `lifetime` (Founder) but the access
-   * window has elapsed. The `planId` above is downgraded to `"free"` in
-   * that case; this flag lets the UI surface a "Founder access ended"
-   * state instead of a generic Free state.
+   * True when the stored plan is `lifetime` (Max) but the access window
+   * has elapsed. The `planId` above is downgraded to `"free"` in that
+   * case; this flag lets the UI surface a "Max access ended" state
+   * instead of a generic Free state.
    */
-  founderExpired: boolean;
+  maxExpired: boolean;
   /**
    * True when the stored plan is `abroad_pass` but the 6-month creation
    * window has elapsed. Lets the UI render the warm "your Abroad Pass
@@ -85,9 +85,9 @@ export async function GET() {
       profile?.subscription_current_period_end ?? null,
   };
   const planId = resolveEffectivePlanId(planFields);
-  const founderExpired = isFounderExpired(planFields);
+  const maxExpired = isMaxExpired(planFields);
   const abroadPassExpired = isAbroadPassExpired(planFields);
-  const oneTimeExpired = founderExpired || abroadPassExpired;
+  const oneTimeExpired = maxExpired || abroadPassExpired;
 
   const body: BillingStatusResponse = {
     planId,
@@ -100,7 +100,7 @@ export async function GET() {
       ? null
       : profile?.subscription_current_period_end ?? null,
     cancelAtPeriodEnd: Boolean(profile?.subscription_cancel_at_period_end),
-    founderExpired,
+    maxExpired,
     abroadPassExpired,
   };
   return NextResponse.json(body);

@@ -2,12 +2,17 @@
  * Centralized plan config — the single source of truth for everything
  * about Memora's billing tiers.
  *
- * Public plans:        free, plus, abroad_pass
- * Promo banner:        lifetime (Founder Plan — surfaced via a small banner,
- *                      not a full pricing card)
- * Hidden plans:        max  (kept for backward compatibility with legacy
- *                      Max subscribers — never shown as a selectable option)
+ * Public plans:        free, plus, lifetime ("Max"), abroad_pass
+ * Hidden plans:        max  (legacy "Max" recurring plan kept for users
+ *                      who subscribed before Max became a one-time tier
+ *                      — never shown as a selectable option)
  * Internal-only plan:  internal  (full-access, never shown publicly)
+ *
+ * Note on identifiers: the user-facing "Max" plan is internally keyed as
+ * `lifetime` because that's how it's stored in `profiles.selected_plan`,
+ * the Stripe webhook mapping, and `STRIPE_PRICE_LIFETIME`. Renaming the
+ * id would force a DB migration + Stripe re-keying for zero user benefit
+ * — the display name is the only thing users see.
  *
  * Stripe price IDs are derived from env vars at the point of use; the
  * client only ever sends a `planId` string, which the server validates
@@ -74,7 +79,7 @@ export type MembershipPlan = {
   /**
    * Stripe billing mode for this plan. Only relevant for paid plans.
    *   "subscription" → recurring (Plus, Max)
-   *   "payment"      → one-time (Abroad Pass, Founder)
+   *   "payment"      → one-time (Max, Abroad Pass)
    */
   stripeMode?: "subscription" | "payment";
 };
@@ -140,6 +145,30 @@ export const membershipPlans: MembershipPlan[] = [
     stripeMode: "subscription",
   },
   {
+    id: "lifetime",
+    name: "Max",
+    priceMonthlyLabel: "$39.99",
+    // One-time 3-year pass — annual-equivalent isn't meaningful; store
+    // the actual cost so the checkout summary renders correctly.
+    price: 39.99,
+    galleryCount: 100,
+    subgalleriesPerGallery: 50,
+    photosPerSubgallery: 200,
+    directPhotosPerGallery: 200,
+    activeShareLinks: 60,
+    shareLimitPeriod: "monthly",
+    summary: "Pay once. Three years of premium access, no monthly billing.",
+    features: [
+      "3 years of premium access",
+      "5x higher limits than Plus",
+      "One payment, no renewal",
+      "Galleries stay viewable after the term ends",
+    ],
+    featured: false,
+    effectiveCost: "Max",
+    stripeMode: "payment",
+  },
+  {
     id: "abroad_pass",
     name: "Abroad Pass",
     priceMonthlyLabel: "$12.99",
@@ -165,7 +194,7 @@ export const membershipPlans: MembershipPlan[] = [
   },
   {
     id: "max",
-    name: "Max",
+    name: "Max (Legacy)",
     priceMonthlyLabel: "$5.99",
     price: annualPriceFromMonthly(5.99),
     galleryCount: UNLIMITED,
@@ -173,7 +202,7 @@ export const membershipPlans: MembershipPlan[] = [
     photosPerSubgallery: UNLIMITED,
     directPhotosPerGallery: UNLIMITED,
     activeShareLinks: null,
-    summary: "For long-term archivists building a life's worth of memories.",
+    summary: "Legacy recurring Max plan retained for existing subscribers.",
     features: [
       "Unlimited galleries",
       "Unlimited sharing",
@@ -181,38 +210,15 @@ export const membershipPlans: MembershipPlan[] = [
       "Early access to new features",
     ],
     featured: false,
-    // Retired plan kept for backward compatibility with legacy Max
-    // subscribers. Hidden from all public/upgrade UI but still resolves
-    // through normalizePlanId, getStripePriceIdForPlan, and the webhook
-    // mapping so existing subs keep functioning.
+    // Retired plan kept for backward compatibility with the original
+    // recurring Max subscribers (pre-2026-05). The current "Max" tier is
+    // the one-time `lifetime` plan above. Hidden from all public/upgrade
+    // UI but still resolves through normalizePlanId,
+    // getStripePriceIdForPlan, and the webhook mapping so existing subs
+    // keep functioning.
     hidden: true,
     effectiveCost: "Custom",
     stripeMode: "subscription",
-  },
-  {
-    id: "lifetime",
-    name: "Founder",
-    priceMonthlyLabel: "$59.99",
-    price: 59.99,
-    galleryCount: UNLIMITED,
-    subgalleriesPerGallery: UNLIMITED,
-    photosPerSubgallery: UNLIMITED,
-    directPhotosPerGallery: UNLIMITED,
-    activeShareLinks: null,
-    summary:
-      "Pay once and get 3 years of premium Memora access. No monthly billing during the 3-year term.",
-    features: [
-      "3 years of premium access",
-      "Very high limits across the board",
-      "One payment, no renewal",
-      "Limited early-adopter pricing",
-    ],
-    featured: false,
-    // Surfaced via a small banner CTA, not the main pricing grid. Kept
-    // out of the public list so it doesn't render as a fourth card.
-    hidden: true,
-    effectiveCost: "Founder",
-    stripeMode: "payment",
   },
   {
     id: "internal",
@@ -293,30 +299,29 @@ export function isInternalPlan(planId: MembershipPlanId): boolean {
 }
 
 /**
- * Founder Plan term, in milliseconds (3 years). Used by the Stripe
- * webhook to stamp `subscription_current_period_end` at purchase time
- * and by the runtime resolver below to check whether that stamp is in
- * the past.
+ * Max Plan term, in milliseconds (3 years). Used by the Stripe webhook
+ * to stamp `subscription_current_period_end` at purchase time and by
+ * the runtime resolver below to check whether that stamp is in the past.
  *
  * 3 calendar years is approximated as 3 × 365.25 days. Drift over a
  * 3-year window from leap-day rounding is < 1 day, which is acceptable
  * for an access-window check that's already enforced loosely.
  */
-export const FOUNDER_TERM_MS = 3 * 365.25 * 24 * 60 * 60 * 1000;
+export const MAX_TERM_MS = 3 * 365.25 * 24 * 60 * 60 * 1000;
 
 /**
  * Abroad Pass term, in milliseconds (≈ 6 months / 183 days). Approximated
  * as 6 × 30.5 days for the same simple-arithmetic reason as
- * FOUNDER_TERM_MS — drift is well under a day across the 6-month window.
+ * MAX_TERM_MS — drift is well under a day across the 6-month window.
  */
 export const ABROAD_PASS_TERM_MS = 6 * 30.5 * 24 * 60 * 60 * 1000;
 
 /**
- * Compute when a Founder Plan purchase made now will expire. Returns an
+ * Compute when a Max Plan purchase made now will expire. Returns an
  * ISO string suitable for the `subscription_current_period_end` column.
  */
-export function computeFounderExpiry(purchasedAt: Date = new Date()): string {
-  return new Date(purchasedAt.getTime() + FOUNDER_TERM_MS).toISOString();
+export function computeMaxExpiry(purchasedAt: Date = new Date()): string {
+  return new Date(purchasedAt.getTime() + MAX_TERM_MS).toISOString();
 }
 
 /**
@@ -336,7 +341,7 @@ export function computeOneTimePlanExpiry(
   planId: MembershipPlanId,
   purchasedAt: Date = new Date(),
 ): string | null {
-  if (planId === "lifetime") return computeFounderExpiry(purchasedAt);
+  if (planId === "lifetime") return computeMaxExpiry(purchasedAt);
   if (planId === "abroad_pass") return computeAbroadPassExpiry(purchasedAt);
   return null;
 }
@@ -351,18 +356,18 @@ export type ProfilePlanFields = {
  * Resolves the *effective* plan id for a profile, accounting for
  * one-time-plan expiry.
  *
- *   - Founder Plan ($59.99 / 3 yrs)     → `selected_plan = "lifetime"`
- *   - Abroad Pass  ($12.99 / 6 months)  → `selected_plan = "abroad_pass"`
+ *   - Max Plan    ($39.99 / 3 yrs)     → `selected_plan = "lifetime"`
+ *   - Abroad Pass ($12.99 / 6 months)  → `selected_plan = "abroad_pass"`
  *
  * Both stamp the access end into `subscription_current_period_end`.
  * Once that timestamp is in the past, the user silently drops to Free
  * for any limit check or UI gate — the row is left intact so an audit
- * trail survives (and so the UI can show "your Abroad Pass period has
- * ended" rather than a generic Free state).
+ * trail survives (and so the UI can show "your Max period has ended"
+ * rather than a generic Free state).
  *
  * Internal/comped accounts always resolve to `internal` regardless of
- * the stored plan. Recurring subscriptions (plus, max) ignore the
- * end-date check; their lifecycle is governed by Stripe events.
+ * the stored plan. Recurring subscriptions (plus, legacy max) ignore
+ * the end-date check; their lifecycle is governed by Stripe events.
  */
 export function resolveEffectivePlanId(
   profile: ProfilePlanFields | null | undefined,
@@ -391,11 +396,11 @@ function isOneTimePlanExpired(
 }
 
 /**
- * True when the profile is an expired Founder Plan account — useful for
- * surfacing a "Founder access ended" UI state without losing the
- * historical fact that the account was once a Founder.
+ * True when the profile is an expired Max Plan account — useful for
+ * surfacing a "Max access ended" UI state without losing the
+ * historical fact that the account was once on Max.
  */
-export function isFounderExpired(
+export function isMaxExpired(
   profile: ProfilePlanFields | null | undefined,
 ): boolean {
   return isOneTimePlanExpired(profile, "lifetime");
@@ -511,7 +516,7 @@ export function translatePlanLimitError(error: unknown): Error | null {
 /**
  * Public plans for the pricing grid — anything `internal` (comped) or
  * `hidden` (legacy/promo) is filtered out so it never appears as a
- * buyable card. Today this is exactly Free, Plus, Abroad Pass.
+ * buyable card. Today this is Free, Plus, Max (lifetime), Abroad Pass.
  */
 export const publicMembershipPlans: MembershipPlan[] = membershipPlans.filter(
   (plan) => !plan.internal && !plan.hidden,

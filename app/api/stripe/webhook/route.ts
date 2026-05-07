@@ -19,7 +19,7 @@ export const runtime = "nodejs";
  * Critical invariants:
  *  - Reads the RAW request body for signature verification.
  *  - Never throws on unknown event types — Stripe retries indefinitely.
- *  - Never downgrades is_internal_account profiles (founder/comped).
+ *  - Never downgrades is_internal_account profiles (comped).
  *  - Maps Stripe price IDs back to Memora plan IDs via the centralized
  *    config so price IDs never leak into the data model in plain form.
  *  - Failures return 5xx so Stripe retries; success returns 200 fast.
@@ -183,15 +183,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // and carry the canonical state — skip the redundant write.
   if (session.mode === "subscription") return;
 
-  // For one-time-payment sessions (Founder Plan, Abroad Pass) this is
-  // where we activate the plan. Plan id rides on the session metadata.
+  // For one-time-payment sessions (Max, Abroad Pass) this is where we
+  // activate the plan. Plan id rides on the session metadata.
   //
-  // Internally the plan id is preserved as-is — `lifetime` for Founder
+  // Internally the plan id is preserved as-is — `lifetime` for Max
   // and `abroad_pass` for the Abroad Pass — and the access window end
   // is stamped in `subscription_current_period_end`. The resolver in
   // @/lib/plans (resolveEffectivePlanId) silently treats anything past
   // that timestamp as Free for limit checks while preserving the
-  // historical row so the UI can show "Founder access ended" or
+  // historical row so the UI can show "Max access ended" or
   // "Abroad Pass period ended" instead of a generic Free state.
   if (session.mode === "payment") {
     const planId = normalizePlanId(session.metadata?.plan_id ?? null);

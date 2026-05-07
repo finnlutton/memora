@@ -3,14 +3,12 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FounderOfferBanner } from "@/components/membership/founder-offer-banner";
 import { RecurringPlanCard } from "@/components/membership/recurring-plan-card";
 import { useBillingStatus } from "@/hooks/use-billing-status";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 import {
   getPlan,
   isPaidPlan,
-  membershipPlans,
   publicMembershipPlans,
   type MembershipPlan,
   type MembershipPlanId,
@@ -20,21 +18,26 @@ import {
  * Membership / pricing panel.
  *
  * Layout:
- *   1. Optional cancel-at-period-end / Abroad-Pass / Max notice
- *   2. Three plan cards in a row: Free, Plus, Abroad Pass
- *   3. Small Founder offer banner (Limited early-adopter pricing) that
- *      reuses the existing Founder checkout/cancel logic
+ *   1. Optional cancel-at-period-end / Abroad-Pass / legacy-Max notice
+ *   2. Four plan cards in a row: Free, Plus, Max, Abroad Pass
  *
- * Max remains a real backend plan but is hidden from the public picker.
- * Legacy Max users keep their plan; they see a notice that lets them
- * downgrade to Plus or Free if they want.
+ * The user-facing "Max" plan is internally keyed as `lifetime` (the
+ * slot formerly used for the Founder Plan, now repriced as Max). The
+ * legacy recurring `max` plan is
+ * hidden from the public picker; existing legacy-Max subscribers see a
+ * notice that lets them downgrade to Plus or Free if they want.
  *
  * Driven entirely by the centralized plan config + the billing status
  * endpoint. All payment + Stripe logic from the previous version is
  * preserved — only the layout, copy, and visual treatment changed.
  */
 
-const PLAN_PICKER_ORDER: MembershipPlanId[] = ["free", "plus", "abroad_pass"];
+const PLAN_PICKER_ORDER: MembershipPlanId[] = [
+  "free",
+  "plus",
+  "lifetime",
+  "abroad_pass",
+];
 
 const PLAN_RANK: Record<MembershipPlanId, number> = {
   free: 0,
@@ -79,7 +82,6 @@ export function MembershipPlansPanel() {
   const pickerPlans = PLAN_PICKER_ORDER
     .map((id) => publicMembershipPlans.find((plan) => plan.id === id))
     .filter((plan): plan is MembershipPlan => Boolean(plan));
-  const founderPlan = membershipPlans.find((p) => p.id === "lifetime");
 
   // Use billing endpoint when available; fall back to local onboarding
   // state during the brief window before /api/billing/status responds.
@@ -128,15 +130,10 @@ export function MembershipPlansPanel() {
     if (planId === effectivePlanId) return "Current plan";
     if (planId === "free") return "Switch to Free";
     if (planId === "plus") return "Upgrade to Plus";
+    if (planId === "lifetime") return "Get Max";
     if (planId === "abroad_pass") return "Get Abroad Pass";
     if (PLAN_RANK[planId] > PLAN_RANK[effectivePlanId]) return "Upgrade";
     return "Choose plan";
-  };
-
-  const founderLabel = (busy: boolean) => {
-    if (busy) return "Redirecting…";
-    if (effectivePlanId === "lifetime") return "Current plan";
-    return "View Founder offer";
   };
 
   const handleSelect = async (selectedPlan: MembershipPlan) => {
@@ -161,9 +158,10 @@ export function MembershipPlansPanel() {
     setBusyPlanId(selectedPlan.id);
     try {
       // Existing Stripe subscriber → route through change-plan so we
-      // proration-update in place (Plus↔Max), schedule cancel-at-period-end
-      // (→ Free), or cancel + redirect to one-time Checkout (→ Founder).
-      // Never create a parallel subscription.
+      // proration-update in place (Plus↔legacy-Max), schedule
+      // cancel-at-period-end (→ Free), or cancel + redirect to one-time
+      // Checkout (→ Max / Abroad Pass). Never create a parallel
+      // subscription.
       if (hasActiveStripeSub) {
         const response = await fetch("/api/stripe/change-plan", {
           method: "POST",
@@ -180,7 +178,8 @@ export function MembershipPlansPanel() {
 
         if (response.ok) {
           if (data.url) {
-            // Founder upgrade — go finish the one-time payment.
+            // One-time-plan upgrade (Max / Abroad Pass) — go finish
+            // the Checkout payment.
             window.location.href = data.url;
             return;
           }
@@ -202,7 +201,7 @@ export function MembershipPlansPanel() {
       }
 
       // No active sub (or change-plan asked us to redirect) → standard
-      // Checkout flow for Plus / Max / Founder.
+      // Checkout flow for Plus / Max / Abroad Pass.
       if (isPaidPlan(selectedPlan.id)) {
         const response = await fetch(
           "/api/stripe/create-checkout-session",
@@ -284,22 +283,22 @@ export function MembershipPlansPanel() {
         </div>
       ) : null}
 
-      {/* Legacy Max users — Max is no longer offered to new users, but
-          existing subscribers stay on it indefinitely until they choose
-          to switch. */}
+      {/* Legacy Max users — the original recurring Max plan is no longer
+          offered to new users, but existing subscribers stay on it
+          indefinitely until they choose to switch. */}
       {isLegacyMax ? (
         <div className="border border-[color:var(--border)] bg-white px-4 py-3 text-[12.5px] leading-5 text-[color:var(--ink-soft)]">
           <p>
             You&apos;re on the{" "}
-            <span className="text-[color:var(--ink)]">Max</span> plan. You can
-            stay on Max as long as your subscription is active, or switch to
-            one of the plans below at any time.
+            <span className="text-[color:var(--ink)]">Max (Legacy)</span>{" "}
+            recurring plan. You can stay on it as long as your subscription
+            is active, or switch to one of the plans below at any time.
           </p>
         </div>
       ) : null}
 
-      {/* ── Plan picker row: Free / Plus / Abroad Pass ────────────────── */}
-      <div className="grid items-stretch gap-4 md:grid-cols-3 md:gap-5">
+      {/* ── Plan picker row: Free / Plus / Max / Abroad Pass ───────── */}
+      <div className="grid items-stretch gap-4 md:grid-cols-2 md:gap-5 lg:grid-cols-4">
         {pickerPlans.map((plan) => (
           <RecurringPlanCard
             key={plan.id}
@@ -311,18 +310,6 @@ export function MembershipPlansPanel() {
           />
         ))}
       </div>
-
-      {/* ── Founder offer — small, subtle banner reusing the existing
-          Founder checkout flow. Not rendered as a fourth card. ─────── */}
-      {founderPlan ? (
-        <FounderOfferBanner
-          isCurrent={effectivePlanId === "lifetime"}
-          isBusy={busyPlanId === "lifetime"}
-          buttonLabel={founderLabel(busyPlanId === "lifetime")}
-          effectivePlanId={effectivePlanId}
-          onSelect={() => handleSelect(founderPlan)}
-        />
-      ) : null}
 
       {/* Legal acknowledgement near checkout. Quiet line beneath the plans. */}
       <p className="text-center text-[11.5px] leading-5 text-[color:var(--ink-soft)]">
