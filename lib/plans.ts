@@ -142,10 +142,10 @@ export const membershipPlans: MembershipPlan[] = [
   {
     id: "abroad_pass",
     name: "Abroad Pass",
-    priceMonthlyLabel: "$29.99",
+    priceMonthlyLabel: "$12.99",
     // Annual-equivalent isn't meaningful for a one-time 6-month pass;
     // store the actual cost so the checkout summary renders correctly.
-    price: 29.99,
+    price: 12.99,
     galleryCount: 100,
     subgalleriesPerGallery: 50,
     photosPerSubgallery: 200,
@@ -352,7 +352,7 @@ export type ProfilePlanFields = {
  * one-time-plan expiry.
  *
  *   - Founder Plan ($59.99 / 3 yrs)     → `selected_plan = "lifetime"`
- *   - Abroad Pass  ($29.99 / 6 months)  → `selected_plan = "abroad_pass"`
+ *   - Abroad Pass  ($12.99 / 6 months)  → `selected_plan = "abroad_pass"`
  *
  * Both stamp the access end into `subscription_current_period_end`.
  * Once that timestamp is in the past, the user silently drops to Free
