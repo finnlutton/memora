@@ -27,7 +27,7 @@ function formatLimit(value: number | null) {
 function shareLine(plan: MembershipPlan) {
   if (isUnlimited(plan.activeShareLinks)) return "Unlimited shares";
   const period = plan.shareLimitPeriod === "monthly" ? "per month" : "total";
-  return `${plan.activeShareLinks} private shares ${period}`;
+  return `${plan.activeShareLinks} share links ${period}`;
 }
 
 function priceSuffix(plan: MembershipPlan): string | null {
@@ -38,9 +38,6 @@ function priceSuffix(plan: MembershipPlan): string | null {
 }
 
 function planSummary(plan: MembershipPlan): string {
-  if (plan.id === "plus") {
-    return "Create more galleries, preserve more moments, and share beautiful memories with the people who matter.";
-  }
   return plan.summary;
 }
 
@@ -111,7 +108,7 @@ export default function PricingPage() {
                     Most chosen
                   </p>
                 ) : null}
-                {isAbroad ? (
+                {isAbroad && !featured ? (
                   <p className="absolute -top-2.5 left-6 bg-[color:var(--background)] px-2 text-[9.5px] uppercase tracking-[0.28em] text-[color:var(--ink-soft)]">
                     Semester
                   </p>
@@ -139,28 +136,25 @@ export default function PricingPage() {
                   {planSummary(plan)}
                 </p>
 
-                <dl className="mt-6 space-y-2.5 text-[12.5px] leading-5 text-[color:var(--ink)]">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <dt className="text-[color:var(--ink-soft)]">Galleries</dt>
-                    <dd>{formatLimit(plan.galleryCount)}</dd>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-3">
-                    <dt className="text-[color:var(--ink-soft)]">
-                      Scenes per gallery
-                    </dt>
-                    <dd>{formatLimit(plan.subgalleriesPerGallery)}</dd>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-3">
-                    <dt className="text-[color:var(--ink-soft)]">
-                      Photos per scene
-                    </dt>
-                    <dd>{formatLimit(plan.photosPerSubgallery)}</dd>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-3">
-                    <dt className="text-[color:var(--ink-soft)]">Sharing</dt>
-                    <dd className="text-right">{shareLine(plan)}</dd>
-                  </div>
-                </dl>
+                {isMax || isAbroad ? (
+                  <p className="mt-6 text-[12.5px] leading-5 text-[color:var(--ink)]">
+                    5x Plus limits across galleries, scenes, photos, and
+                    sharing.
+                  </p>
+                ) : (
+                  <dl className="mt-6 space-y-2.5 text-[12.5px] leading-5 text-[color:var(--ink)]">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <dt className="text-[color:var(--ink-soft)]">
+                        Active galleries
+                      </dt>
+                      <dd>{formatLimit(plan.galleryCount)}</dd>
+                    </div>
+                    <div className="flex items-baseline justify-between gap-3">
+                      <dt className="text-[color:var(--ink-soft)]">Sharing</dt>
+                      <dd className="text-right">{shareLine(plan)}</dd>
+                    </div>
+                  </dl>
+                )}
 
                 <div className="mt-auto pt-7">
                   <Link
