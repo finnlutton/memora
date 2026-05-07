@@ -139,22 +139,6 @@ export default function PricingPage() {
                   {planSummary(plan)}
                 </p>
 
-                {isAbroad ? (
-                  <p className="mt-4 text-[12.5px] leading-6 text-[color:var(--ink-soft)]">
-                    The Abroad Pass gives you six months to build your semester
-                    archive. After that, your galleries remain viewable and
-                    shareable, but new uploads and new galleries require an
-                    active plan.
-                  </p>
-                ) : null}
-                {isMax ? (
-                  <p className="mt-4 text-[12.5px] leading-6 text-[color:var(--ink-soft)]">
-                    Pay once and keep premium access for three years — no
-                    monthly billing during the term. After it ends your
-                    galleries stay viewable; new uploads need an active plan.
-                  </p>
-                ) : null}
-
                 <dl className="mt-6 space-y-2.5 text-[12.5px] leading-5 text-[color:var(--ink)]">
                   <div className="flex items-baseline justify-between gap-3">
                     <dt className="text-[color:var(--ink-soft)]">Galleries</dt>
