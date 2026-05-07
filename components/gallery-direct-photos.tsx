@@ -448,7 +448,8 @@ function DividerRow({
           }}
           placeholder="add label"
           size={Math.max(value.length, 8)}
-          className="bg-transparent text-left font-serif text-[17px] leading-tight text-[color:var(--ink)] outline-none placeholder:text-[color:var(--ink-faint)] md:text-[19px]"
+          style={{ fieldSizing: "content" } as React.CSSProperties}
+          className="min-w-[8ch] max-w-full bg-transparent text-left font-serif text-[17px] leading-tight text-[color:var(--ink)] outline-none placeholder:text-[color:var(--ink-faint)] md:text-[19px]"
         />
         <span
           aria-hidden
