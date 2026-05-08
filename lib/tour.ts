@@ -88,6 +88,11 @@ export const TOUR_STEPS: TourStep[] = [
     anchor: "[data-tour-id='settings-appearance']",
     anchorSide: "bottom",
   },
+  {
+    route: "/galleries/settings",
+    title: "Add Memora to your Home Screen",
+    body: "For the best app-like experience, open Memora in Safari, tap the Share icon, then choose 'Add to Home Screen.'",
+  },
 ];
 
 export type TourState = {

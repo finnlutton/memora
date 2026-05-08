@@ -57,6 +57,18 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
     };
   }, [mobileDrawerOpen]);
 
+  // The mobile tour choreography needs to demonstrate "tap the hamburger,
+  // then tap a nav tab" for cross-page steps. We expose a window event
+  // here so the tour component can ask us to open the drawer without
+  // lifting state into a context. The matching pathname-change effect
+  // above closes the drawer once routing completes.
+  useEffect(() => {
+    const handler = () => setMobileDrawerOpen(true);
+    window.addEventListener("memora:tour:open-mobile-drawer", handler);
+    return () =>
+      window.removeEventListener("memora:tour:open-mobile-drawer", handler);
+  }, []);
+
   // Publish shell dimensions to :root so full-bleed pages (e.g. Memory Map)
   // can align to the sidebar/top-chrome without duplicating layout math.
   useEffect(() => {
@@ -297,6 +309,7 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
           onClick={() => setMobileDrawerOpen(true)}
           aria-label="Open navigation"
           aria-expanded={mobileDrawerOpen}
+          data-tour-id="mobile-menu-trigger"
           style={{ top: "calc(env(safe-area-inset-top, 0px) + 12px)" }}
           className="fixed left-3 z-30 flex h-9 w-9 items-center justify-center rounded-md border border-[color:var(--border)] bg-[color:var(--chrome)] text-[color:var(--ink-soft)] shadow-[0_2px_8px_rgba(10,20,35,0.06)] backdrop-blur transition-colors hover:bg-[color:var(--hover-tint)] hover:text-[color:var(--ink)] md:hidden"
         >
@@ -354,6 +367,7 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
                     href={item.href}
                     aria-current={active ? "page" : undefined}
                     onClick={() => setMobileDrawerOpen(false)}
+                    data-tour-nav-mobile={item.tourNav}
                     className={cn(
                       "group relative flex h-10 items-center gap-3 rounded-md pr-2 text-[13px] transition-colors",
                       active
@@ -386,6 +400,7 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
                     href={item.href}
                     aria-current={active ? "page" : undefined}
                     onClick={() => setMobileDrawerOpen(false)}
+                    data-tour-nav-mobile={item.tourNav}
                     className={cn(
                       "group relative mb-1 flex h-10 items-center gap-3 rounded-md pr-2 text-[13px] transition-colors",
                       active
