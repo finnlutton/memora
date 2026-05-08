@@ -198,7 +198,7 @@ export function SubgalleryCarousel({
               cardRefs.current[index] = element;
             }}
             data-subgallery-card
-            className="w-[94%] shrink-0 snap-start md:w-[44rem] lg:w-[54rem] xl:w-[62rem]"
+            className="w-[94%] shrink-0 snap-start md:w-[34rem] lg:w-[42rem] xl:w-[48rem]"
           >
             {clickable ? (
               <Link
