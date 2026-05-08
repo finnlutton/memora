@@ -33,7 +33,23 @@ type GalleryRow = {
   cover_image_path: string | null;
   start_date: string | null;
   end_date: string | null;
+  locations: string[] | null;
 };
+
+function dayCount(startDate: string | null, endDate: string | null) {
+  if (!startDate || !endDate) return null;
+  const start = new Date(`${startDate}T00:00:00Z`).getTime();
+  const end = new Date(`${endDate}T00:00:00Z`).getTime();
+  if (Number.isNaN(start) || Number.isNaN(end)) return null;
+  const days = Math.round((end - start) / 86_400_000) + 1;
+  return days > 0 ? days : null;
+}
+
+function primaryLocation(locations: string[] | null | undefined) {
+  if (!locations) return null;
+  const cleaned = locations.map((l) => l?.trim()).filter((l): l is string => !!l);
+  return cleaned[0] ?? null;
+}
 
 function isLikelyStoragePath(path: string) {
   return !path.startsWith("data:") && !path.startsWith("blob:") && !path.startsWith("/") && !path.startsWith("http");
@@ -168,7 +184,7 @@ export default async function PublicSharePage({
   const { data: galleryRows, error: galleryError } = galleryIds.length
     ? await admin
         .from("galleries")
-        .select("id, title, description, cover_image_path, start_date, end_date")
+        .select("id, title, description, cover_image_path, start_date, end_date, locations")
         .in("id", galleryIds)
         .order("updated_at", { ascending: false })
         .returns<GalleryRow[]>()
@@ -185,117 +201,195 @@ export default async function PublicSharePage({
     redirect(`/share/${token}/gallery/${galleryRows[0].id}`);
   }
 
-  // senderCtx was fetched in parallel with `share` above.
   const senderName = senderCtx?.senderName ?? "Someone";
   const sharedDate = formatShareDate(share.created_at);
+  const sharedDateCaps = sharedDate ? sharedDate.toUpperCase() : "";
+
+  const memberLabels = (share.recipient_member_labels ?? []).filter(
+    (label): label is string =>
+      typeof label === "string" && label.trim().length > 0,
+  );
+  const recipientsLine = memberLabels.length ? memberLabels.join(" · ") : null;
+  const groupName = share.recipient_group_name?.trim() || null;
+  const titleText = groupName ? `Shared with ${groupName}` : "Shared with you";
+  const [titleFirstWord, ...titleRestWords] = titleText.split(" ");
+  const titleRest = titleRestWords.join(" ");
+
+  const galleries = galleryRows ?? [];
+  const featured = galleries[0] ?? null;
+  const rest = galleries.slice(1);
+  const galleryCountLabel = `${galleries.length} ${galleries.length === 1 ? "GALLERY" : "GALLERIES"}`;
 
   return (
     <ShareThemeFrame themeId={share.theme_id}>
-    <main className="flex min-h-screen flex-col bg-[color:var(--background)] px-4 py-6 text-[color:var(--ink)] md:px-8 md:py-8">
-      {/*
-        Header eyebrow + title personalize the share when the sender
-        chose a recipient group at create time. With group data:
-          • eyebrow = the member names joined by ' · '
-          • title   = 'Shared with <group name>'
-        Without group data we fall back to the original
-        'Memora' / 'Shared with you' wording so older share links
-        keep rendering exactly as they did before.
+    <main className="min-h-screen bg-[color:var(--background)] px-4 py-5 text-[color:var(--ink)] md:px-8 md:py-7">
+      <div className="mx-auto flex w-full max-w-6xl flex-col">
+        {/* Top bar: brand · date */}
+        <div className="flex items-baseline justify-between border-b border-[color:var(--border)] pb-3 md:pb-4">
+          <p className="font-serif italic text-base text-[color:var(--ink)] md:text-lg">Memora</p>
+          {sharedDateCaps ? (
+            <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)] md:text-[11px]">
+              {sharedDateCaps}
+            </p>
+          ) : null}
+        </div>
 
-        Sticky-footer layout: <main> is a min-h-screen flex column and the
-        inner wrapper grows to fill it. With only a couple of gallery tiles
-        the spacer below pushes the Memora footer to the bottom of the
-        viewport so it doesn't float up directly under the cards. With many
-        tiles the spacer collapses and the footer sits naturally below them.
-      */}
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col">
-        {(() => {
-          const memberLabels = (share.recipient_member_labels ?? []).filter(
-            (label): label is string =>
-              typeof label === "string" && label.trim().length > 0,
-          );
-          const eyebrowText = memberLabels.length
-            ? memberLabels.join(" · ")
-            : "Memora";
-          const groupName = share.recipient_group_name?.trim() || null;
-          const titleText = groupName
-            ? `Shared with ${groupName}`
-            : "Shared with you";
-          return (
-            <div className="mb-6 border-b border-[color:var(--border)] pb-4 md:mb-8 md:pb-5">
-              <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
-                {eyebrowText}
+        {/* Masthead: title left, message right */}
+        <div className="grid grid-cols-1 gap-6 border-b border-[color:var(--border)] py-7 md:grid-cols-[1.6fr_1fr] md:gap-10 md:py-10">
+          <div>
+            {(recipientsLine || senderName) ? (
+              <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)] md:text-[11px]">
+                {recipientsLine ? `${recipientsLine} — ` : ""}
+                FROM {senderName.toUpperCase()}
               </p>
-              <h1 className="mt-2 font-serif text-3xl leading-tight md:mt-3 md:text-5xl">
-                {titleText}
-              </h1>
-              <p className="mt-2 font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.18em] text-[color:var(--ink-faint)] md:mt-3 md:text-[11px]">
-                From {senderName}
-                {sharedDate ? ` · ${sharedDate}` : ""}
+            ) : null}
+            <h1 className="mt-3 font-serif text-4xl leading-[1.05] tracking-tight text-[color:var(--ink)] md:mt-5 md:text-6xl">
+              <span className="italic">{titleFirstWord}</span>
+              {titleRest ? <> {titleRest}</> : null}
+              <span className="text-[color:var(--ink-faint)]">.</span>
+            </h1>
+          </div>
+          {share.message ? (
+            <div className="md:border-l md:border-[color:var(--border)] md:pl-8">
+              <p className="font-serif text-[15px] leading-7 text-[color:var(--ink-soft)] md:text-base md:leading-[1.7]">
+                {share.message}
               </p>
-              {share.message ? (
-                <p className="mt-3 max-w-3xl text-sm leading-6 text-[color:var(--ink-soft)] md:mt-4 md:text-[15px] md:leading-7">
-                  {share.message}
-                </p>
-              ) : null}
             </div>
+          ) : null}
+        </div>
+
+        {/* Featured hero */}
+        {featured ? (() => {
+          const coverPath = featured.cover_image_path ?? "";
+          const coverImage = isLikelyStoragePath(coverPath)
+            ? imageProxyUrlForPath(coverPath)
+            : coverPath;
+          const loc = primaryLocation(featured.locations);
+          const range = formatDateRange(featured.start_date, featured.end_date);
+          const days = dayCount(featured.start_date, featured.end_date);
+          return (
+            <Link
+              href={`/share/${token}/gallery/${featured.id}`}
+              className="group relative mt-8 block overflow-hidden rounded-md md:mt-10"
+            >
+              <div className="relative aspect-[16/9] w-full bg-[color:var(--paper-strong)] md:aspect-[21/10]">
+                {coverImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={coverImage}
+                    alt={featured.title}
+                    className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.015]"
+                    loading="eager"
+                    decoding="async"
+                    fetchPriority="high"
+                  />
+                ) : null}
+                <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-black/15" />
+                <span className="absolute left-4 top-4 rounded-sm bg-white/90 px-2 py-1 text-[10px] uppercase tracking-[0.22em] text-black md:left-5 md:top-5">
+                  Featured
+                </span>
+                <div className="absolute inset-x-4 bottom-4 flex flex-wrap items-end justify-between gap-3 text-white md:inset-x-6 md:bottom-6">
+                  <div className="min-w-0">
+                    {loc ? (
+                      <p className="text-[10px] uppercase tracking-[0.22em] text-white/85 md:text-[11px]">
+                        {loc.toUpperCase()}
+                      </p>
+                    ) : null}
+                    <h2 className="mt-1.5 font-serif text-3xl leading-tight md:mt-2 md:text-5xl">
+                      {featured.title}
+                    </h2>
+                  </div>
+                  {(range || days) ? (
+                    <div className="text-right">
+                      {range ? (
+                        <p className="font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.16em] text-white/85 md:text-[11px]">
+                          {range}
+                        </p>
+                      ) : null}
+                      {days ? (
+                        <p className="mt-1 font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.16em] text-white/75 md:text-[11px]">
+                          {days} {days === 1 ? "DAY" : "DAYS"}
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </Link>
           );
-        })()}
+        })() : null}
 
-        {galleryRows?.length ? (
-          <section className="grid gap-5 md:grid-cols-2">
-            {galleryRows.map((gallery, index) => {
-              const coverPath = gallery.cover_image_path ?? "";
-              const coverImage = isLikelyStoragePath(coverPath)
-                ? imageProxyUrlForPath(coverPath)
-                : coverPath;
-              // First tile is the LCP candidate — flag it for the
-              // browser's preload scanner. Everything below the fold can
-              // wait until it nears the viewport.
-              const isLcpCandidate = index === 0;
+        {/* Rest of the season */}
+        {rest.length ? (
+          <section className="mt-10 md:mt-14">
+            <div className="flex items-baseline justify-between border-b border-[color:var(--border)] pb-3">
+              <h3 className="font-serif text-xl text-[color:var(--ink)] md:text-2xl">
+                The rest of the season
+              </h3>
+              <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)] md:text-[11px]">
+                {galleryCountLabel}
+              </p>
+            </div>
 
-              return (
-                <Link
-                  key={gallery.id}
-                  href={`/share/${token}/gallery/${gallery.id}`}
-                  className="group block"
-                >
-                  <div className="relative border border-[color:var(--border)] bg-[color:var(--paper)] p-2.5">
-                    <div className="relative aspect-[16/10] overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)]">
+            <div className="mt-6 grid gap-x-8 gap-y-10 md:mt-8 md:grid-cols-6">
+              {rest.map((gallery, index) => {
+                const coverPath = gallery.cover_image_path ?? "";
+                const coverImage = isLikelyStoragePath(coverPath)
+                  ? imageProxyUrlForPath(coverPath)
+                  : coverPath;
+                const loc = primaryLocation(gallery.locations);
+                const range = formatDateRange(gallery.start_date, gallery.end_date);
+                // First two of remainder render as larger 2-col cards;
+                // anything after fills a tighter 3-col row beneath them.
+                const isLarge = index < 2;
+                const colSpan = isLarge ? "md:col-span-3" : "md:col-span-2";
+                const aspect = isLarge ? "aspect-[5/4]" : "aspect-[3/2]";
+                const titleSize = isLarge ? "md:text-2xl" : "md:text-xl";
+
+                return (
+                  <Link
+                    key={gallery.id}
+                    href={`/share/${token}/gallery/${gallery.id}`}
+                    className={`group block ${colSpan}`}
+                  >
+                    <div className={`relative ${aspect} w-full overflow-hidden rounded-sm bg-[color:var(--paper-strong)]`}>
                       {coverImage ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={coverImage}
                           alt={gallery.title}
                           className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.015]"
-                          loading={isLcpCandidate ? "eager" : "lazy"}
+                          loading="lazy"
                           decoding="async"
-                          fetchPriority={isLcpCandidate ? "high" : "auto"}
                         />
                       ) : null}
                     </div>
-                  </div>
-                  <div className="mt-3 space-y-2">
-                    <h2 className="font-serif text-2xl leading-[1.15] text-[color:var(--ink)]">{gallery.title}</h2>
-                    {formatDateRange(gallery.start_date, gallery.end_date) ? (
-                      <p className="font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)]">
-                        {formatDateRange(gallery.start_date, gallery.end_date)}
+                    <h4 className={`mt-3 font-serif text-xl leading-[1.15] text-[color:var(--ink)] ${titleSize}`}>
+                      {gallery.title}
+                    </h4>
+                    {(loc || range) ? (
+                      <p className="mt-1.5 font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)]">
+                        {loc ? loc.toUpperCase() : null}
+                        {loc && range ? " · " : null}
+                        {range ? range.toUpperCase() : null}
                       </p>
                     ) : null}
-                  </div>
-                </Link>
-              );
-            })}
+                  </Link>
+                );
+              })}
+            </div>
           </section>
-        ) : (
-          <section className="border-y border-[color:var(--border)] px-6 py-10 text-center">
+        ) : null}
+
+        {!galleries.length ? (
+          <section className="mt-10 border-y border-[color:var(--border)] px-6 py-10 text-center">
             <p className="font-serif text-2xl leading-tight">Nothing to see just yet.</p>
             <p className="mt-2 text-sm leading-6 text-[color:var(--ink-soft)]">
               The sender hasn&apos;t added any galleries to this share yet. Check back soon — anything they add will show up here automatically.
             </p>
           </section>
-        )}
-        <div aria-hidden className="flex-1" />
-        <footer className="mt-10 border-t border-[color:var(--border)] pt-6 text-center md:mt-14 md:pt-8">
+        ) : null}
+        <footer className="mt-16 border-t border-[color:var(--border)] pt-6 text-center md:mt-20 md:pt-8">
           <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">Memora</p>
           <p className="mt-2 text-sm text-[color:var(--ink-soft)]">
             Want to preserve your own memories?{" "}
