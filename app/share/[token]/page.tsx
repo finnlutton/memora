@@ -245,8 +245,8 @@ export default async function PublicSharePage({
               </p>
             ) : null}
             <h1 className="mt-3 font-serif text-4xl leading-[1.05] tracking-tight text-[color:var(--ink)] md:mt-5 md:text-6xl">
-              <span className="italic">{titleLeading}</span>
-              {titleRest ? <> {titleRest}</> : null}
+              {titleLeading}
+              {titleRest ? <> <span className="italic">{titleRest}</span></> : null}
               <span className="text-[color:var(--ink-faint)]">.</span>
             </h1>
           </div>
