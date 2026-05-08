@@ -1085,39 +1085,51 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
 
         const nextUser = data.session?.user ?? null;
 
+        // ensureProfileRow, loadProfileState, and loadUserGalleriesFromSupabase
+        // are independent reads scoped to nextUser.id. Fan them out so the
+        // bootstrap's TTFI is gated on the slowest single round-trip rather
+        // than their sum (previously this was 3 sequential network hops
+        // before the store could flip to hydrated).
+        let profileState: {
+          hasSeenWelcome: boolean;
+          selectedPlanId: MembershipPlanId | null;
+          displayName: string | null;
+        } = { hasSeenWelcome: false, selectedPlanId: null, displayName: null };
+        let persistedUserGalleries: Gallery[] = nextCollections.user;
         if (nextUser) {
-          await ensureProfileRow(
-            supabase,
-            {
-              id: nextUser.id,
-              email: nextUser.email ?? null,
-            },
-            "store:initial-sync:ensure-profile",
-          );
-        }
-        const profileState = nextUser
-          ? await loadProfileState(
+          const userIdentity = {
+            id: nextUser.id,
+            email: nextUser.email ?? null,
+          };
+          const [, profileResult, galleriesResult] = await Promise.all([
+            ensureProfileRow(
               supabase,
-              {
-                id: nextUser.id,
-                email: nextUser.email ?? null,
-              },
+              userIdentity,
+              "store:initial-sync:ensure-profile",
+            ).catch((error) => {
+              console.error("Memora: ensureProfileRow failed", error);
+              return false;
+            }),
+            loadProfileState(
+              supabase,
+              userIdentity,
               "store:initial-sync",
-            )
-          : { hasSeenWelcome: false, selectedPlanId: null, displayName: null };
-        const persistedUserGalleries = nextUser
-          ? await withTimeout(
+            ).catch((error) => {
+              console.error("Memora: loadProfileState failed", error);
+              return null;
+            }),
+            withTimeout(
               loadUserGalleriesFromSupabase(supabase, nextUser.id),
               RECOVERY_TIMEOUT_MS,
               "loadUserGalleriesFromSupabase:initial",
             ).catch((error) => {
-              console.error(
-                "Memora: initial gallery load failed",
-                error,
-              );
-              return nextCollections.user;
-            })
-          : nextCollections.user;
+              console.error("Memora: initial gallery load failed", error);
+              return null;
+            }),
+          ]);
+          if (profileResult) profileState = profileResult;
+          if (galleriesResult) persistedUserGalleries = galleriesResult;
+        }
 
         // Mark the user we just loaded so the auth state listener
         // can skip a redundant reload when SIGNED_IN fires for the
@@ -1219,45 +1231,55 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // Same fan-out as the initial-sync bootstrap: ensure/load/galleries
+      // are independent reads, so awaiting them in series only added
+      // latency. Each branch keeps its own catch + fallback so a single
+      // failed call doesn't tank the whole transition.
+      let profileState: {
+        hasSeenWelcome: boolean;
+        selectedPlanId: MembershipPlanId | null;
+        displayName: string | null;
+      } = { hasSeenWelcome: false, selectedPlanId: null, displayName: null };
+      let nextUserGalleries: Gallery[] = [];
       if (user) {
-        try {
-          await withTimeout(
+        const userIdentity = { id: user.id, email: user.email ?? null };
+        const [, profileResult, galleriesResult] = await Promise.all([
+          withTimeout(
             ensureProfileRow(
               supabase,
-              { id: user.id, email: user.email ?? null },
+              userIdentity,
               "store:auth-state-change:ensure-profile",
             ),
             RECOVERY_TIMEOUT_MS,
             "ensureProfileRow",
-          );
-        } catch (error) {
-          console.error("Memora: ensureProfileRow failed", error);
-        }
-      }
-      const profileState = user
-        ? await withTimeout(
+          ).catch((error) => {
+            console.error("Memora: ensureProfileRow failed", error);
+            return false;
+          }),
+          withTimeout(
             loadProfileState(
               supabase,
-              { id: user.id, email: user.email ?? null },
+              userIdentity,
               "store:auth-state-change",
             ),
             RECOVERY_TIMEOUT_MS,
             "loadProfileState",
           ).catch((error) => {
             console.error("Memora: loadProfileState failed", error);
-            return { hasSeenWelcome: false, selectedPlanId: null, displayName: null };
-          })
-        : { hasSeenWelcome: false, selectedPlanId: null, displayName: null };
-      const nextUserGalleries = user
-        ? await withTimeout(
+            return null;
+          }),
+          withTimeout(
             loadUserGalleriesFromSupabase(supabase, user.id),
             RECOVERY_TIMEOUT_MS,
             "loadUserGalleriesFromSupabase",
           ).catch((error) => {
             console.error("Memora: failed to load persisted galleries", error);
-            return [] as Gallery[];
-          })
-        : [];
+            return null;
+          }),
+        ]);
+        if (profileResult) profileState = profileResult;
+        if (galleriesResult) nextUserGalleries = galleriesResult;
+      }
 
       lastLoadedUserIdRef.current = user?.id ?? null;
       queueMicrotask(() => {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowLeft, MoreHorizontal } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { CollapsibleEntry } from "@/components/collapsible-entry";
@@ -27,7 +27,10 @@ export default function GalleryDetailPage() {
   const [actionsOpen, setActionsOpen] = useState(false);
   const [sharingOpen, setSharingOpen] = useState(false);
   const selectedPlan = getMembershipPlan(onboarding.selectedPlanId);
-  const overLimitReport = computeOverLimit(galleries, selectedPlan ?? null);
+  const overLimitReport = useMemo(
+    () => computeOverLimit(galleries, selectedPlan ?? null),
+    [galleries, selectedPlan],
+  );
 
   if (!gallery) {
     return (
