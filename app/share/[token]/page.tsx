@@ -239,7 +239,7 @@ export default async function PublicSharePage({
         <div className="grid grid-cols-1 gap-6 py-7 md:grid-cols-[1.6fr_1fr] md:gap-10 md:py-10">
           <div>
             {(recipientsLine || senderName) ? (
-              <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)] md:text-[11px]">
+              <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-soft)] md:text-[11px]">
                 {recipientsLine ? `${recipientsLine} — ` : ""}
                 FROM {senderName.toUpperCase()}
               </p>
@@ -251,7 +251,7 @@ export default async function PublicSharePage({
             </h1>
           </div>
           {share.message ? (
-            <div className="md:border-l md:border-[color:var(--ink)] md:pl-8">
+            <div className="md:border-l-[0.5px] md:border-[color:var(--ink)] md:pl-8">
               <p className="font-serif text-[15px] leading-7 text-[color:var(--ink)] md:text-base md:leading-[1.7]">
                 {share.message}
               </p>
@@ -286,7 +286,7 @@ export default async function PublicSharePage({
                   />
                 ) : null}
                 <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-black/15" />
-                <span className="absolute left-4 top-4 rounded-sm bg-white/90 px-2 py-1 text-[10px] uppercase tracking-[0.22em] text-black md:left-5 md:top-5">
+                <span className="absolute left-4 top-4 hidden rounded-sm bg-white/90 px-2 py-1 text-[10px] uppercase tracking-[0.22em] text-black md:left-5 md:top-5 md:inline-block">
                   Featured
                 </span>
                 <div className="absolute inset-x-4 bottom-4 flex flex-wrap items-end justify-between gap-3 text-white md:inset-x-6 md:bottom-6">
