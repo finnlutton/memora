@@ -249,14 +249,17 @@ export function GalleryDirectPhotos({ gallery }: { gallery: Gallery }) {
     <section className="mt-auto pt-12">
       {!isEmpty ? (
         <>
-          <div className="mb-3 flex items-center justify-end">
+          <div className="mb-3 flex items-end justify-between">
+            <h2 className="hidden font-serif text-xl text-[color:var(--ink)] md:block md:text-4xl">
+              Moments
+            </h2>
             <button
               type="button"
               onClick={() => {
                 setEditMode((v) => !v);
                 if (editMode) setEditingPhotoId(null);
               }}
-              className="px-2 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-[color:var(--ink-soft)] transition hover:text-[color:var(--ink)]"
+              className="ml-auto px-2 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-[color:var(--ink-soft)] transition hover:text-[color:var(--ink)]"
               aria-pressed={editMode}
             >
               {editMode ? "Done" : "Edit"}
