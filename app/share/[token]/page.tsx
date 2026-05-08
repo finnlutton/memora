@@ -219,24 +219,24 @@ export default async function PublicSharePage({
   const galleries = galleryRows ?? [];
   const featured = galleries[0] ?? null;
   const rest = galleries.slice(1);
-  const galleryCountLabel = `${galleries.length} ${galleries.length === 1 ? "GALLERY" : "GALLERIES"}`;
+  const galleryCountLabel = `${rest.length} ${rest.length === 1 ? "GALLERY" : "GALLERIES"}`;
 
   return (
     <ShareThemeFrame themeId={share.theme_id}>
     <main className="min-h-screen bg-[color:var(--background)] px-4 py-5 text-[color:var(--ink)] md:px-8 md:py-7">
       <div className="mx-auto flex w-full max-w-6xl flex-col">
         {/* Top bar: brand · date */}
-        <div className="flex items-baseline justify-between border-b border-[color:var(--border-strong)] pb-3 md:pb-4">
+        <div className="flex items-baseline justify-between border-b-[0.5px] border-[color:var(--ink)] pb-3 md:pb-4">
           <p className="font-serif italic text-base text-[color:var(--ink)] md:text-lg">Memora</p>
           {sharedDateCaps ? (
-            <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)] md:text-[11px]">
+            <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink)] md:text-[11px]">
               {sharedDateCaps}
             </p>
           ) : null}
         </div>
 
         {/* Masthead: title left, message right */}
-        <div className="grid grid-cols-1 gap-6 border-b border-[color:var(--border-strong)] py-7 md:grid-cols-[1.6fr_1fr] md:gap-10 md:py-10">
+        <div className="grid grid-cols-1 gap-6 py-7 md:grid-cols-[1.6fr_1fr] md:gap-10 md:py-10">
           <div>
             {(recipientsLine || senderName) ? (
               <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)] md:text-[11px]">
@@ -251,8 +251,8 @@ export default async function PublicSharePage({
             </h1>
           </div>
           {share.message ? (
-            <div className="md:border-l md:border-[color:var(--border-strong)] md:pl-8">
-              <p className="font-serif text-[15px] leading-7 text-[color:var(--ink-soft)] md:text-base md:leading-[1.7]">
+            <div className="md:border-l md:border-[color:var(--ink)] md:pl-8">
+              <p className="font-serif text-[15px] leading-7 text-[color:var(--ink)] md:text-base md:leading-[1.7]">
                 {share.message}
               </p>
             </div>
@@ -271,7 +271,7 @@ export default async function PublicSharePage({
           return (
             <Link
               href={`/share/${token}/gallery/${featured.id}`}
-              className="group relative mt-8 block overflow-hidden rounded-md md:mt-10"
+              className="group relative mt-3 block overflow-hidden rounded-md md:mt-10"
             >
               <div className="relative aspect-[16/9] w-full bg-[color:var(--paper-strong)] md:aspect-[21/10]">
                 {coverImage ? (
@@ -323,16 +323,16 @@ export default async function PublicSharePage({
         {/* Rest of the adventures */}
         {rest.length ? (
           <section className="mt-10 md:mt-14">
-            <div className="flex items-baseline justify-between border-b border-[color:var(--border)] pb-3">
+            <div className="flex items-baseline justify-between border-b-[0.5px] border-[color:var(--border-strong)] pb-3">
               <h3 className="font-serif text-xl text-[color:var(--ink)] md:text-2xl">
-                The rest of the adventures
+                Also featured:
               </h3>
-              <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)] md:text-[11px]">
+              <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink)] md:text-[11px]">
                 {galleryCountLabel}
               </p>
             </div>
 
-            <div className="mt-6 grid gap-x-8 gap-y-10 md:mt-8 md:grid-cols-6">
+            <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-6 md:mt-8 md:grid-cols-6 md:gap-x-8 md:gap-y-10">
               {rest.map((gallery, index) => {
                 const coverPath = gallery.cover_image_path ?? "";
                 const coverImage = isLikelyStoragePath(coverPath)
@@ -365,11 +365,11 @@ export default async function PublicSharePage({
                         />
                       ) : null}
                     </div>
-                    <h4 className={`mt-3 font-serif text-xl leading-[1.15] text-[color:var(--ink)] ${titleSize}`}>
+                    <h4 className={`mt-2 font-serif text-base leading-[1.2] text-[color:var(--ink)] md:mt-3 md:text-xl md:leading-[1.15] ${titleSize}`}>
                       {gallery.title}
                     </h4>
                     {(loc || range) ? (
-                      <p className="mt-1.5 font-[family-name:var(--font-mono)] text-[10.5px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)]">
+                      <p className="mt-1 font-[family-name:var(--font-mono)] text-[9.5px] uppercase tracking-[0.14em] text-[color:var(--ink-faint)] md:mt-1.5 md:text-[10.5px] md:tracking-[0.16em]">
                         {loc ? loc.toUpperCase() : null}
                         {loc && range ? " · " : null}
                         {range ? range.toUpperCase() : null}
