@@ -61,7 +61,10 @@ export function getServerSiteOrigin(requestOrigin?: string | null) {
     return getCanonicalProductionOrigin();
   }
 
-  return getConfiguredSiteOrigin() ?? normalizeOrigin(requestOrigin) ?? normalizeOrigin(process.env.VERCEL_URL) ?? getCanonicalProductionOrigin();
+  // Preview & dev: trust the actual request origin first so preview
+  // deployments stay on their own URL even if NEXT_PUBLIC_SITE_URL gets
+  // mis-scoped to all environments.
+  return normalizeOrigin(requestOrigin) ?? getConfiguredSiteOrigin() ?? normalizeOrigin(process.env.VERCEL_URL) ?? getCanonicalProductionOrigin();
 }
 
 export function buildAbsoluteAppUrl(pathname: string, origin: string) {
