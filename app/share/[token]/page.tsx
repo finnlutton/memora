@@ -212,8 +212,9 @@ export default async function PublicSharePage({
   const recipientsLine = memberLabels.length ? memberLabels.join(" · ") : null;
   const groupName = share.recipient_group_name?.trim() || null;
   const titleText = groupName ? `Shared with ${groupName}` : "Shared with you";
-  const [titleFirstWord, ...titleRestWords] = titleText.split(" ");
-  const titleRest = titleRestWords.join(" ");
+  const titleWords = titleText.split(" ");
+  const titleLeading = titleWords.slice(0, 2).join(" ");
+  const titleRest = titleWords.slice(2).join(" ");
 
   const galleries = galleryRows ?? [];
   const featured = galleries[0] ?? null;
@@ -225,32 +226,32 @@ export default async function PublicSharePage({
     <main className="min-h-screen bg-[color:var(--background)] px-4 py-5 text-[color:var(--ink)] md:px-8 md:py-7">
       <div className="mx-auto flex w-full max-w-6xl flex-col">
         {/* Top bar: brand · date */}
-        <div className="flex items-baseline justify-between border-b border-[color:var(--border)] pb-3 md:pb-4">
+        <div className="flex items-baseline justify-between border-b border-[color:var(--border-strong)] pb-3 md:pb-4">
           <p className="font-serif italic text-base text-[color:var(--ink)] md:text-lg">Memora</p>
           {sharedDateCaps ? (
-            <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)] md:text-[11px]">
+            <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)] md:text-[11px]">
               {sharedDateCaps}
             </p>
           ) : null}
         </div>
 
         {/* Masthead: title left, message right */}
-        <div className="grid grid-cols-1 gap-6 border-b border-[color:var(--border)] py-7 md:grid-cols-[1.6fr_1fr] md:gap-10 md:py-10">
+        <div className="grid grid-cols-1 gap-6 border-b border-[color:var(--border-strong)] py-7 md:grid-cols-[1.6fr_1fr] md:gap-10 md:py-10">
           <div>
             {(recipientsLine || senderName) ? (
-              <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)] md:text-[11px]">
+              <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)] md:text-[11px]">
                 {recipientsLine ? `${recipientsLine} — ` : ""}
                 FROM {senderName.toUpperCase()}
               </p>
             ) : null}
             <h1 className="mt-3 font-serif text-4xl leading-[1.05] tracking-tight text-[color:var(--ink)] md:mt-5 md:text-6xl">
-              <span className="italic">{titleFirstWord}</span>
+              <span className="italic">{titleLeading}</span>
               {titleRest ? <> {titleRest}</> : null}
               <span className="text-[color:var(--ink-faint)]">.</span>
             </h1>
           </div>
           {share.message ? (
-            <div className="md:border-l md:border-[color:var(--border)] md:pl-8">
+            <div className="md:border-l md:border-[color:var(--border-strong)] md:pl-8">
               <p className="font-serif text-[15px] leading-7 text-[color:var(--ink-soft)] md:text-base md:leading-[1.7]">
                 {share.message}
               </p>
@@ -319,12 +320,12 @@ export default async function PublicSharePage({
           );
         })() : null}
 
-        {/* Rest of the season */}
+        {/* Rest of the adventures */}
         {rest.length ? (
           <section className="mt-10 md:mt-14">
             <div className="flex items-baseline justify-between border-b border-[color:var(--border)] pb-3">
               <h3 className="font-serif text-xl text-[color:var(--ink)] md:text-2xl">
-                The rest of the season
+                The rest of the adventures
               </h3>
               <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)] md:text-[11px]">
                 {galleryCountLabel}
