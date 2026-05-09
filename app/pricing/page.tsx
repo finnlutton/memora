@@ -11,11 +11,11 @@ import {
 export const metadata: Metadata = {
   title: "Pricing · Memora",
   description:
-    "Plans for the Memora archive — Free, Plus, Max, and the Abroad Pass. Pick the size that fits how much you want to remember.",
+    "Plans for the Memora archive — Free, the Abroad Pass, and the Memora Pass. Pick the size that fits how much you want to remember.",
   openGraph: {
     title: "Pricing · Memora",
     description:
-      "Plans for the Memora archive — Free, Plus, Max, and the Abroad Pass.",
+      "Plans for the Memora archive — Free, the Abroad Pass, and the Memora Pass.",
   },
 };
 
@@ -33,7 +33,8 @@ function shareLine(plan: MembershipPlan) {
 
 function priceSuffix(plan: MembershipPlan): string | null {
   if (plan.id === "free") return null;
-  if (plan.id === "abroad_pass") return "/ once";
+  if (plan.id === "abroad_pass") return "/ 6 mo";
+  if (plan.id === "memora_pass") return "/ year";
   if (plan.id === "lifetime") return "/ 3 yrs";
   return "/ mo";
 }
@@ -44,17 +45,15 @@ function planSummary(plan: MembershipPlan): string {
 
 function ctaLabel(plan: MembershipPlan) {
   if (plan.id === "free") return "Start free";
-  if (plan.id === "plus") return "Upgrade to Plus";
-  if (plan.id === "lifetime") return "Get Max";
   if (plan.id === "abroad_pass") return "Get Abroad Pass";
+  if (plan.id === "memora_pass") return "Get Memora Pass";
   return `Start with ${plan.name}`;
 }
 
 const PRICING_PAGE_PLAN_ORDER = [
   "free",
-  "plus",
-  "lifetime",
   "abroad_pass",
+  "memora_pass",
 ] as const;
 
 export default function PricingPage() {
@@ -89,12 +88,12 @@ export default function PricingPage() {
 
         <section
           aria-label="Plan options"
-          className="mt-10 grid gap-4 md:mt-14 md:grid-cols-2 lg:grid-cols-4"
+          className="mt-10 grid gap-4 md:mt-14 md:grid-cols-3"
         >
           {plans.map((plan) => {
             const featured = !!plan.featured;
             const isAbroad = plan.id === "abroad_pass";
-            const isMax = plan.id === "lifetime";
+            const isMemoraPass = plan.id === "memora_pass";
             return (
               <article
                 key={plan.id}
@@ -114,9 +113,9 @@ export default function PricingPage() {
                     Semester
                   </p>
                 ) : null}
-                {isMax ? (
+                {isMemoraPass && !featured ? (
                   <p className="absolute -top-2.5 left-6 bg-[color:var(--background)] px-2 text-[9.5px] uppercase tracking-[0.28em] text-[color:var(--ink-soft)]">
-                    3-year pass
+                    1-year pass
                   </p>
                 ) : null}
 
@@ -137,9 +136,9 @@ export default function PricingPage() {
                   {planSummary(plan)}
                 </p>
 
-                {isMax || isAbroad ? (
+                {isMemoraPass || isAbroad ? (
                   <p className="mt-6 text-[12.5px] leading-5 text-[color:var(--ink)]">
-                    5x Plus limits across galleries, scenes, photos, and
+                    Premium limits across galleries, scenes, photos, and
                     sharing.
                   </p>
                 ) : (

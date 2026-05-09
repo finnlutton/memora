@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   isAbroadPassExpired,
   isMaxExpired,
+  isMemoraPassExpired,
   resolveEffectivePlanId,
   type MembershipPlanId,
 } from "@/lib/plans";
@@ -16,18 +17,19 @@ export type BillingStatusResponse = {
   hasStripeCustomer: boolean;
   subscriptionStatus: string | null;
   /**
-   * For monthly subs:        next renewal date.
-   * For an active Max:       when 3-year access ends.
-   * For an active Abroad:    when the 6-month creation window ends.
-   * Null for Free, internal, expired Max, or expired Abroad Pass.
+   * For monthly subs:           next renewal date.
+   * For an active Memora Pass:  when the 1-year window ends.
+   * For an active Abroad Pass:  when the 6-month window ends.
+   * For a legacy active Max:    when the 3-year term ends.
+   * Null for Free, internal, or any expired one-time plan.
    */
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
   /**
-   * True when the stored plan is `lifetime` (Max) but the access window
-   * has elapsed. The `planId` above is downgraded to `"free"` in that
-   * case; this flag lets the UI surface a "Max access ended" state
-   * instead of a generic Free state.
+   * True when the stored plan is `lifetime` (legacy 3-year Max) but the
+   * access window has elapsed. The `planId` above is downgraded to
+   * `"free"` in that case; this flag lets the UI surface a "Max access
+   * ended" state instead of a generic Free state.
    */
   maxExpired: boolean;
   /**
@@ -37,6 +39,12 @@ export type BillingStatusResponse = {
    * require an active plan.
    */
   abroadPassExpired: boolean;
+  /**
+   * True when the stored plan is `memora_pass` but the 1-year window
+   * has elapsed. Lets the UI render the "your Memora Pass has ended"
+   * state — galleries stay viewable, new uploads require an active plan.
+   */
+  memoraPassExpired: boolean;
 };
 
 /**
@@ -87,7 +95,8 @@ export async function GET() {
   const planId = resolveEffectivePlanId(planFields);
   const maxExpired = isMaxExpired(planFields);
   const abroadPassExpired = isAbroadPassExpired(planFields);
-  const oneTimeExpired = maxExpired || abroadPassExpired;
+  const memoraPassExpired = isMemoraPassExpired(planFields);
+  const oneTimeExpired = maxExpired || abroadPassExpired || memoraPassExpired;
 
   const body: BillingStatusResponse = {
     planId,
@@ -102,6 +111,7 @@ export async function GET() {
     cancelAtPeriodEnd: Boolean(profile?.subscription_cancel_at_period_end),
     maxExpired,
     abroadPassExpired,
+    memoraPassExpired,
   };
   return NextResponse.json(body);
 }

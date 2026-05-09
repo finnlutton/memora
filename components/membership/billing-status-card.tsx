@@ -136,13 +136,19 @@ export function BillingStatusCard() {
     // a one-time plan so the user understands why their limits dropped.
     const expiredMax = status.maxExpired;
     const expiredAbroad = status.abroadPassExpired;
+    const expiredMemoraPass = status.memoraPassExpired;
     let title = "Current plan: Free";
     let body: string | null = null;
     let cta = "Upgrade plan";
-    if (expiredAbroad) {
+    if (expiredMemoraPass) {
+      title = "Memora Pass ended";
+      body =
+        "Your Memora Pass year has ended. Your archive is safe and still viewable; new uploads and shares now follow Free-plan limits.";
+      cta = "Choose a new plan";
+    } else if (expiredAbroad) {
       title = "Abroad Pass period ended";
       body =
-        "Your Abroad Pass creation period has ended. Your galleries are still viewable and shareable. Upgrade to Plus to create new galleries or upload more photos.";
+        "Your Abroad Pass creation period has ended. Your galleries are still viewable and shareable. Pick a new plan to create new galleries or upload more photos.";
       cta = "Choose a new plan";
     } else if (expiredMax) {
       title = "Max access ended";
@@ -201,7 +207,36 @@ export function BillingStatusCard() {
   }
 
   // ── State 1: Active paid plan, not canceled ─────────────────────────
-  // Max is a one-time purchase — no renewal during the 3-year term.
+  // Memora Pass is a one-time purchase — no renewal during the 1-year
+  // term. Galleries stay viewable after the window ends.
+  if (status.planId === "memora_pass") {
+    return (
+      <div className="border border-[color:var(--border)] bg-white px-4 py-4">
+        <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-[color:var(--ink-soft)]">
+          Billing
+        </p>
+        <p className="mt-3 font-serif text-[20px] leading-tight text-[color:var(--ink)]">
+          Memora Pass active
+        </p>
+        {renewDate ? (
+          <p className="mt-2 text-[13px] leading-6 text-[color:var(--ink-soft)]">
+            Access through {renewDate}.
+          </p>
+        ) : null}
+        <p className="mt-1 text-[12.5px] leading-6 text-[color:var(--ink-soft)]">
+          Paid once. After your year ends, your galleries stay viewable
+          and shareable. New uploads will need an active plan.
+        </p>
+        {status.hasStripeCustomer ? (
+          <div className="mt-4">
+            <ManageBillingInline />
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  // Legacy 3-year Max — one-time purchase, no renewal during the term.
   if (status.planId === "lifetime") {
     return (
       <div className="border border-[color:var(--border)] bg-white px-4 py-4">

@@ -2,17 +2,17 @@
  * Centralized plan config — the single source of truth for everything
  * about Memora's billing tiers.
  *
- * Public plans:        free, plus, lifetime ("Max"), abroad_pass
- * Hidden plans:        max  (legacy "Max" recurring plan kept for users
- *                      who subscribed before Max became a one-time tier
- *                      — never shown as a selectable option)
- * Internal-only plan:  internal  (full-access, never shown publicly)
+ * Public plans:        free, abroad_pass, memora_pass
+ * Hidden plans:        plus     (legacy recurring monthly — retired)
+ *                      lifetime (legacy one-time 3-year "Max" — retired)
+ *                      max      (older legacy recurring "Max" — retired
+ *                                even before lifetime took the slot)
+ * Internal-only plan:  internal (full-access, never shown publicly)
  *
- * Note on identifiers: the user-facing "Max" plan is internally keyed as
- * `lifetime` because that's how it's stored in `profiles.selected_plan`,
- * the Stripe webhook mapping, and `STRIPE_PRICE_LIFETIME`. Renaming the
- * id would force a DB migration + Stripe re-keying for zero user benefit
- * — the display name is the only thing users see.
+ * Hidden plans stay in the config so `selected_plan` rows from existing
+ * subscribers continue to resolve through normalizePlanId,
+ * getStripePriceIdForPlan, and the Stripe webhook mapping. They are
+ * filtered out of every public picker via `publicMembershipPlans`.
  *
  * Stripe price IDs are derived from env vars at the point of use; the
  * client only ever sends a `planId` string, which the server validates
@@ -24,6 +24,7 @@ export type MembershipPlanId =
   | "free"
   | "plus"
   | "abroad_pass"
+  | "memora_pass"
   | "max"
   | "lifetime"
   | "internal";
@@ -125,50 +126,6 @@ export const membershipPlans: MembershipPlan[] = [
     effectiveCost: `$${dollars(0)}`,
   },
   {
-    id: "plus",
-    name: "Plus",
-    priceMonthlyLabel: "$1.99",
-    price: annualPriceFromMonthly(1.99),
-    galleryCount: 20,
-    subgalleriesPerGallery: 10,
-    photosPerSubgallery: 40,
-    directPhotosPerGallery: 40,
-    activeShareLinks: 12,
-    shareLimitPeriod: "monthly",
-    summary: "An introduction to Memora with enough storage for most people.",
-    features: [
-      formatGalleryCount(20),
-      "12 private share links per month",
-    ],
-    featured: false,
-    effectiveCost: `$${dollars(annualPriceFromMonthly(1.99) / 20)}`,
-    stripeMode: "subscription",
-  },
-  {
-    id: "lifetime",
-    name: "Max",
-    priceMonthlyLabel: "$39.99",
-    // One-time 3-year pass — annual-equivalent isn't meaningful; store
-    // the actual cost so the checkout summary renders correctly.
-    price: 39.99,
-    galleryCount: 100,
-    subgalleriesPerGallery: 50,
-    photosPerSubgallery: 200,
-    directPhotosPerGallery: 200,
-    activeShareLinks: 60,
-    shareLimitPeriod: "monthly",
-    summary: "Pay once. Three years of premium access, no monthly billing.",
-    features: [
-      "3 years of premium access",
-      "5x higher limits than Plus",
-      "One payment, no renewal",
-      "Galleries stay viewable after the term ends",
-    ],
-    featured: false,
-    effectiveCost: "Max",
-    stripeMode: "payment",
-  },
-  {
     id: "abroad_pass",
     name: "Abroad Pass",
     priceMonthlyLabel: "$12.99",
@@ -184,12 +141,90 @@ export const membershipPlans: MembershipPlan[] = [
     summary: "One upfront payment. Six months of creation access.",
     features: [
       "6 months of creation access",
-      "5x higher limits than Plus",
+      "Premium gallery and sharing limits",
       "Galleries stay viewable after the term ends",
       "One payment, no renewal",
     ],
-    featured: true,
+    featured: false,
     effectiveCost: "Abroad Pass",
+    stripeMode: "payment",
+  },
+  {
+    id: "memora_pass",
+    name: "Memora Pass",
+    priceMonthlyLabel: "$23.99",
+    // One-time annual pass — store the actual cost so the checkout
+    // summary renders correctly.
+    price: 23.99,
+    galleryCount: 100,
+    subgalleriesPerGallery: 50,
+    photosPerSubgallery: 200,
+    directPhotosPerGallery: 200,
+    activeShareLinks: 60,
+    shareLimitPeriod: "monthly",
+    summary: "Pay once. A full year of premium access, no auto-renewal.",
+    features: [
+      "1 year of premium access",
+      "Premium gallery and sharing limits",
+      "One payment, no renewal",
+      "Galleries stay viewable after the term ends",
+    ],
+    featured: true,
+    effectiveCost: "Memora Pass",
+    stripeMode: "payment",
+  },
+  {
+    id: "plus",
+    name: "Plus (Legacy)",
+    priceMonthlyLabel: "$1.99",
+    price: annualPriceFromMonthly(1.99),
+    galleryCount: 20,
+    subgalleriesPerGallery: 10,
+    photosPerSubgallery: 40,
+    directPhotosPerGallery: 40,
+    activeShareLinks: 12,
+    shareLimitPeriod: "monthly",
+    summary: "Legacy recurring Plus plan retained for existing subscribers.",
+    features: [
+      formatGalleryCount(20),
+      "12 private share links per month",
+    ],
+    featured: false,
+    // Retired recurring monthly plan. Hidden from all public/upgrade UI
+    // but still resolves through normalizePlanId, getStripePriceIdForPlan,
+    // and the Stripe webhook mapping so any pre-2026-05 Plus subscribers
+    // keep functioning until they cancel or switch.
+    hidden: true,
+    effectiveCost: `$${dollars(annualPriceFromMonthly(1.99) / 20)}`,
+    stripeMode: "subscription",
+  },
+  {
+    id: "lifetime",
+    name: "Max (3-year, Legacy)",
+    priceMonthlyLabel: "$39.99",
+    // One-time 3-year pass — annual-equivalent isn't meaningful; store
+    // the actual cost so the checkout summary renders correctly.
+    price: 39.99,
+    galleryCount: 100,
+    subgalleriesPerGallery: 50,
+    photosPerSubgallery: 200,
+    directPhotosPerGallery: 200,
+    activeShareLinks: 60,
+    shareLimitPeriod: "monthly",
+    summary: "Legacy 3-year Max pass retained for existing buyers.",
+    features: [
+      "3 years of premium access",
+      "Premium gallery and sharing limits",
+      "One payment, no renewal",
+      "Galleries stay viewable after the term ends",
+    ],
+    featured: false,
+    // Retired one-time 3-year plan. Hidden from all public/upgrade UI
+    // but still resolves through normalizePlanId, getStripePriceIdForPlan,
+    // and the Stripe webhook mapping so existing 3-year buyers keep
+    // their access window intact.
+    hidden: true,
+    effectiveCost: "Max",
     stripeMode: "payment",
   },
   {
@@ -242,6 +277,7 @@ const KNOWN_PLAN_IDS = new Set<MembershipPlanId>([
   "free",
   "plus",
   "abroad_pass",
+  "memora_pass",
   "max",
   "lifetime",
   "internal",
@@ -251,8 +287,8 @@ const KNOWN_PLAN_IDS = new Set<MembershipPlanId>([
  * Coerce any input string into a valid MembershipPlanId. Old plan IDs from
  * pre-Stripe versions ("lite", "pro") are remapped: lite→free (downgrade,
  * Lite is gone) and pro→max (renamed). Hyphenated/spaced variants of the
- * Abroad Pass ("abroad-pass", "abroad pass") are tolerated. Unknown
- * values fall back to free.
+ * Abroad Pass and Memora Pass ("abroad-pass", "memora pass", etc.) are
+ * tolerated. Unknown values fall back to free.
  */
 export function normalizePlanId(value: string | null | undefined): MembershipPlanId {
   const normalized = value?.trim().toLowerCase();
@@ -265,6 +301,13 @@ export function normalizePlanId(value: string | null | undefined): MembershipPla
     normalized === "abroadpass"
   ) {
     return "abroad_pass";
+  }
+  if (
+    normalized === "memora-pass" ||
+    normalized === "memora pass" ||
+    normalized === "memorapass"
+  ) {
+    return "memora_pass";
   }
   if (KNOWN_PLAN_IDS.has(normalized as MembershipPlanId)) {
     return normalized as MembershipPlanId;
@@ -280,6 +323,7 @@ export function isPaidPlan(planId: MembershipPlanId): boolean {
   return (
     planId === "plus" ||
     planId === "abroad_pass" ||
+    planId === "memora_pass" ||
     planId === "max" ||
     planId === "lifetime"
   );
@@ -291,7 +335,11 @@ export function isPaidPlan(planId: MembershipPlanId): boolean {
  * resolved to "free" once the access window has elapsed.
  */
 export function isOneTimePlan(planId: MembershipPlanId): boolean {
-  return planId === "abroad_pass" || planId === "lifetime";
+  return (
+    planId === "abroad_pass" ||
+    planId === "memora_pass" ||
+    planId === "lifetime"
+  );
 }
 
 export function isInternalPlan(planId: MembershipPlanId): boolean {
@@ -317,6 +365,14 @@ export const MAX_TERM_MS = 3 * 365.25 * 24 * 60 * 60 * 1000;
 export const ABROAD_PASS_TERM_MS = 6 * 30.5 * 24 * 60 * 60 * 1000;
 
 /**
+ * Memora Pass term, in milliseconds (1 year). Used by the Stripe webhook
+ * to stamp `subscription_current_period_end` at purchase time. After that
+ * timestamp passes, `resolveEffectivePlanId` silently drops the user to
+ * Free for any limit check or UI gate.
+ */
+export const MEMORA_PASS_TERM_MS = 365.25 * 24 * 60 * 60 * 1000;
+
+/**
  * Compute when a Max Plan purchase made now will expire. Returns an
  * ISO string suitable for the `subscription_current_period_end` column.
  */
@@ -334,6 +390,15 @@ export function computeAbroadPassExpiry(purchasedAt: Date = new Date()): string 
 }
 
 /**
+ * Compute when a Memora Pass purchase made now will expire. Returns an
+ * ISO string for `subscription_current_period_end`; once that time
+ * passes, `resolveEffectivePlanId` silently downgrades the user to Free.
+ */
+export function computeMemoraPassExpiry(purchasedAt: Date = new Date()): string {
+  return new Date(purchasedAt.getTime() + MEMORA_PASS_TERM_MS).toISOString();
+}
+
+/**
  * Stamp the appropriate one-time-plan expiry timestamp. Centralized so
  * the webhook handler doesn't need to know the term length per plan.
  */
@@ -343,6 +408,7 @@ export function computeOneTimePlanExpiry(
 ): string | null {
   if (planId === "lifetime") return computeMaxExpiry(purchasedAt);
   if (planId === "abroad_pass") return computeAbroadPassExpiry(purchasedAt);
+  if (planId === "memora_pass") return computeMemoraPassExpiry(purchasedAt);
   return null;
 }
 
@@ -356,18 +422,20 @@ export type ProfilePlanFields = {
  * Resolves the *effective* plan id for a profile, accounting for
  * one-time-plan expiry.
  *
- *   - Max Plan    ($39.99 / 3 yrs)     → `selected_plan = "lifetime"`
- *   - Abroad Pass ($12.99 / 6 months)  → `selected_plan = "abroad_pass"`
+ *   - Memora Pass     ($23.99 / 1 yr)     → `selected_plan = "memora_pass"`
+ *   - Abroad Pass     ($12.99 / 6 months) → `selected_plan = "abroad_pass"`
+ *   - Max (legacy)    ($39.99 / 3 yrs)    → `selected_plan = "lifetime"`
  *
- * Both stamp the access end into `subscription_current_period_end`.
+ * Each stamps the access end into `subscription_current_period_end`.
  * Once that timestamp is in the past, the user silently drops to Free
  * for any limit check or UI gate — the row is left intact so an audit
- * trail survives (and so the UI can show "your Max period has ended"
+ * trail survives (and so the UI can show "your Memora Pass has ended"
  * rather than a generic Free state).
  *
  * Internal/comped accounts always resolve to `internal` regardless of
- * the stored plan. Recurring subscriptions (plus, legacy max) ignore
- * the end-date check; their lifecycle is governed by Stripe events.
+ * the stored plan. Recurring subscriptions (legacy plus, legacy max)
+ * ignore the end-date check; their lifecycle is governed by Stripe
+ * events.
  */
 export function resolveEffectivePlanId(
   profile: ProfilePlanFields | null | undefined,
@@ -428,6 +496,33 @@ export function isAbroadPassActive(
 ): boolean {
   if (profile?.is_internal_account) return false;
   if (normalizePlanId(profile?.selected_plan ?? null) !== "abroad_pass") return false;
+  const endsAt = profile?.subscription_current_period_end;
+  if (!endsAt) return false;
+  const expiresAt = new Date(endsAt);
+  if (Number.isNaN(expiresAt.getTime())) return false;
+  return expiresAt.getTime() >= Date.now();
+}
+
+/**
+ * True when the profile is an expired Memora Pass account — used to
+ * render the "your Memora Pass has ended" state in the settings UI
+ * (galleries stay viewable, new uploads require an active plan).
+ */
+export function isMemoraPassExpired(
+  profile: ProfilePlanFields | null | undefined,
+): boolean {
+  return isOneTimePlanExpired(profile, "memora_pass");
+}
+
+/**
+ * True when the profile holds a Memora Pass that has not yet expired.
+ * Read by settings UI to render the active-until copy.
+ */
+export function isMemoraPassActive(
+  profile: ProfilePlanFields | null | undefined,
+): boolean {
+  if (profile?.is_internal_account) return false;
+  if (normalizePlanId(profile?.selected_plan ?? null) !== "memora_pass") return false;
   const endsAt = profile?.subscription_current_period_end;
   if (!endsAt) return false;
   const expiresAt = new Date(endsAt);
@@ -515,8 +610,8 @@ export function translatePlanLimitError(error: unknown): Error | null {
 
 /**
  * Public plans for the pricing grid — anything `internal` (comped) or
- * `hidden` (legacy/promo) is filtered out so it never appears as a
- * buyable card. Today this is Free, Plus, Max (lifetime), Abroad Pass.
+ * `hidden` (legacy/retired) is filtered out so it never appears as a
+ * buyable card. Today this is Free, Abroad Pass, Memora Pass.
  */
 export const publicMembershipPlans: MembershipPlan[] = membershipPlans.filter(
   (plan) => !plan.internal && !plan.hidden,
@@ -554,7 +649,9 @@ export function getStripePriceIdForPlan(planId: MembershipPlanId): string {
         ? "STRIPE_PRICE_MAX_MONTHLY"
         : planId === "abroad_pass"
           ? "STRIPE_ABROAD_PASS_PRICE_ID"
-          : "STRIPE_PRICE_LIFETIME";
+          : planId === "memora_pass"
+            ? "STRIPE_MEMORA_PASS_PRICE_ID"
+            : "STRIPE_PRICE_LIFETIME";
   const value = process.env[envName];
   if (!value) {
     throw new Error(`Missing Stripe price env var: ${envName}`);
@@ -573,5 +670,6 @@ export function mapStripePriceIdToPlan(priceId: string): MembershipPlanId | null
   if (priceId === process.env.STRIPE_PRICE_MAX_MONTHLY) return "max";
   if (priceId === process.env.STRIPE_PRICE_LIFETIME) return "lifetime";
   if (priceId === process.env.STRIPE_ABROAD_PASS_PRICE_ID) return "abroad_pass";
+  if (priceId === process.env.STRIPE_MEMORA_PASS_PRICE_ID) return "memora_pass";
   return null;
 }

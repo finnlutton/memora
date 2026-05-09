@@ -1,13 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
-import type Stripe from "stripe";
 import {
+  getPlan,
   getStripePriceIdForPlan,
   isInternalPlan,
   isOneTimePlan,
   membershipPlans,
   normalizePlanId,
   resolveEffectivePlanId,
-  type MembershipPlanId,
 } from "@/lib/plans";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { buildAbsoluteAppUrl, getServerSiteOrigin } from "@/lib/site-url";
@@ -20,37 +19,26 @@ export const runtime = "nodejs";
 /**
  * Universal "change my plan" endpoint.
  *
- * Replaces stacked-Checkout upgrades (which created a second subscription
- * and double-charged the user) with proper in-place subscription updates.
+ * Public plans today are Free, Abroad Pass, and Memora Pass (all either
+ * free or one-time payments). The recurring Plus and 3-year Max plans
+ * are retired but kept resolvable for any pre-2026 subscribers, so this
+ * endpoint still has to handle "legacy recurring sub → switch to a
+ * one-time plan or Free."
  *
  * Routing by (current plan → target plan):
  *   - No active sub → 409 with redirect: "checkout"
  *     (caller falls back to /api/stripe/create-checkout-session)
- *   - Plus ↔ legacy-Max → stripe.subscriptions.update() with proration:
- *       upgrade   → proration_behavior: "always_invoice"
- *                   payment_behavior:   "error_if_incomplete"
- *                   (refuses the change if payment fails — keeps old plan)
- *       downgrade → proration_behavior: "create_prorations"
- *                   (credit appears on next regular invoice)
- *   - Plus/legacy-Max → Free → cancel_at_period_end on current sub
- *   - Plus/legacy-Max → one-time plan (Max, Abroad Pass) →
+ *   - Legacy-recurring (plus / legacy-max) → Free →
+ *     cancel_at_period_end on current sub
+ *   - Legacy-recurring → one-time plan (Memora Pass, Abroad Pass) →
  *     cancel_at_period_end on current sub, return a one-time Checkout
  *     Session URL for the lump-sum payment
- *   - Max (lifetime) → anything paid → blocked: Max term already
- *     covers all paid features
+ *   - Active one-time plan (lifetime) → recurring legacy plan → blocked:
+ *     the active term already covers premium features
  *
  * Webhook (`customer.subscription.updated`) is the source of truth for
  * the DB sync; this endpoint never writes the profile directly.
  */
-
-const PLAN_RANK: Record<MembershipPlanId, number> = {
-  free: 0,
-  plus: 1,
-  abroad_pass: 2,
-  max: 3,
-  lifetime: 4,
-  internal: 5,
-};
 
 const ACTIVE_SUB_STATUSES = new Set(["active", "trialing", "past_due"]);
 
@@ -96,8 +84,7 @@ export async function POST(request: NextRequest) {
     );
   }
   const targetPlanId = normalizePlanId(requestedPlanId);
-  const targetPlan = membershipPlans.find((p) => p.id === targetPlanId);
-  if (!targetPlan) {
+  if (!membershipPlans.some((p) => p.id === targetPlanId)) {
     return NextResponse.json({ error: "Unknown plan." }, { status: 400 });
   }
   if (isInternalPlan(targetPlanId)) {
@@ -146,32 +133,20 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 4. Block Max (lifetime) → recurring during active term — they
-  // already have everything Plus offers, charging again would be silly.
+  // 4. Block one-time-plan holders from switching back to a (now legacy)
+  // recurring plan during their active term — they'd lose paid time and
+  // start a new monthly bill on top of the term they already paid for.
+  // Defensive only: the public picker no longer offers Plus or Max.
   if (
-    effectivePlanId === "lifetime" &&
+    (effectivePlanId === "lifetime" ||
+      effectivePlanId === "abroad_pass" ||
+      effectivePlanId === "memora_pass") &&
     (targetPlanId === "plus" || targetPlanId === "max")
   ) {
     return NextResponse.json(
       {
         error:
-          "Your Max access already includes everything in Plus. Wait until your Max term ends to switch to a recurring plan.",
-      },
-      { status: 400 },
-    );
-  }
-
-  // Abroad Pass already covers 5x-Plus limits for the duration of the
-  // 6-month creation window — switching to Plus mid-window would charge
-  // them again for less. Send them to the billing status / wait flow.
-  if (
-    effectivePlanId === "abroad_pass" &&
-    (targetPlanId === "plus" || targetPlanId === "max")
-  ) {
-    return NextResponse.json(
-      {
-        error:
-          "Your Abroad Pass already covers higher limits than Plus for the rest of your six-month window. Wait until it ends to switch to a recurring plan.",
+          "Your current pass already covers premium features. Wait until your term ends before switching to a recurring plan.",
       },
       { status: 400 },
     );
@@ -221,13 +196,13 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 7. Plus/legacy-Max → one-time plan (Max, Abroad Pass): cancel
-  // current sub at period end, then issue a Checkout URL for the
-  // one-time payment. Slight overlap (≤ one billing period of paid
-  // time they've already covered) is intentional — see decision (2a)
-  // in the design doc / chat.
+  // 7. Legacy-recurring → one-time plan (Memora Pass, Abroad Pass, or
+  // legacy 3-year Max): cancel current sub at period end, then issue a
+  // Checkout URL for the one-time payment. Slight overlap (≤ one
+  // billing period of paid time they've already covered) is intentional
+  // — see decision (2a) in the design doc / chat.
   if (isOneTimePlan(targetPlanId)) {
-    const planLabel = targetPlanId === "lifetime" ? "Max" : "Abroad Pass";
+    const planLabel = getPlan(targetPlanId).name;
     try {
       await stripe.subscriptions.update(subscriptionId, {
         cancel_at_period_end: true,
@@ -295,83 +270,9 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 8. Plus ↔ legacy-Max: in-place subscription update with proration.
-  if (targetPlanId === "plus" || targetPlanId === "max") {
-    let newPriceId: string;
-    try {
-      newPriceId = getStripePriceIdForPlan(targetPlanId);
-    } catch (err) {
-      console.error("Memora: change-plan price env missing", err);
-      return NextResponse.json(
-        { error: "Plan not currently available." },
-        { status: 500 },
-      );
-    }
-
-    let subscription: Stripe.Subscription;
-    try {
-      subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    } catch (err) {
-      console.error(
-        "Memora: change-plan retrieve subscription failed",
-        err,
-      );
-      return NextResponse.json(
-        { error: "Could not load your subscription." },
-        { status: 500 },
-      );
-    }
-
-    const item = subscription.items.data[0];
-    if (!item) {
-      return NextResponse.json(
-        { error: "Subscription has no billable items." },
-        { status: 500 },
-      );
-    }
-
-    const isUpgrade = PLAN_RANK[targetPlanId] > PLAN_RANK[effectivePlanId];
-
-    try {
-      await stripe.subscriptions.update(subscriptionId, {
-        items: [{ id: item.id, price: newPriceId }],
-        // Upgrades: bill the prorated difference now. Downgrades: stash
-        // the credit for the next regular invoice.
-        proration_behavior: isUpgrade ? "always_invoice" : "create_prorations",
-        // Upgrades: refuse the change if payment fails so the user keeps
-        // their old plan instead of landing in `incomplete`.
-        // Downgrades: no immediate charge, so payment_behavior is moot —
-        // omit it and let Stripe use the default.
-        ...(isUpgrade
-          ? { payment_behavior: "error_if_incomplete" as const }
-          : {}),
-        // Clear any previously-scheduled cancellation — they're staying.
-        cancel_at_period_end: false,
-        metadata: {
-          ...(subscription.metadata ?? {}),
-          user_id: user.id,
-          plan_id: targetPlanId,
-        },
-      });
-      // The customer.subscription.updated webhook will sync selected_plan,
-      // stripe_price_id, and current_period_end into the profile.
-      return NextResponse.json({
-        ok: true,
-        upgrade: isUpgrade,
-        message: isUpgrade
-          ? `Upgraded to ${targetPlan.name}. We charged the prorated difference for the rest of this billing period.`
-          : `Switched to ${targetPlan.name}. Your unused time on the previous plan will appear as a credit on your next invoice.`,
-      });
-    } catch (err) {
-      console.error("Memora: change-plan subscription update failed", err);
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Could not change plan. Please try again.";
-      return NextResponse.json({ error: message }, { status: 500 });
-    }
-  }
-
+  // Switching to a (now retired) recurring plan from any other state is
+  // not a flow we support today — Plus and Max are hidden from every
+  // public picker and only kept resolvable for read-only legacy access.
   return NextResponse.json(
     { error: "Unsupported plan change." },
     { status: 400 },

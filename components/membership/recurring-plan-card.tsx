@@ -7,20 +7,20 @@ import type { MembershipPlan } from "@/lib/plans";
  * Editorial plan card.
  *
  * Three of these render in a single row on the membership page (Free,
- * Plus, Abroad Pass). The featured plan (`plan.featured`) gets a soft
- * tint, a "Recommended" pill, and a slightly lifted shadow — restrained,
- * not shouty. Everything else is identical so plans read as comparable
- * options, not as a hierarchy with one obvious winner.
+ * Abroad Pass, Memora Pass). The featured plan (`plan.featured`) gets
+ * a soft tint, a "Recommended" pill, and a slightly lifted shadow —
+ * restrained, not shouty. Everything else is identical so plans read
+ * as comparable options, not as a hierarchy with one obvious winner.
  *
  * Card content is driven entirely by the centralized plan config; this
  * component intentionally has no plan-specific copy or limits. The
- * price-suffix (/ month vs / once) is the only piece of layout that
- * branches on plan type.
+ * price-suffix is the only piece of layout that branches on plan type.
  */
 
 function priceSuffix(plan: MembershipPlan): string | null {
   if (plan.id === "free") return null;
-  if (plan.id === "abroad_pass") return "/ once";
+  if (plan.id === "abroad_pass") return "/ 6 mo";
+  if (plan.id === "memora_pass") return "/ year";
   if (plan.id === "lifetime") return "/ 3 yrs";
   return "/ month";
 }

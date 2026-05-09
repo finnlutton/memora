@@ -309,16 +309,17 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // and carry the canonical state — skip the redundant write.
   if (session.mode === "subscription") return;
 
-  // For one-time-payment sessions (Max, Abroad Pass) this is where we
-  // activate the plan. Plan id rides on the session metadata.
+  // For one-time-payment sessions (Memora Pass, Abroad Pass, legacy
+  // 3-year Max) this is where we activate the plan. Plan id rides on
+  // the session metadata.
   //
-  // Internally the plan id is preserved as-is — `lifetime` for Max
-  // and `abroad_pass` for the Abroad Pass — and the access window end
-  // is stamped in `subscription_current_period_end`. The resolver in
-  // @/lib/plans (resolveEffectivePlanId) silently treats anything past
-  // that timestamp as Free for limit checks while preserving the
-  // historical row so the UI can show "Max access ended" or
-  // "Abroad Pass period ended" instead of a generic Free state.
+  // Internally the plan id is preserved as-is — `memora_pass`,
+  // `abroad_pass`, or `lifetime` — and the access window end is stamped
+  // in `subscription_current_period_end`. The resolver in @/lib/plans
+  // (resolveEffectivePlanId) silently treats anything past that
+  // timestamp as Free for limit checks while preserving the historical
+  // row so the UI can show "your Memora Pass has ended" instead of a
+  // generic Free state.
   if (session.mode === "payment") {
     const planId = normalizePlanId(session.metadata?.plan_id ?? null);
     if (!isPaidPlan(planId)) return;
@@ -345,7 +346,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           ? "lifetime"
           : planId === "abroad_pass"
             ? "abroad_pass"
-            : null,
+            : planId === "memora_pass"
+              ? "memora_pass"
+              : null,
       subscription_current_period_end: periodEnd,
       subscription_cancel_at_period_end: false,
     });

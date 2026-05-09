@@ -18,14 +18,13 @@ import {
  * Membership / pricing panel.
  *
  * Layout:
- *   1. Optional cancel-at-period-end / Abroad-Pass / legacy-Max notice
- *   2. Four plan cards in a row: Free, Plus, Max, Abroad Pass
+ *   1. Optional cancel-at-period-end / active-pass / legacy-plan notice
+ *   2. Three plan cards in a row: Free, Abroad Pass, Memora Pass
  *
- * The user-facing "Max" plan is internally keyed as `lifetime` (the
- * slot formerly used for the Founder Plan, now repriced as Max). The
- * legacy recurring `max` plan is
- * hidden from the public picker; existing legacy-Max subscribers see a
- * notice that lets them downgrade to Plus or Free if they want.
+ * The retired Plus (recurring monthly) and 3-year Max plans live on as
+ * `hidden` entries in the plan config so existing subscribers keep
+ * working — anyone still on one sees a legacy notice with a downgrade
+ * path to Free or a one-time pass.
  *
  * Driven entirely by the centralized plan config + the billing status
  * endpoint. All payment + Stripe logic from the previous version is
@@ -34,18 +33,18 @@ import {
 
 const PLAN_PICKER_ORDER: MembershipPlanId[] = [
   "free",
-  "plus",
-  "lifetime",
   "abroad_pass",
+  "memora_pass",
 ];
 
 const PLAN_RANK: Record<MembershipPlanId, number> = {
   free: 0,
   plus: 1,
   abroad_pass: 2,
-  max: 3,
-  lifetime: 4,
-  internal: 5,
+  memora_pass: 3,
+  max: 4,
+  lifetime: 5,
+  internal: 6,
 };
 
 function formatDate(iso: string | null) {
@@ -76,7 +75,8 @@ export function MembershipPlansPanel() {
       ACTIVE_SUB_STATUSES.has(billing.subscriptionStatus) &&
       billing.planId !== "free" &&
       billing.planId !== "lifetime" &&
-      billing.planId !== "abroad_pass",
+      billing.planId !== "abroad_pass" &&
+      billing.planId !== "memora_pass",
   );
 
   const pickerPlans = PLAN_PICKER_ORDER
@@ -92,7 +92,10 @@ export function MembershipPlansPanel() {
   const renewDate = formatDate(billing?.currentPeriodEnd ?? null);
   const effectivePlan = getPlan(effectivePlanId);
   const isLegacyMax = effectivePlanId === "max";
+  const isLegacyPlus = effectivePlanId === "plus";
+  const isLegacyLifetime = effectivePlanId === "lifetime";
   const isAbroadActive = effectivePlanId === "abroad_pass";
+  const isMemoraPassActive = effectivePlanId === "memora_pass";
   const [billingPortalBusy, setBillingPortalBusy] = useState(false);
   const [billingPortalError, setBillingPortalError] = useState<string | null>(null);
 
@@ -129,9 +132,8 @@ export function MembershipPlansPanel() {
     if (busy) return planId === "free" ? "Saving…" : "Redirecting…";
     if (planId === effectivePlanId) return "Current plan";
     if (planId === "free") return "Switch to Free";
-    if (planId === "plus") return "Upgrade to Plus";
-    if (planId === "lifetime") return "Get Max";
     if (planId === "abroad_pass") return "Get Abroad Pass";
+    if (planId === "memora_pass") return "Get Memora Pass";
     if (PLAN_RANK[planId] > PLAN_RANK[effectivePlanId]) return "Upgrade";
     return "Choose plan";
   };
@@ -157,11 +159,10 @@ export function MembershipPlansPanel() {
 
     setBusyPlanId(selectedPlan.id);
     try {
-      // Existing Stripe subscriber → route through change-plan so we
-      // proration-update in place (Plus↔legacy-Max), schedule
-      // cancel-at-period-end (→ Free), or cancel + redirect to one-time
-      // Checkout (→ Max / Abroad Pass). Never create a parallel
-      // subscription.
+      // Existing Stripe subscriber (legacy Plus / legacy recurring Max)
+      // → route through change-plan so we schedule cancel-at-period-end
+      // (→ Free) or cancel + redirect to one-time Checkout (→ Memora
+      // Pass / Abroad Pass). Never create a parallel subscription.
       if (hasActiveStripeSub) {
         const response = await fetch("/api/stripe/change-plan", {
           method: "POST",
@@ -201,7 +202,7 @@ export function MembershipPlansPanel() {
       }
 
       // No active sub (or change-plan asked us to redirect) → standard
-      // Checkout flow for Plus / Max / Abroad Pass.
+      // Checkout flow for Memora Pass / Abroad Pass.
       if (isPaidPlan(selectedPlan.id)) {
         const response = await fetch(
           "/api/stripe/create-checkout-session",
@@ -283,6 +284,33 @@ export function MembershipPlansPanel() {
         </div>
       ) : null}
 
+      {/* Active Memora Pass — show access-through date. */}
+      {isMemoraPassActive && renewDate ? (
+        <div className="border border-[color:var(--border)] bg-white px-4 py-3 text-[12.5px] leading-5 text-[color:var(--ink-soft)]">
+          <p>
+            <span className="text-[color:var(--ink)]">Memora Pass active.</span>{" "}
+            Access through{" "}
+            <span className="text-[color:var(--ink)]">{renewDate}</span>. After
+            that, your galleries stay viewable and shareable; new uploads will
+            need an active plan.
+          </p>
+        </div>
+      ) : null}
+
+      {/* Legacy Plus users — the recurring monthly Plus plan is retired
+          but kept resolvable for any pre-2026 subscribers. */}
+      {isLegacyPlus ? (
+        <div className="border border-[color:var(--border)] bg-white px-4 py-3 text-[12.5px] leading-5 text-[color:var(--ink-soft)]">
+          <p>
+            You&apos;re on the{" "}
+            <span className="text-[color:var(--ink)]">Plus (Legacy)</span>{" "}
+            monthly plan. Memora doesn&apos;t sell new monthly subscriptions
+            anymore — you can stay on yours as long as it&apos;s active, or
+            switch to one of the plans below at any time.
+          </p>
+        </div>
+      ) : null}
+
       {/* Legacy Max users — the original recurring Max plan is no longer
           offered to new users, but existing subscribers stay on it
           indefinitely until they choose to switch. */}
@@ -297,8 +325,22 @@ export function MembershipPlansPanel() {
         </div>
       ) : null}
 
-      {/* ── Plan picker row: Free / Plus / Max / Abroad Pass ───────── */}
-      <div className="grid items-stretch gap-4 md:grid-cols-2 md:gap-5 lg:grid-cols-4">
+      {/* Legacy 3-year Max — one-time pass retired; existing buyers keep
+          their access window until it ends. */}
+      {isLegacyLifetime && renewDate ? (
+        <div className="border border-[color:var(--border)] bg-white px-4 py-3 text-[12.5px] leading-5 text-[color:var(--ink-soft)]">
+          <p>
+            <span className="text-[color:var(--ink)]">Max (3-year) active.</span>{" "}
+            Access through{" "}
+            <span className="text-[color:var(--ink)]">{renewDate}</span>. The
+            3-year pass is no longer sold; once your term ends you can pick
+            up a Memora Pass or Abroad Pass below.
+          </p>
+        </div>
+      ) : null}
+
+      {/* ── Plan picker row: Free / Abroad Pass / Memora Pass ──────── */}
+      <div className="grid items-stretch gap-4 md:grid-cols-3 md:gap-5">
         {pickerPlans.map((plan) => (
           <RecurringPlanCard
             key={plan.id}

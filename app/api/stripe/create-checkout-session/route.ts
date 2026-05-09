@@ -157,9 +157,11 @@ export async function POST(request: NextRequest) {
     origin,
   );
 
-  // 6. Create the Checkout Session. Subscription mode for Plus and
-  // legacy Max, payment mode (one-time) for Max (lifetime) and Abroad
-  // Pass.
+  // 6. Create the Checkout Session. Mode comes from the plan config:
+  // payment-mode (one-time) for Memora Pass, Abroad Pass, and any legacy
+  // 3-year Max purchases; subscription-mode is only reached by legacy
+  // Plus / recurring-Max plans, which are hidden from the public picker
+  // but still resolvable for existing subscribers.
   const mode = known.stripeMode ?? "subscription";
   try {
     const session = await stripe.checkout.sessions.create({
@@ -176,9 +178,9 @@ export async function POST(request: NextRequest) {
             },
           }
         : {
-            // For one-time payments (Max, Abroad Pass) attach metadata
-            // to the resulting payment intent so the webhook can
-            // identify which plan was purchased.
+            // For one-time payments (Memora Pass, Abroad Pass, legacy
+            // 3-year Max) attach metadata to the resulting payment
+            // intent so the webhook can identify which plan was bought.
             payment_intent_data: {
               metadata: { user_id: user.id, plan_id: planId },
             },

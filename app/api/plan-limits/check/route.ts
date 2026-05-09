@@ -130,9 +130,10 @@ export async function POST(request: NextRequest) {
         currentUsage = countRes.count ?? 0;
       }
     } else if (resource === "shares") {
-      // Plus enforces a monthly quota that resets the 1st of each
-      // calendar month (UTC); every other plan caps total shares
-      // ever created so revoking does not free up headroom.
+      // Plans with `shareLimitPeriod: "monthly"` enforce a quota that
+      // resets the 1st of each calendar month (UTC); plans on the
+      // "lifetime" period count every share ever created, so revoking
+      // does not free up headroom.
       const period = plan.shareLimitPeriod ?? "lifetime";
       let query = supabase
         .from("shares")
