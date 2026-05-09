@@ -1,8 +1,8 @@
 /**
- * Memora theme system — three curated palettes, hue-only variation.
+ * Memora theme system — five curated palettes, hue-only variation.
  *
  * Scope discipline:
- *  - Only three themes. This is not a theme engine; do not expose custom palettes.
+ *  - Only five themes. This is not a theme engine; do not expose custom palettes.
  *  - Photographs, the globe atmosphere, the logo, and error/destructive states
  *    are intentionally NOT themed (see app/globals.css comment).
  *  - The user's saved theme is APP-ONLY: it applies on /galleries, /dashboard,
@@ -19,7 +19,7 @@
  *    last-saved theme can't bleed onto the marketing site.
  */
 
-export const THEME_IDS = ["harbor", "grove", "dusk"] as const;
+export const THEME_IDS = ["harbor", "grove", "dusk", "amber", "vector"] as const;
 export type ThemeId = (typeof THEME_IDS)[number];
 
 export const DEFAULT_THEME: ThemeId = "harbor";
@@ -44,20 +44,32 @@ export const THEMES: Record<ThemeId, ThemeDefinition> = {
   harbor: {
     id: "harbor",
     name: "Harbor",
-    description: "The default. A quiet mellow blue, like morning water.",
+    description: "The default.",
     swatch: ["#f5f8fc", "#eef3f8", "#dbe5f0", "#587090", "#0f1823"],
   },
   grove: {
     id: "grove",
     name: "Grove",
-    description: "A soft sage. Reads like a gardener's journal.",
+    description: "A soft sage.",
     swatch: ["#f4f7f1", "#edf1e8", "#dde4d3", "#6a7b5d", "#141a15"],
   },
   dusk: {
     id: "dusk",
     name: "Dusk",
-    description: "A warm off-white — the last hour of sun.",
+    description: "A warm off-white.",
     swatch: ["#faf4f2", "#f4ebe8", "#e8d8d3", "#8a6a6f", "#1d1517"],
+  },
+  amber: {
+    id: "amber",
+    name: "Amber",
+    description: "A honeyed amber.",
+    swatch: ["#fbf5e6", "#f4ead4", "#e6d3a5", "#9a7a3a", "#1f1810"],
+  },
+  vector: {
+    id: "vector",
+    name: "Vector",
+    description: "A bright orange.",
+    swatch: ["#fff1e0", "#ffe3c5", "#ffc99a", "#ff6a1f", "#2a1408"],
   },
 };
 
@@ -123,4 +135,4 @@ export function pathUsesSavedTheme(pathname: string): boolean {
  * localStorage; everything else falls back to Harbor.
  */
 const APP_PREFIX_LITERAL = JSON.stringify(APP_THEME_PATH_PREFIXES);
-export const THEME_INIT_SCRIPT = `(function(){try{var p=window.location.pathname||'/';var prefixes=${APP_PREFIX_LITERAL};var isApp=false;for(var i=0;i<prefixes.length;i++){var pre=prefixes[i];if(p===pre||p.indexOf(pre+'/')===0){isApp=true;break;}}var t='${DEFAULT_THEME}';if(isApp){var s=localStorage.getItem('${THEME_STORAGE_KEY}');if(s==='harbor'||s==='grove'||s==='dusk'){t=s;}}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','${DEFAULT_THEME}');}})();`;
+export const THEME_INIT_SCRIPT = `(function(){try{var p=window.location.pathname||'/';var prefixes=${APP_PREFIX_LITERAL};var isApp=false;for(var i=0;i<prefixes.length;i++){var pre=prefixes[i];if(p===pre||p.indexOf(pre+'/')===0){isApp=true;break;}}var t='${DEFAULT_THEME}';if(isApp){var s=localStorage.getItem('${THEME_STORAGE_KEY}');if(s==='harbor'||s==='grove'||s==='dusk'||s==='amber'||s==='vector'){t=s;}}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','${DEFAULT_THEME}');}})();`;

@@ -3,7 +3,8 @@
 /* ============================================================================
  * Theme system
  * ----------------------------------------------------------------------------
- * Three curated themes — Harbor (default blue), Grove (sage), Dusk (blush).
+ * Five curated themes — Harbor (default blue), Grove (sage), Dusk (blush),
+ * Amber (honey), Vector (bright orange).
  * Applied via `data-theme` on <html>, set before first paint by an inline
  * script in app/layout.tsx. Themes are user-facing at /galleries/settings.
  *
@@ -41,8 +42,8 @@
    * grid of cards on the workspace reads as printed plates rather than
    * faint outlines. Grove/Dusk redefine these to track their own
    * border/paper so the punchier framing is harbor-only. */
-  --frame-border: rgba(30, 76, 120, 0.22);
-  --frame-bg: #e3edf7;
+  --frame-border: rgba(40, 105, 170, 0.16);
+  --frame-bg: #ecf2fa;
 
   /* Theme-aware ambient tokens (promoted from hardcoded values) */
   --halo: rgba(216, 228, 241, 0.64);
@@ -143,6 +144,79 @@
   --chrome: rgba(253, 246, 244, 0.94);
   --chrome-strong: rgba(254, 248, 246, 0.98);
   --accent-strong-hover: #3a2428;
+}
+
+/* Amber — warm honeyed amber. Sunlight through aged glass. Like Dusk, this
+ * is a warm-on-warm palette so border / ink-soft / ink-faint need extra
+ * strength to clear AA against the honey background. */
+:root[data-theme="amber"],
+[data-theme="amber"] {
+  --background: #fbf5e6;
+  --paper: #f4ead4;
+  --paper-strong: #e6d3a5;
+  --foreground: #1f1810;
+  --ink: #1f1810;
+  --ink-soft: #5b4825; /* ~7:1 on --background */
+  --ink-faint: #9a7f4e; /* ~3.4:1 — warm-on-warm needs the bump */
+  --accent: #9a7a3a;
+  --accent-strong: #2c2010;
+  --border: rgba(120, 78, 22, 0.18); /* matches Dusk's +0.04 vs Harbor */
+  --border-strong: rgba(60, 38, 12, 0.28);
+
+  /* Frame tokens. Amber's paper sits noticeably darker than its background
+   * (bigger step than Harbor's), so reusing --paper as the mat reads as a
+   * heavy honey slab around each photo. Tuck the mat closer to the
+   * background and ease the border so the frame whispers. */
+  --frame-border: rgba(120, 78, 22, 0.14);
+  --frame-bg: #f8efd9;
+
+  --halo: rgba(244, 222, 175, 0.6);
+  --gradient-start: #fdf9eb;
+  --gradient-end: #f6ecd3;
+  --grid-line: rgba(50, 32, 8, 0.045);
+  --selection-bg: rgba(160, 120, 40, 0.22);
+  --hover-tint: rgba(180, 138, 50, 0.1);
+  --active-tint: rgba(180, 138, 50, 0.18);
+
+  --chrome: rgba(253, 247, 232, 0.94);
+  --chrome-strong: rgba(254, 250, 238, 0.98);
+  --accent-strong-hover: #3c2d15;
+}
+
+/* Vector — bright orange. Loud on purpose. Background and paper carry a
+ * warm-peach tint so app surfaces stay readable, but the accent is the
+ * full Vector-tracksuit orange. This palette intentionally pushes past
+ * the ≤20% saturation rule the other four themes hold to. */
+:root[data-theme="vector"],
+[data-theme="vector"] {
+  --background: #fff1e0;
+  --paper: #ffe3c5;
+  --paper-strong: #ffc99a;
+  --foreground: #2a1408;
+  --ink: #2a1408;
+  --ink-soft: #6e3815; /* ~7:1 on --background */
+  --ink-faint: #ad7041; /* ~3.4:1 — warm-on-warm needs the bump */
+  --accent: #ff6a1f;
+  --accent-strong: #b94100;
+  --border: rgba(200, 80, 0, 0.2);
+  --border-strong: rgba(140, 55, 0, 0.32);
+
+  /* Frame tokens. Amber-style: tuck the mat closer to background so the
+   * peach paper doesn't slab around each photo, and ease the border. */
+  --frame-border: rgba(200, 80, 0, 0.16);
+  --frame-bg: #ffe9d2;
+
+  --halo: rgba(255, 200, 150, 0.6);
+  --gradient-start: #fff5e8;
+  --gradient-end: #ffe5cc;
+  --grid-line: rgba(80, 35, 5, 0.045);
+  --selection-bg: rgba(255, 110, 30, 0.22);
+  --hover-tint: rgba(255, 130, 50, 0.1);
+  --active-tint: rgba(255, 130, 50, 0.18);
+
+  --chrome: rgba(255, 245, 232, 0.94);
+  --chrome-strong: rgba(255, 248, 238, 0.98);
+  --accent-strong-hover: #d04d00;
 }
 
 @theme inline {

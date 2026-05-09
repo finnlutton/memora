@@ -84,7 +84,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: "/galleries/settings",
     navTo: "settings",
     title: "Make Memora yours.",
-    body: "Three quiet palettes — Harbor, Grove, and Dusk — to dress your archive. Membership and account settings live here too.",
+    body: "Five palettes — Harbor, Grove, Dusk, Amber, and Vector — to dress your archive. Membership and account settings live here too.",
     anchor: "[data-tour-id='settings-appearance']",
     anchorSide: "bottom",
   },

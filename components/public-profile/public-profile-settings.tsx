@@ -392,7 +392,7 @@ export function PublicProfileSettings({
         <div
           role="radiogroup"
           aria-label="Public page theme"
-          className="grid grid-cols-3 gap-2"
+          className="grid grid-cols-2 gap-2 sm:grid-cols-5"
         >
           {THEME_IDS.map((id) => {
             const definition = THEMES[id];
