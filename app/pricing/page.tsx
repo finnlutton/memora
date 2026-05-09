@@ -27,7 +27,8 @@ function formatLimit(value: number | null) {
 function shareLine(plan: MembershipPlan) {
   if (isUnlimited(plan.activeShareLinks)) return "Unlimited shares";
   const period = plan.shareLimitPeriod === "monthly" ? "per month" : "total";
-  return `${plan.activeShareLinks} share links ${period}`;
+  const noun = plan.activeShareLinks === 1 ? "share link" : "share links";
+  return `${plan.activeShareLinks} ${noun} ${period}`;
 }
 
 function priceSuffix(plan: MembershipPlan): string | null {
