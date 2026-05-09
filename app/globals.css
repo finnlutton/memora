@@ -41,7 +41,7 @@
    * grid of cards on the workspace reads as printed plates rather than
    * faint outlines. Grove/Dusk redefine these to track their own
    * border/paper so the punchier framing is harbor-only. */
-  --frame-border: rgba(30, 76, 120, 0.32);
+  --frame-border: rgba(30, 76, 120, 0.22);
   --frame-bg: #e3edf7;
 
   /* Theme-aware ambient tokens (promoted from hardcoded values) */
