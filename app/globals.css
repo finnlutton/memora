@@ -36,6 +36,14 @@
   --border: rgba(42, 64, 89, 0.14);
   --border-strong: rgba(22, 35, 56, 0.26);
 
+  /* Gallery-card frame (mat + edge). Harbor leans into a deeper, more
+   * saturated ocean blue here than the global border/paper tokens so the
+   * grid of cards on the workspace reads as printed plates rather than
+   * faint outlines. Grove/Dusk redefine these to track their own
+   * border/paper so the punchier framing is harbor-only. */
+  --frame-border: rgba(30, 76, 120, 0.32);
+  --frame-bg: #e3edf7;
+
   /* Theme-aware ambient tokens (promoted from hardcoded values) */
   --halo: rgba(216, 228, 241, 0.64);
   --gradient-start: #f8fbff;
@@ -85,6 +93,11 @@
   --border: rgba(60, 78, 52, 0.16);
   --border-strong: rgba(30, 42, 26, 0.28);
 
+  /* Frame tokens track the global border/paper here — only Harbor opts
+   * into a punchier ocean-blue mat. */
+  --frame-border: rgba(60, 78, 52, 0.16);
+  --frame-bg: #edf1e8;
+
   --halo: rgba(220, 230, 210, 0.58);
   --gradient-start: #f7faf3;
   --gradient-end: #eef2e8;
@@ -113,6 +126,11 @@
   --accent-strong: #2a1a1d;
   --border: rgba(86, 52, 58, 0.18); /* +0.04 opacity vs Harbor — warm-on-warm needs it */
   --border-strong: rgba(42, 26, 29, 0.28);
+
+  /* Frame tokens track the global border/paper here — only Harbor opts
+   * into a punchier ocean-blue mat. */
+  --frame-border: rgba(86, 52, 58, 0.18);
+  --frame-bg: #f4ebe8;
 
   --halo: rgba(238, 220, 218, 0.6);
   --gradient-start: #fdf7f5;

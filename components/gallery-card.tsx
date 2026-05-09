@@ -99,7 +99,7 @@ export function GalleryCard({
         narrow screens. Hairline border is the only chrome — intentional,
         reads as a printed photograph's edge, not a UI card.
       */}
-      <div className="relative w-full border border-[color:var(--border)] bg-[color:var(--paper)] p-1.5 md:p-[14px]">
+      <div className="relative w-full border border-[color:var(--frame-border)] bg-[color:var(--frame-bg)] p-1.5 md:p-[14px]">
       <div className="relative aspect-[4/5] w-full overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)] md:aspect-[16/9]">
         {/*
           Empty `coverImage` happens when the photo's `data:` src has been
