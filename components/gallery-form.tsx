@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Save } from "lucide-react";
+import { CoverFocalPicker } from "@/components/cover-focal-picker";
 import { LocationAutocompleteInput } from "@/components/location-autocomplete-input";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { DateField } from "@/components/ui/date-field";
 import { useGalleryDraftWriter } from "@/hooks/use-gallery-draft";
 import { useMemoraStore } from "@/hooks/use-memora-store";
 import { readFileAsDataUrl } from "@/lib/file";
-import { nextImageUnoptimizedForSrc, splitCommaSeparated } from "@/lib/utils";
+import { splitCommaSeparated } from "@/lib/utils";
 import type { Gallery, GalleryInput } from "@/types/memora";
 
 /**
@@ -67,6 +67,12 @@ export function GalleryForm({
   const [submitError, setSubmitError] = useState("");
   const [coverImage, setCoverImage] = useState(
     initialValue?.coverImage ?? defaultCoverImage ?? "",
+  );
+  const [coverFocalX, setCoverFocalX] = useState<number>(
+    initialValue?.coverImageFocalX ?? 50,
+  );
+  const [coverFocalY, setCoverFocalY] = useState<number>(
+    initialValue?.coverImageFocalY ?? 50,
   );
   const [title, setTitle] = useState(
     initialValue?.title ?? (isNewGallery ? initialDraft.title : ""),
@@ -132,6 +138,8 @@ export function GalleryForm({
       await onSubmit({
         title,
         coverImage,
+        coverImageFocalX: coverFocalX,
+        coverImageFocalY: coverFocalY,
         description,
         startDate,
         endDate,
@@ -264,16 +272,20 @@ export function GalleryForm({
             </header>
 
             {coverImage ? (
-              <div className="relative aspect-[4/3] overflow-hidden border border-[color:var(--border-strong)]/70">
-                <Image
-                  src={coverImage}
-                  alt="Gallery cover preview"
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 35vw"
-                  unoptimized={nextImageUnoptimizedForSrc(coverImage)}
-                />
-              </div>
+              // The picker frame mirrors the gallery card's actual aspect
+              // ratio (4/5 mobile, 16/9 desktop) so what the user lines up
+              // here is exactly what publishes to the home grid.
+              <CoverFocalPicker
+                src={coverImage}
+                alt="Gallery cover preview"
+                focalX={coverFocalX}
+                focalY={coverFocalY}
+                onChange={({ focalX, focalY }) => {
+                  setCoverFocalX(focalX);
+                  setCoverFocalY(focalY);
+                }}
+                aspectClassName="aspect-[4/5] md:aspect-[16/9]"
+              />
             ) : (
               <div className="flex aspect-[4/3] items-center justify-center border border-dashed border-[color:var(--border-strong)] bg-[color:var(--background)] text-[13px] font-medium text-[color:var(--ink-soft)]">
                 No cover selected
@@ -290,6 +302,11 @@ export function GalleryForm({
                 try {
                   const nextSrc = await readFileAsDataUrl(files[0]);
                   setCoverImage(nextSrc);
+                  // Reset framing for a fresh cover so the picker starts
+                  // centered. Editing an existing cover preserves the
+                  // saved focal point until the user uploads a new one.
+                  setCoverFocalX(50);
+                  setCoverFocalY(50);
                   setCoverError("");
                 } catch (error) {
                   setCoverError(

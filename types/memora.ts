@@ -42,6 +42,14 @@ export type Subgallery = {
   galleryId: string;
   title: string;
   coverImage: string;
+  /**
+   * Cover image focal point as percentages (0–100). Applied as
+   * `object-position: ${x}% ${y}%` on every render surface. Default 50/50
+   * matches the legacy center-cover behavior; users can drag the photo
+   * within the frame on upload/edit to keep portrait subjects in view.
+   */
+  coverImageFocalX?: number;
+  coverImageFocalY?: number;
   location: string;
   locationLat?: number | null;
   locationLng?: number | null;
@@ -66,6 +74,9 @@ export type Gallery = {
   id: string;
   title: string;
   coverImage: string;
+  /** Cover focal point as percentages (0–100). See `Subgallery` for details. */
+  coverImageFocalX?: number;
+  coverImageFocalY?: number;
   description: string;
   startDate: string;
   endDate: string;
@@ -94,6 +105,8 @@ export type Gallery = {
 export type GalleryInput = {
   title: string;
   coverImage: string;
+  coverImageFocalX?: number;
+  coverImageFocalY?: number;
   description: string;
   startDate: string;
   endDate: string;
@@ -108,6 +121,8 @@ export type GalleryInput = {
 export type SubgalleryInput = {
   title: string;
   coverImage: string;
+  coverImageFocalX?: number;
+  coverImageFocalY?: number;
   location: string;
   locationLat: number | null;
   locationLng: number | null;

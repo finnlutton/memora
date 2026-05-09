@@ -52,6 +52,14 @@ export function GalleryCard({
 }) {
   // Prefer the persisted gallery cover; fall back to first subgallery if absent.
   const coverImage = gallery.coverImage || gallery.subgalleries[0]?.coverImage;
+  // Pull focal from whichever source actually provided the cover, defaulting
+  // to centered (legacy / unset). This keeps the published frame anchored on
+  // whatever the user dragged to in the form.
+  const coverFallback = !gallery.coverImage ? gallery.subgalleries[0] : null;
+  const coverFocalX =
+    (gallery.coverImage ? gallery.coverImageFocalX : coverFallback?.coverImageFocalX) ?? 50;
+  const coverFocalY =
+    (gallery.coverImage ? gallery.coverImageFocalY : coverFallback?.coverImageFocalY) ?? 50;
 
   const primaryLocation = formatLocationForCard(gallery.locations[0]);
   // Compact range: drop the year from the start date when both dates
@@ -105,6 +113,7 @@ export function GalleryCard({
             alt={gallery.title}
             fill
             className="object-cover transition duration-[700ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.015]"
+            style={{ objectPosition: `${coverFocalX}% ${coverFocalY}%` }}
             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 100vw, 720px"
             unoptimized={nextImageUnoptimizedForSrc(coverImage)}
           />

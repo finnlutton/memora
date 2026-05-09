@@ -17,6 +17,9 @@ export function GalleryHero({ gallery }: { gallery: Gallery }) {
             alt={gallery.title}
             fill
             className="object-cover"
+            style={{
+              objectPosition: `${gallery.coverImageFocalX ?? 50}% ${gallery.coverImageFocalY ?? 50}%`,
+            }}
             sizes="(max-width: 1024px) 100vw, 55vw"
             priority
             unoptimized={nextImageUnoptimizedForSrc(gallery.coverImage)}

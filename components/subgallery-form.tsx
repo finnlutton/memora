@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, Check, ChevronDown, Save } from "lucide-react";
+import { CoverFocalPicker } from "@/components/cover-focal-picker";
 import { LocationAutocompleteInput } from "@/components/location-autocomplete-input";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,12 @@ export function SubgalleryForm({
     initialValue: initialValue?.title ?? "",
   });
   const [coverImage, setCoverImage] = useState(initialValue?.coverImage ?? "/demo/mountain-window.svg");
+  const [coverFocalX, setCoverFocalX] = useState<number>(
+    initialValue?.coverImageFocalX ?? 50,
+  );
+  const [coverFocalY, setCoverFocalY] = useState<number>(
+    initialValue?.coverImageFocalY ?? 50,
+  );
   const [location, setLocation] = useState(initialValue?.location ?? "");
   const [locationLat, setLocationLat] = useState<number | null>(initialValue?.locationLat ?? null);
   const [locationLng, setLocationLng] = useState<number | null>(initialValue?.locationLng ?? null);
@@ -91,6 +98,8 @@ export function SubgalleryForm({
       await onSubmit({
         title,
         coverImage,
+        coverImageFocalX: coverFocalX,
+        coverImageFocalY: coverFocalY,
         location,
         locationLat,
         locationLng,
@@ -200,16 +209,20 @@ export function SubgalleryForm({
             </header>
 
             {coverImage ? (
-              <div className="relative aspect-[20/9] overflow-hidden border border-[color:var(--border-strong)]/70">
-                <Image
-                  src={coverImage}
-                  alt="Subgallery cover preview"
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 35vw"
-                  unoptimized={nextImageUnoptimizedForSrc(coverImage)}
-                />
-              </div>
+              // The picker frame mirrors the subgallery card's actual aspect
+              // (10/13 mobile, 16/11 desktop) so what's framed here matches
+              // the published scene card.
+              <CoverFocalPicker
+                src={coverImage}
+                alt="Subgallery cover preview"
+                focalX={coverFocalX}
+                focalY={coverFocalY}
+                onChange={({ focalX, focalY }) => {
+                  setCoverFocalX(focalX);
+                  setCoverFocalY(focalY);
+                }}
+                aspectClassName="aspect-[10/13] md:aspect-[16/11]"
+              />
             ) : (
               <div className="flex aspect-[20/9] items-center justify-center border border-dashed border-[color:var(--border-strong)] bg-[color:var(--background)] text-[13px] font-medium text-[color:var(--ink-soft)]">
                 No cover selected
@@ -226,6 +239,10 @@ export function SubgalleryForm({
                 try {
                   const nextSrc = await readFileAsDataUrl(files[0]);
                   setCoverImage(nextSrc);
+                  // Reset framing for a fresh cover (see gallery-form for
+                  // the same rationale).
+                  setCoverFocalX(50);
+                  setCoverFocalY(50);
                   setCoverError("");
                 } catch (error) {
                   setCoverError(
@@ -330,6 +347,8 @@ export function SubgalleryForm({
                 setPhotos((current) => [...current, ...uploaded]);
                 if (!coverImage && uploaded[0]) {
                   setCoverImage(uploaded[0].src);
+                  setCoverFocalX(50);
+                  setCoverFocalY(50);
                 }
                 setPhotosError("");
               } catch (error) {
@@ -483,7 +502,11 @@ export function SubgalleryForm({
                     <div className="mt-auto flex items-center justify-between gap-3 text-[13px]">
                       <button
                         type="button"
-                        onClick={() => setCoverImage(photo.src)}
+                        onClick={() => {
+                          setCoverImage(photo.src);
+                          setCoverFocalX(50);
+                          setCoverFocalY(50);
+                        }}
                         aria-pressed={isCover}
                         className={`inline-flex items-center gap-2 font-medium transition ${
                           isCover

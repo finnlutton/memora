@@ -25,6 +25,9 @@ export function SubgalleryCard({
             alt={subgallery.title}
             fill
             className="object-cover transition duration-700"
+            style={{
+              objectPosition: `${subgallery.coverImageFocalX ?? 50}% ${subgallery.coverImageFocalY ?? 50}%`,
+            }}
             sizes="(max-width: 768px) 90vw, 60vw"
             unoptimized={nextImageUnoptimizedForSrc(subgallery.coverImage)}
           />

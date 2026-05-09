@@ -31,6 +31,8 @@ type GalleryRow = {
   title: string;
   description: string | null;
   cover_image_path: string | null;
+  cover_image_focal_x: number | null;
+  cover_image_focal_y: number | null;
   start_date: string | null;
   end_date: string | null;
   locations: string[] | null;
@@ -184,7 +186,7 @@ export default async function PublicSharePage({
   const { data: galleryRows, error: galleryError } = galleryIds.length
     ? await admin
         .from("galleries")
-        .select("id, title, description, cover_image_path, start_date, end_date, locations")
+        .select("id, title, description, cover_image_path, cover_image_focal_x, cover_image_focal_y, start_date, end_date, locations")
         .in("id", galleryIds)
         .order("updated_at", { ascending: false })
         .returns<GalleryRow[]>()
@@ -280,6 +282,9 @@ export default async function PublicSharePage({
                     src={coverImage}
                     alt={featured.title}
                     className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.015]"
+                    style={{
+                      objectPosition: `${featured.cover_image_focal_x ?? 50}% ${featured.cover_image_focal_y ?? 50}%`,
+                    }}
                     loading="eager"
                     decoding="async"
                     fetchPriority="high"
@@ -360,6 +365,9 @@ export default async function PublicSharePage({
                           src={coverImage}
                           alt={gallery.title}
                           className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.015]"
+                          style={{
+                            objectPosition: `${gallery.cover_image_focal_x ?? 50}% ${gallery.cover_image_focal_y ?? 50}%`,
+                          }}
                           loading="lazy"
                           decoding="async"
                         />

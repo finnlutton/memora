@@ -40,6 +40,8 @@ type SubgalleryRow = {
   title: string;
   description: string | null;
   cover_image_path: string | null;
+  cover_image_focal_x: number | null;
+  cover_image_focal_y: number | null;
   location: string | null;
   date_label: string | null;
   start_date: string | null;
@@ -214,7 +216,7 @@ export default async function PublicSharedGalleryPage({
       .maybeSingle<GalleryRow>(),
     admin
       .from("subgalleries")
-      .select("id, title, description, cover_image_path, location, date_label, start_date, end_date")
+      .select("id, title, description, cover_image_path, cover_image_focal_x, cover_image_focal_y, location, date_label, start_date, end_date")
       .eq("gallery_id", galleryId)
       .order("display_order", { ascending: true })
       .returns<SubgalleryRow[]>(),
@@ -361,6 +363,9 @@ export default async function PublicSharedGalleryPage({
                           src={cover}
                           alt=""
                           className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.015]"
+                          style={{
+                            objectPosition: `${subgallery.cover_image_focal_x ?? 50}% ${subgallery.cover_image_focal_y ?? 50}%`,
+                          }}
                           loading={isLcpCandidate ? "eager" : "lazy"}
                           decoding="async"
                           fetchPriority={isLcpCandidate ? "high" : "auto"}

@@ -315,6 +315,8 @@ type GalleryRow = {
   title: string;
   description: string | null;
   cover_image_path: string | null;
+  cover_image_focal_x?: number | null;
+  cover_image_focal_y?: number | null;
   location: string | null;
   location_lat: number | null;
   location_lng: number | null;
@@ -336,6 +338,8 @@ type SubgalleryRow = {
   title: string;
   description: string | null;
   cover_image_path: string | null;
+  cover_image_focal_x?: number | null;
+  cover_image_focal_y?: number | null;
   location: string | null;
   location_lat: number | null;
   location_lng: number | null;
@@ -758,6 +762,8 @@ async function loadUserGalleriesFromSupabase(
       galleryId: subgallery.gallery_id,
       title: subgallery.title,
       coverImage: resolvedImageMap.get(normalizedCover) ?? normalizedCover,
+      coverImageFocalX: subgallery.cover_image_focal_x ?? undefined,
+      coverImageFocalY: subgallery.cover_image_focal_y ?? undefined,
       location: subgallery.location ?? "",
       locationLat: subgallery.location_lat ?? null,
       locationLng: subgallery.location_lng ?? null,
@@ -779,6 +785,8 @@ async function loadUserGalleriesFromSupabase(
       id: gallery.id,
       title: gallery.title,
       coverImage: resolvedImageMap.get(normalizedCover) ?? normalizedCover,
+      coverImageFocalX: gallery.cover_image_focal_x ?? undefined,
+      coverImageFocalY: gallery.cover_image_focal_y ?? undefined,
       description: gallery.description ?? "",
       startDate: gallery.start_date ?? "",
       endDate: gallery.end_date ?? "",
@@ -1433,6 +1441,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             title: input.title,
             description: input.description || null,
             cover_image_path: persistedCover || null,
+            cover_image_focal_x: input.coverImageFocalX ?? 50,
+            cover_image_focal_y: input.coverImageFocalY ?? 50,
             location: input.location || null,
             location_lat: input.locationLat,
             location_lng: input.locationLng,
@@ -1495,6 +1505,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
           displayOrder: null,
           id: nextGalleryId,
           coverImage: persistedCover,
+          coverImageFocalX: input.coverImageFocalX ?? 50,
+          coverImageFocalY: input.coverImageFocalY ?? 50,
           createdAt: timestamp,
           updatedAt: timestamp,
           subgalleries: [],
@@ -1553,6 +1565,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
               title: input.title,
               description: input.description || null,
               cover_image_path: persistedCover || null,
+              cover_image_focal_x: input.coverImageFocalX ?? 50,
+              cover_image_focal_y: input.coverImageFocalY ?? 50,
               location: input.location || null,
               location_lat: input.locationLat,
               location_lng: input.locationLng,
@@ -1595,6 +1609,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
                   moodTags: input.moodTags,
                   privacy: input.privacy,
                   coverImage: persistedCover,
+                  coverImageFocalX: input.coverImageFocalX ?? 50,
+                  coverImageFocalY: input.coverImageFocalY ?? 50,
                   updatedAt: new Date().toISOString(),
                 }
               : gallery,
@@ -1828,6 +1844,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
             title: input.title,
             description: input.description || null,
             cover_image_path: persistedCover || null,
+            cover_image_focal_x: input.coverImageFocalX ?? 50,
+            cover_image_focal_y: input.coverImageFocalY ?? 50,
             location: input.location || null,
             location_lat: input.locationLat,
             location_lng: input.locationLng,
@@ -1909,6 +1927,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
         const nextSubgallery: Subgallery = {
           ...input,
           coverImage: input.coverImage || persistedCover,
+          coverImageFocalX: input.coverImageFocalX ?? 50,
+          coverImageFocalY: input.coverImageFocalY ?? 50,
           photos: localPhotos,
           locationLat: input.locationLat,
           locationLng: input.locationLng,
@@ -2028,6 +2048,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
               title: input.title,
               description: input.description || null,
               cover_image_path: persistedCover || null,
+              cover_image_focal_x: input.coverImageFocalX ?? 50,
+              cover_image_focal_y: input.coverImageFocalY ?? 50,
               location: input.location || null,
               location_lat: input.locationLat,
               location_lng: input.locationLng,
@@ -2097,6 +2119,8 @@ export function MemoraProvider({ children }: { children: React.ReactNode }) {
                           ...subgallery,
                           ...input,
                           coverImage: persistedCover,
+                          coverImageFocalX: input.coverImageFocalX ?? 50,
+                          coverImageFocalY: input.coverImageFocalY ?? 50,
                           photos: sortPhotos(
                             persistedPhotos.map((photo, index) => ({
                               ...photo,
