@@ -87,23 +87,25 @@ type PlaceholderCard = {
 const CARDS: PlaceholderCard[] = [
   {
     id: "c1",
-    title: "Switzerland & N. Italy",
-    location: "Zermatt, Switzerland",
-    dateRange: "Feb 6 – Feb 23, 2026",
-    year: "2026",
-    days: 18,
+    title: "Baja Surf Trip",
+    location: "Los Cabos, Mexico",
+    dateRange: "Jun 8 – Jun 16, 2024",
+    year: "2024",
+    days: 9,
     pattern: "hero-thumbs",
     tone: 2,
+    imageSrc: "/demo/share-demo/c1.webp",
   },
   {
     id: "c2",
-    title: "Andalusian Day Trips",
-    location: "Granada, Spain",
-    dateRange: "Sep 12 – Sep 24, 2022",
-    year: "2022",
-    days: 13,
+    title: "Frühlingsfest 2026",
+    location: "Munich, Germany",
+    dateRange: "Apr 17 – Apr 26, 2026",
+    year: "2026",
+    days: 10,
     pattern: "triptych",
     tone: 1,
+    imageSrc: "/demo/share-demo/c2.webp",
   },
   {
     id: "c3",
@@ -114,6 +116,7 @@ const CARDS: PlaceholderCard[] = [
     days: 11,
     pattern: "quad",
     tone: 0,
+    imageSrc: "/demo/share-demo/c3.webp",
   },
   {
     id: "c4",
@@ -124,6 +127,7 @@ const CARDS: PlaceholderCard[] = [
     days: 9,
     pattern: "strip",
     tone: 3,
+    imageSrc: "/demo/share-demo/c4.webp",
   },
 ];
 
