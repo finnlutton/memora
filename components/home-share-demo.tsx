@@ -63,10 +63,22 @@ type CoverPattern = "hero-thumbs" | "triptych" | "quad" | "strip";
 type PlaceholderCard = {
   id: string;
   title: string;
-  meta: string;
+  // Used for the LOCATION · DATE caption on every surface (workspace card,
+  // share-page tile, share-page hero). Mirrors the real GalleryCard fields.
+  location: string;
+  dateRange: string;
+  year: string;
+  days?: number;
   pattern: CoverPattern;
-  // 0–3, subtly shifts the cover's tonal base within the shared palette
+  // 0–3, subtly shifts the cover's tonal base within the shared palette.
+  // Only consulted when `imageSrc` isn't provided.
   tone: 0 | 1 | 2 | 3;
+  // Optional path to a real cover image under /public. When set, every
+  // surface (workspace card, share hero, also-featured tile) renders this
+  // image instead of the wireframe placeholder. Drop files at
+  //   public/demo/share-demo/{c1,c2,c3,c4}.webp
+  // and they'll wire up automatically.
+  imageSrc?: string;
 };
 
 // Covers are wireframe-style layout hints, not photos. They share a single
@@ -76,28 +88,40 @@ const CARDS: PlaceholderCard[] = [
   {
     id: "c1",
     title: "Switzerland & N. Italy",
-    meta: "Feb 2026 · 4 subgalleries",
+    location: "Zermatt, Switzerland",
+    dateRange: "Feb 6 – Feb 23, 2026",
+    year: "2026",
+    days: 18,
     pattern: "hero-thumbs",
     tone: 2,
   },
   {
     id: "c2",
     title: "Andalusian Day Trips",
-    meta: "Sep 2022 · 3 subgalleries",
+    location: "Granada, Spain",
+    dateRange: "Sep 12 – Sep 24, 2022",
+    year: "2022",
+    days: 13,
     pattern: "triptych",
     tone: 1,
   },
   {
     id: "c3",
     title: "Japan Trip",
-    meta: "Apr 2024 · 2 subgalleries",
+    location: "Kyoto, Japan",
+    dateRange: "Apr 4 – Apr 14, 2024",
+    year: "2024",
+    days: 11,
     pattern: "quad",
     tone: 0,
   },
   {
     id: "c4",
     title: "Baja Mornings",
-    meta: "Mar 2024 · 3 subgalleries",
+    location: "Baja California, MX",
+    dateRange: "Mar 18 – Mar 26, 2024",
+    year: "2024",
+    days: 9,
     pattern: "strip",
     tone: 3,
   },
@@ -109,36 +133,51 @@ const SELECTED_IDS = ["c1", "c2", "c3"];
 type Group = { id: string; label: string; meta: string };
 
 const GROUPS: Group[] = [
-  { id: "parents", label: "Parents", meta: "2 people" },
+  { id: "parents", label: "Mom & Dad", meta: "2 people" },
   { id: "grandparents", label: "Grandparents", meta: "4 people" },
   { id: "friends", label: "Close friends", meta: "6 people" },
 ];
 
 const CHOSEN_GROUP_ID = "parents";
 
-// Content for the fake shared page. Keyed by group id so the demo could be
-// extended to script a different group without changing layout.
+// Content for the fake shared page. Mirrors the fields the real /share/[token]
+// page reads off the `shares` row + sender context: group name + member labels
+// in the eyebrow, a serif "Shared with X" headline, sender date, and the
+// custom message. Keep this in sync with app/share/[token]/page.tsx.
 const SHARED_PAGE: Record<
   string,
-  { audience: string; title: string; message: string; url: string }
+  {
+    senderName: string;
+    groupName: string;
+    recipientLabels: string[];
+    date: string;
+    message: string;
+    url: string;
+  }
 > = {
   parents: {
-    audience: "For Mom & Dad",
-    title: "Past few weekends abroad!",
+    senderName: "Finn",
+    groupName: "Mom & Dad",
+    recipientLabels: ["Mom", "Dad"],
+    date: "May 9, 2026",
     message:
       "Check these out in your own time, I left a few comments for each of you. Mom, I found a restaurant I have to take you to...",
     url: "memora.app/share/a9f2xq7t",
   },
   grandparents: {
-    audience: "For Nana & Papa",
-    title: "Letters from the road.",
+    senderName: "Finn",
+    groupName: "Nana & Papa",
+    recipientLabels: ["Nana", "Papa"],
+    date: "May 9, 2026",
     message:
       "Saved these up so we could look through them together next time I'm over for Sunday lunch.",
     url: "memora.app/share/b4k8mz2e",
   },
   friends: {
-    audience: "For the group",
-    title: "The year, in pieces.",
+    senderName: "Finn",
+    groupName: "the group",
+    recipientLabels: ["Maya", "Theo", "Hadley", "Quinn"],
+    date: "May 9, 2026",
     message:
       "Pulled the ones I think you'll actually want to see. Tell me which trip I owe you a full story on.",
     url: "memora.app/share/d7p3vw1s",
@@ -291,8 +330,10 @@ export function HomeShareDemo() {
               className="absolute inset-0"
             >
               <SharedPagePreview
-                audience={shared.audience}
-                title={shared.title}
+                senderName={shared.senderName}
+                groupName={shared.groupName}
+                recipientLabels={shared.recipientLabels}
+                date={shared.date}
                 message={shared.message}
                 url={shared.url}
                 cards={selectedCards}
@@ -504,46 +545,99 @@ function GalleryCard({
   card: PlaceholderCard;
   selected: boolean;
 }) {
+  // Editorial card: faithful compressed version of components/gallery-card.tsx.
+  // Frame mat with hairline border + paper bg + padding (the "matted print"
+  // treatment); 16:9 cover inside a darker hairline frame; year + duration
+  // badges sit on the mat at the top corners; caption block (serif title +
+  // mono caps "LOCATION · DATE") sits directly on the page canvas — no card
+  // bg, no shadow.
   return (
     <motion.div
-      animate={{
-        borderColor: selected
-          ? "var(--accent-strong)"
-          : "var(--border)",
-        boxShadow: selected
-          ? "0 8px 20px -10px rgba(14,22,34,0.22)"
-          : "0 0 0 rgba(14,22,34,0)",
-        y: selected ? -2 : 0,
-      }}
+      animate={{ y: selected ? -2 : 0 }}
       transition={{ duration: 0.28, ease: EASE }}
-      className="relative overflow-hidden rounded-lg border bg-white"
+      className="group block"
     >
-      <CoverPlaceholder pattern={card.pattern} tone={card.tone} />
-      <div className="px-2 py-1.5 md:px-5 md:py-3.5">
-        <p className="truncate font-serif text-[11px] leading-tight text-[color:var(--ink)] md:text-[16px]">
+      <motion.div
+        animate={{
+          borderColor: selected
+            ? "var(--ink)"
+            : "var(--frame-border)",
+          boxShadow: selected
+            ? "0 10px 28px -16px rgba(14,22,34,0.32)"
+            : "0 0 0 rgba(14,22,34,0)",
+        }}
+        transition={{ duration: 0.28, ease: EASE }}
+        className="relative w-full border bg-[color:var(--frame-bg)] p-1.5 md:p-3"
+      >
+        <div className="relative aspect-[16/9] w-full overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)]">
+          <CoverArt card={card} />
+          <AnimatePresence>
+            {selected ? (
+              <motion.div
+                key="check"
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.5, opacity: 0 }}
+                transition={{ duration: 0.26, ease: EASE }}
+                className="absolute right-1 top-1 z-20 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[color:var(--ink)] text-white shadow-[0_4px_12px_rgba(14,22,34,0.32)] md:right-2 md:top-2 md:h-6 md:w-6"
+                aria-hidden
+              >
+                <Check className="h-2.5 w-2.5 md:h-3.5 md:w-3.5" strokeWidth={2.5} />
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </div>
+        {/* Year + duration badges — match real GalleryCard placement */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute left-2 top-2 inline-flex items-center bg-[color:var(--chrome)] px-1 py-px font-[family-name:var(--font-mono)] text-[7.5px] tracking-[0.12em] text-[color:var(--ink)] md:left-3.5 md:top-3.5 md:px-1.5 md:py-0.5 md:text-[9px] md:tracking-[0.16em]"
+        >
+          {card.year}
+        </span>
+        {card.days ? (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute right-2 top-2 inline-flex items-center bg-[color:var(--chrome)] px-1 py-px font-[family-name:var(--font-mono)] text-[7.5px] tracking-[0.12em] text-[color:var(--ink)] md:right-3.5 md:top-3.5 md:px-1.5 md:py-0.5 md:text-[9px] md:tracking-[0.16em]"
+          >
+            {card.days}d
+          </span>
+        ) : null}
+      </motion.div>
+      <div className="mt-1.5 md:mt-3">
+        <h3 className="truncate font-serif text-[12px] leading-[1.2] text-[color:var(--ink)] md:text-[18px] md:leading-[1.15]">
           {card.title}
-        </p>
-        <p className="mt-0.5 truncate text-[8.5px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)] md:mt-1 md:text-[10px] md:tracking-[0.18em]">
-          {card.meta}
+        </h3>
+        <p className="mt-0.5 truncate font-[family-name:var(--font-mono)] text-[8px] uppercase tracking-[0.14em] text-[color:var(--ink-faint)] md:mt-1.5 md:text-[10px] md:tracking-[0.16em]">
+          {card.location.toUpperCase()} · {card.dateRange.toUpperCase()}
         </p>
       </div>
-      <AnimatePresence>
-        {selected ? (
-          <motion.div
-            key="check"
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.5, opacity: 0 }}
-            transition={{ duration: 0.26, ease: EASE }}
-            className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[color:var(--accent-strong)] text-white shadow-[0_4px_12px_rgba(14,22,34,0.22)] md:right-2 md:top-2 md:h-6 md:w-6"
-            aria-hidden
-          >
-            <Check className="h-2.5 w-2.5 md:h-3.5 md:w-3.5" strokeWidth={2.5} />
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
     </motion.div>
   );
+}
+
+/**
+ * CoverArt — single entry point for every demo cover surface (workspace card,
+ * share-page hero, also-featured tile). When `card.imageSrc` is set, renders
+ * that file as a full-bleed photograph (Next/Image); otherwise falls back to
+ * the wireframe `CoverPlaceholder` so the demo still looks intentional with
+ * no photo assets shipped. Drop files at /public/demo/share-demo/{c1,...}.webp
+ * and set `imageSrc` on each CARDS entry — every surface picks them up
+ * automatically.
+ */
+function CoverArt({ card }: { card: PlaceholderCard }) {
+  if (card.imageSrc) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return (
+      <img
+        src={card.imageSrc}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover"
+        loading="lazy"
+        decoding="async"
+      />
+    );
+  }
+  return <CoverPlaceholder pattern={card.pattern} tone={card.tone} fill />;
 }
 
 // Restrained cover placeholder — soft neutral base with a faint wireframe
@@ -559,14 +653,21 @@ function CoverPlaceholder({
   pattern,
   tone,
   large = false,
+  fill = false,
 }: {
   pattern: CoverPattern;
   tone: 0 | 1 | 2 | 3;
   large?: boolean;
+  // `fill` makes the placeholder absolute-fill its parent. The parent must be
+  // `relative` and own its own aspect/height. Used by the share-page hero +
+  // also-featured tiles where the surrounding tile sets the aspect ratio.
+  fill?: boolean;
 }) {
-  const heightClass = large
-    ? "h-20 md:h-44"
-    : "h-16 md:h-36";
+  const heightClass = fill
+    ? "absolute inset-0"
+    : large
+      ? "h-20 md:h-44"
+      : "h-16 md:h-36";
   const shape = "bg-white/55 ring-1 ring-inset ring-white/40";
   return (
     <div
@@ -654,70 +755,65 @@ function GroupRow({ group, chosen }: { group: Group; chosen: boolean }) {
   );
 }
 
-function SharedGalleryTile({
-  card,
-  large = false,
-}: {
-  card: PlaceholderCard;
-  large?: boolean;
-}) {
-  return (
-    <div className="overflow-hidden rounded-lg border border-[color:var(--border)] bg-white">
-      <CoverPlaceholder pattern={card.pattern} tone={card.tone} large={large} />
-      <div
-        className={
-          large
-            ? "px-2 py-1.5 md:px-5 md:py-3.5"
-            : "px-1.5 py-1 md:px-3 md:py-2.5"
-        }
-      >
-        <p
-          className={
-            large
-              ? "truncate font-serif text-[11px] leading-tight text-[color:var(--ink)] md:text-[17px]"
-              : "truncate font-serif text-[9.5px] leading-tight text-[color:var(--ink)] md:text-[13px]"
-          }
-        >
-          {card.title}
-        </p>
-        <p
-          className={
-            large
-              ? "mt-0.5 truncate text-[8.5px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)] md:mt-1 md:text-[10px] md:tracking-[0.18em]"
-              : "mt-0.5 truncate text-[7.5px] uppercase tracking-[0.16em] text-[color:var(--ink-faint)] md:text-[9.5px] md:tracking-[0.18em]"
-          }
-        >
-          {card.meta}
-        </p>
-      </div>
-    </div>
-  );
-}
-
+/**
+ * SharedPagePreview — compressed, faithful mock of /share/[token].
+ *
+ * Layout mirrors app/share/[token]/page.tsx so the demo doesn't drift when
+ * that page is iterated:
+ *   - hairline top bar with serif italic "Memora" + mono date caps
+ *   - masthead (eyebrow with sender + recipients, big serif "Shared with X."
+ *     headline with italic on the variable portion, optional message column
+ *     separated by a vertical rule)
+ *   - featured hero (16:9-ish placeholder with FEATURED tag, location caps,
+ *     gallery title overlay, date range + day count on the right)
+ *   - "Also featured:" grid of secondary tiles
+ *
+ * Sizes are tuned for the demo stage's fixed ~560 px height — proportions
+ * match the real page; absolute font sizes are scaled down ~30%.
+ */
 function SharedPagePreview({
-  audience,
-  title,
+  senderName,
+  groupName,
+  recipientLabels,
+  date,
   message,
   url,
   cards,
   stage = "loaded",
 }: {
-  audience: string;
-  title: string;
+  senderName: string;
+  groupName: string;
+  recipientLabels: string[];
+  date: string;
   message: string;
   url: string;
   cards: PlaceholderCard[];
   stage?: "empty" | "pasted" | "navigating" | "loaded";
 }) {
-  const [cover, ...thumbs] = cards;
+  const [featured, ...rest] = cards;
   const showUrl = stage !== "empty";
   const highlightUrl = stage === "pasted";
   const showProgress = stage === "navigating";
   const showContent = stage === "loaded";
+
+  // Real page splits the title so the variable portion (group name) renders
+  // italic against the leading "Shared with". For the default no-group fallback
+  // ("Shared with you") the second word still goes italic, which matches.
+  const titleLeading = "Shared with";
+  const titleRest = groupName || "you";
+
+  const recipientsLine = recipientLabels.length
+    ? recipientLabels.map((l) => l.toUpperCase()).join(" · ")
+    : null;
+  const eyebrow = `${recipientsLine ? `${recipientsLine} — ` : ""}FROM ${senderName.toUpperCase()}`;
+  const dateCaps = date.toUpperCase();
+  const restCount = rest.length;
+  const restCountLabel = `${restCount} ${restCount === 1 ? "GALLERY" : "GALLERIES"}`;
+
   return (
-    <div className="flex h-full flex-col bg-white">
+    <div className="flex h-full flex-col bg-[color:var(--background)]">
       {/* Browser chrome */}
-      <div className="relative flex h-10 items-center gap-3 border-b border-[color:var(--border)] bg-[color:var(--paper)] px-4 md:px-5">
+      <div className="relative flex h-10 shrink-0 items-center gap-3 border-b border-[color:var(--border)] bg-[color:var(--paper)] px-4 md:px-5">
         <div className="flex gap-1.5">
           <span className="h-2.5 w-2.5 rounded-full bg-[#ec8682]" />
           <span className="h-2.5 w-2.5 rounded-full bg-[#f3c066]" />
@@ -754,7 +850,6 @@ function SharedPagePreview({
             />
           )}
         </motion.div>
-        {/* Loading progress — hairline across the chrome base */}
         <AnimatePresence>
           {showProgress ? (
             <motion.div
@@ -775,81 +870,108 @@ function SharedPagePreview({
         initial={{ opacity: 0 }}
         animate={{ opacity: showContent ? 1 : 0 }}
         transition={{ duration: 0.4, ease: EASE, delay: showContent ? 0.05 : 0 }}
-        className="relative flex-1 overflow-hidden px-3.5 py-4 md:px-12 md:py-10"
+        className="relative flex-1 overflow-hidden bg-[color:var(--background)] px-4 pt-3 text-[color:var(--ink)] md:px-8 md:pt-4"
       >
-        <p className="text-[8.5px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)] md:text-[10px] md:tracking-[0.3em]">
-          Shared privately · {audience}
-        </p>
-        <h3 className="mt-1.5 max-w-[22rem] font-serif text-[18px] leading-[1.08] text-[color:var(--ink)] md:mt-2.5 md:text-[34px] md:leading-[1.04]">
-          {title}
-        </h3>
-        <p className="mt-2 max-w-[22rem] text-[10.5px] leading-[1.45] text-[color:var(--ink-soft)] md:mt-4 md:text-[14.5px] md:leading-7">
-          “{message}”
-        </p>
+        {/* Top bar: brand · date — black hairline divider, real page idiom. */}
+        <div className="flex items-baseline justify-between border-b-[0.5px] border-[color:var(--ink)] pb-2 md:pb-2.5">
+          <p className="font-serif italic text-[12px] text-[color:var(--ink)] md:text-[14px]">
+            Memora
+          </p>
+          <p className="font-[family-name:var(--font-mono)] text-[8px] uppercase tracking-[0.22em] text-[color:var(--ink)] md:text-[9.5px]">
+            {dateCaps}
+          </p>
+        </div>
 
-        {cover ? (
-          <div className="mt-3 grid grid-cols-[1.4fr_1fr] gap-2 md:mt-8 md:gap-5">
-            <SharedGalleryTile card={cover} large />
-            <div className="grid grid-cols-1 grid-rows-2 gap-2 md:grid-cols-2 md:grid-rows-1 md:gap-5">
-              {thumbs.slice(0, 2).map((t) => (
-                <SharedGalleryTile key={t.id} card={t} />
-              ))}
+        {/* Masthead — title left, message right with vertical rule */}
+        <div className="grid grid-cols-1 gap-3 py-3 md:grid-cols-[1.6fr_1fr] md:gap-6 md:py-4">
+          <div className="min-w-0">
+            <p className="truncate font-[family-name:var(--font-mono)] text-[8px] uppercase tracking-[0.22em] text-[color:var(--ink-soft)] md:text-[9.5px]">
+              {eyebrow}
+            </p>
+            <h3 className="mt-1.5 font-serif text-[18px] leading-[1.05] tracking-tight text-[color:var(--ink)] md:mt-2 md:text-[30px]">
+              {titleLeading} <span className="italic">{titleRest}</span>
+              <span className="text-[color:var(--ink-faint)]">.</span>
+            </h3>
+          </div>
+          <div className="md:border-l-[0.5px] md:border-[color:var(--ink)] md:pl-5">
+            <p className="font-serif text-[10.5px] leading-[1.5] text-[color:var(--ink)] md:text-[12px] md:leading-[1.6]">
+              {message}
+            </p>
+          </div>
+        </div>
+
+        {/* Featured hero — placeholder with overlay text */}
+        {featured ? (
+          <div className="relative aspect-[21/10] w-full overflow-hidden rounded-[3px] bg-[color:var(--paper-strong)] md:aspect-[24/10]">
+            <CoverArt card={featured} />
+            {/* Dark scrim for overlay text. Real /share lays this over a
+                photograph; here it only needs to bottom-load so the wireframe
+                placeholder still reads above it. */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"
+            />
+            <span className="absolute left-2.5 top-2.5 hidden rounded-sm bg-white/90 px-1.5 py-0.5 font-[family-name:var(--font-mono)] text-[8px] uppercase tracking-[0.22em] text-black md:left-3 md:top-3 md:inline-block md:px-2 md:py-1 md:text-[9px]">
+              Featured
+            </span>
+            <div className="absolute inset-x-2.5 bottom-2 flex flex-wrap items-end justify-between gap-2 text-white md:inset-x-4 md:bottom-3">
+              <div className="min-w-0">
+                <p className="font-[family-name:var(--font-mono)] text-[8px] uppercase tracking-[0.22em] text-white/85 md:text-[9.5px]">
+                  {featured.location.toUpperCase()}
+                </p>
+                <h4 className="mt-1 font-serif text-[16px] leading-tight md:mt-1.5 md:text-[26px]">
+                  {featured.title}
+                </h4>
+              </div>
+              <div className="text-right">
+                <p className="font-[family-name:var(--font-mono)] text-[8.5px] uppercase tracking-[0.16em] text-white/85 md:text-[9.5px]">
+                  {featured.dateRange.toUpperCase()}
+                </p>
+                {featured.days ? (
+                  <p className="mt-0.5 font-[family-name:var(--font-mono)] text-[8.5px] uppercase tracking-[0.16em] text-white/75 md:text-[9.5px]">
+                    {featured.days} DAYS
+                  </p>
+                ) : null}
+              </div>
             </div>
           </div>
         ) : null}
 
-        {/* Annotation callouts — visible once the page has loaded. */}
-        {showContent ? (
-          <>
-            <Annotation
-              delay={0.35}
-              style={{ left: "calc(22rem + 0.75rem)", top: "90px" }}
-              text="Choose a personalized title for the people you're sharing with."
-            />
-            <Annotation
-              delay={0.55}
-              style={{ left: "calc(22rem + 0.75rem)", top: "188px" }}
-              text="Add a personal note along the way."
-            />
-          </>
+        {/* Also featured */}
+        {rest.length ? (
+          <div className="mt-3 md:mt-5">
+            <div className="flex items-baseline justify-between border-b-[0.5px] border-[color:var(--border-strong)] pb-1.5 md:pb-2">
+              <p className="font-serif text-[13px] text-[color:var(--ink)] md:text-[16px]">
+                Also featured:
+              </p>
+              <p className="font-[family-name:var(--font-mono)] text-[8px] uppercase tracking-[0.22em] text-[color:var(--ink)] md:text-[9.5px]">
+                {restCountLabel}
+              </p>
+            </div>
+            <div className="mt-2.5 grid grid-cols-2 gap-3 md:mt-3 md:gap-5">
+              {rest.slice(0, 2).map((card) => (
+                <SharedAlsoTile key={card.id} card={card} />
+              ))}
+            </div>
+          </div>
         ) : null}
       </motion.div>
     </div>
   );
 }
 
-/**
- * Annotation callout — a small captioned box with a hairline pointer to
- * the element it's describing. Positioned absolutely by the parent.
- */
-function Annotation({
-  text,
-  style,
-  delay = 0,
-}: {
-  text: string;
-  style: React.CSSProperties;
-  delay?: number;
-}) {
+function SharedAlsoTile({ card }: { card: PlaceholderCard }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 6 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.45, ease: EASE, delay }}
-      style={style}
-      className="pointer-events-none absolute z-20 hidden w-[210px] items-center md:flex"
-    >
-      {/* Pointer: dot on the target end, hairline running to the caption */}
-      <div className="relative flex h-px w-6 shrink-0 items-center">
-        <span
-          className="absolute left-0 h-[5px] w-[5px] -translate-y-1/2 rounded-full bg-[color:var(--accent-strong)]"
-          style={{ top: "50%" }}
-        />
-        <span className="h-px w-full bg-[color:var(--border-strong)] opacity-70" />
+    <div>
+      <div className="relative aspect-[3/2] w-full overflow-hidden rounded-[2px] bg-[color:var(--paper-strong)]">
+        <CoverArt card={card} />
       </div>
-      <div className="rounded-md border border-[color:var(--border)] bg-white/95 px-3 py-2 text-[10.5px] leading-[1.35] text-[color:var(--ink)] shadow-[0_10px_22px_-14px_rgba(18,31,48,0.22)] backdrop-blur-sm">
-        {text}
-      </div>
-    </motion.div>
+      <p className="mt-1.5 truncate font-serif text-[11px] leading-[1.15] text-[color:var(--ink)] md:mt-2 md:text-[14px]">
+        {card.title}
+      </p>
+      <p className="mt-0.5 truncate font-[family-name:var(--font-mono)] text-[7.5px] uppercase tracking-[0.14em] text-[color:var(--ink-faint)] md:text-[9px] md:tracking-[0.16em]">
+        {card.location.toUpperCase()} · {card.dateRange.toUpperCase()}
+      </p>
+    </div>
   );
 }
