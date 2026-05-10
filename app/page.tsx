@@ -98,28 +98,10 @@ export default function HomePage() {
       </section>
 
       {/*
-        Memory globe — stays on the site's normal paper. Section break is
-        a faint radial glow behind the globe; no hairline rule, since the
-        partial-width inset-x-4 line read as cropping the layout.
-      */}
-      <section
-        aria-label="Memora Map"
-        className="relative mx-auto w-full max-w-7xl px-4 py-24 md:px-6 md:py-32"
-      >
-        {/* Full-bleed so the radial fade dissolves into the page bg
-            instead of clipping at the max-w-7xl right edge. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-0 -z-10 h-full w-screen -translate-x-1/2 bg-[radial-gradient(ellipse_at_60%_50%,rgba(120,150,195,0.10)_0%,transparent_55%)]"
-        />
-        <HomeMemoryGlobe />
-      </section>
-
-      {/*
         Share demo — full-bleed flat navy surface. The inner demo is white,
         so the contrast reads as an editorial spread: the page body for the
         heading, a navy plate for the showpiece. Edges feather softly so
-        the transition from the light globe section doesn't feel cut.
+        the transition from the surrounding light sections doesn't feel cut.
       */}
       <section
         aria-label="Sharing a gallery"
@@ -142,6 +124,24 @@ export default function HomePage() {
         <div className="relative mx-auto w-full max-w-7xl px-4 py-24 md:px-6 md:py-32">
           <HomeShareDemo />
         </div>
+      </section>
+
+      {/*
+        Memory globe — stays on the site's normal paper. Section break is
+        a faint radial glow behind the globe; no hairline rule, since the
+        partial-width inset-x-4 line read as cropping the layout.
+      */}
+      <section
+        aria-label="Memora Map"
+        className="relative mx-auto w-full max-w-7xl px-4 py-24 md:px-6 md:py-32"
+      >
+        {/* Full-bleed so the radial fade dissolves into the page bg
+            instead of clipping at the max-w-7xl right edge. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-0 -z-10 h-full w-screen -translate-x-1/2 bg-[radial-gradient(ellipse_at_60%_50%,rgba(120,150,195,0.10)_0%,transparent_55%)]"
+        />
+        <HomeMemoryGlobe />
       </section>
 
       {/*
