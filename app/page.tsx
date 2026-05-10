@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
-import { HomeGalleryBuild } from "@/components/home-gallery-build";
+import { HomeGalleryTour } from "@/components/home-gallery-tour";
 import { HomeHero } from "@/components/home-hero";
 import { HomeMemoryGlobe } from "@/components/home-memory-globe";
 import { HomeShareDemo } from "@/components/home-share-demo";
@@ -94,7 +94,7 @@ export default function HomePage() {
         id={REVEAL_TARGET_ID}
         className="mx-auto w-full max-w-7xl px-4 py-24 md:px-6 md:py-32"
       >
-        <HomeGalleryBuild />
+        <HomeGalleryTour />
       </section>
 
       {/*
