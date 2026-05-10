@@ -160,7 +160,10 @@ const SEQUENCE: Cue[] = [
 ];
 
 const TOTAL_DURATION_MS = 20000;
-const SCENE_SCROLL_DISTANCE = 1020;
+// Fallback scroll distance — overridden at runtime once we measure the actual
+// scene content overflow. Without measurement the mobile layout (2-col grid,
+// taller rows) would under-scroll because the constant was tuned for desktop.
+const SCENE_SCROLL_FALLBACK = 1020;
 
 export function HomeGalleryTour() {
   const [stage, setStage] = useState<Stage>("workspace");
@@ -170,6 +173,8 @@ export function HomeGalleryTour() {
   const [tourComplete, setTourComplete] = useState(false);
   const timeoutsRef = useRef<number[]>([]);
   const scrollRafRef = useRef<number | null>(null);
+  const sceneScrollRef = useRef<HTMLDivElement | null>(null);
+  const sceneInnerRef = useRef<HTMLDivElement | null>(null);
 
   const clearAll = useCallback(() => {
     timeoutsRef.current.forEach((id) => window.clearTimeout(id));
@@ -220,9 +225,12 @@ export function HomeGalleryTour() {
           const clearId = window.setTimeout(() => setPulseId(null), 360);
           timeoutsRef.current.push(clearId);
         } else if (cue.kind === "scroll") {
-          // Distance is the full inner-content overflow so every photo in
-          // the scene rolls into view by the end of the scroll cue.
-          animateScroll(SCENE_SCROLL_DISTANCE, cue.durationMs);
+          // Measure live overflow so the scroll covers every row regardless
+          // of viewport (mobile uses 2 cols → taller content than desktop 3).
+          const inner = sceneInnerRef.current?.scrollHeight ?? 0;
+          const outer = sceneScrollRef.current?.clientHeight ?? 0;
+          const distance = Math.max(0, inner - outer) || SCENE_SCROLL_FALLBACK;
+          animateScroll(distance, cue.durationMs);
         }
       }, cue.at);
       timeoutsRef.current.push(id);
@@ -270,7 +278,7 @@ export function HomeGalleryTour() {
       {/* Stage — fixed height so the cuts don't reflow the page. */}
       <div
         ref={stageRef}
-        className="relative mx-auto mt-12 h-[600px] w-full max-w-5xl overflow-hidden rounded-sm border border-white/10 bg-[color:var(--background)] shadow-[0_32px_80px_-24px_rgba(0,0,0,0.55),0_0_0_1px_rgba(255,255,255,0.04)] ring-1 ring-white/5 md:h-[640px]"
+        className="relative mx-auto mt-10 h-[520px] w-full max-w-5xl overflow-hidden rounded-sm border border-white/10 bg-[color:var(--background)] shadow-[0_32px_80px_-24px_rgba(0,0,0,0.55),0_0_0_1px_rgba(255,255,255,0.04)] ring-1 ring-white/5 md:mt-12 md:h-[640px]"
       >
         <BrowserChrome path={browserPathFor(stage)} />
 
@@ -311,7 +319,11 @@ export function HomeGalleryTour() {
                   transition={{ duration: 0.36, ease: EASE }}
                   className="absolute inset-0 overflow-hidden"
                 >
-                  <SceneStage scrollY={scrollY} />
+                  <SceneStage
+                    scrollY={scrollY}
+                    outerRef={sceneScrollRef}
+                    innerRef={sceneInnerRef}
+                  />
                 </motion.div>
               ) : null}
             </AnimatePresence>
@@ -372,7 +384,7 @@ function Sidebar() {
   return (
     <aside
       style={{ width: SIDEBAR_WIDTH }}
-      className="relative flex shrink-0 flex-col border-r border-[color:var(--border)] bg-[color:var(--chrome)] py-3"
+      className="relative hidden shrink-0 flex-col border-r border-[color:var(--border)] bg-[color:var(--chrome)] py-3 md:flex"
     >
       <div className="flex items-center justify-between px-3 pb-3">
         <SidebarLogo />
@@ -444,7 +456,7 @@ function SidebarLink({
 
 function WorkspaceStage({ pulseId }: { pulseId: string | null }) {
   return (
-    <div className="h-full overflow-hidden px-6 pt-5 md:px-8 md:pt-6">
+    <div className="h-full overflow-hidden px-5 pt-5 md:px-8 md:pt-6">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="font-[family-name:var(--font-mono)] text-[9px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]">
@@ -457,7 +469,7 @@ function WorkspaceStage({ pulseId }: { pulseId: string | null }) {
             Curate, preserve, and share your experiences here.
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-3 pt-1">
+        <div className="hidden shrink-0 items-center gap-3 pt-1 md:flex">
           <ArrowUpDown className="h-3 w-3 text-[color:var(--ink-faint)]" />
           <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-[0.2em] text-[color:var(--ink-soft)]">
             <Share2 className="h-2.5 w-2.5" /> Share galleries
@@ -468,7 +480,7 @@ function WorkspaceStage({ pulseId }: { pulseId: string | null }) {
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-x-5 gap-y-7 md:gap-x-7">
+      <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-7 md:gap-x-7">
         {GALLERIES.map((gallery) => (
           <WorkspaceGalleryCard
             key={gallery.id}
@@ -505,7 +517,7 @@ function WorkspaceGalleryCard({
         transition={{ duration: 0.28, ease: EASE }}
         className="relative w-full border bg-[color:var(--frame-bg)] p-1.5 md:p-2.5"
       >
-        <div className="relative aspect-[16/9] w-full overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)]">
+        <div className="relative aspect-[4/5] w-full overflow-hidden border border-[color:var(--border)] bg-[color:var(--paper-strong)] md:aspect-[16/9]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={gallery.imageSrc}
@@ -522,13 +534,13 @@ function WorkspaceGalleryCard({
         </div>
         <span
           aria-hidden
-          className="pointer-events-none absolute left-3 top-3 inline-flex items-center bg-[color:var(--chrome)] px-1.5 py-0.5 font-[family-name:var(--font-mono)] text-[9px] tracking-[0.14em] text-[color:var(--ink)]"
+          className="pointer-events-none absolute left-2 top-2 inline-flex items-center bg-[color:var(--chrome)] px-1 py-px font-[family-name:var(--font-mono)] text-[7px] tracking-[0.14em] text-[color:var(--ink)] md:left-3 md:top-3 md:px-1.5 md:py-0.5 md:text-[9px]"
         >
           {gallery.year}
         </span>
         <span
           aria-hidden
-          className="pointer-events-none absolute right-3 top-3 inline-flex items-center bg-[color:var(--chrome)] px-1.5 py-0.5 font-[family-name:var(--font-mono)] text-[9px] tracking-[0.14em] text-[color:var(--ink)]"
+          className="pointer-events-none absolute right-2 top-2 inline-flex items-center bg-[color:var(--chrome)] px-1 py-px font-[family-name:var(--font-mono)] text-[7px] tracking-[0.14em] text-[color:var(--ink)] md:right-3 md:top-3 md:px-1.5 md:py-0.5 md:text-[9px]"
         >
           {gallery.days}d
         </span>
@@ -547,7 +559,7 @@ function WorkspaceGalleryCard({
 
 function GalleryStage({ pulseId }: { pulseId: string | null }) {
   return (
-    <div className="h-full overflow-hidden px-6 pt-5 md:px-8 md:pt-6">
+    <div className="h-full overflow-hidden px-5 pt-5 md:px-8 md:pt-6">
       <button
         type="button"
         className="inline-flex items-center gap-1.5 font-[family-name:var(--font-mono)] text-[9.5px] uppercase tracking-[0.2em] text-[color:var(--ink-soft)]"
@@ -616,24 +628,25 @@ function SubgalleryCard({ sub, pulsing }: { sub: Subgallery; pulsing: boolean })
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/72 via-black/30 to-black/0"
       />
-      <div className="absolute inset-x-3 bottom-3 text-white md:inset-x-4 md:bottom-4">
-        <p className="font-[family-name:var(--font-mono)] text-[9px] uppercase tracking-[0.22em] text-white/85">
+      <div className="absolute inset-x-2.5 bottom-2.5 text-white md:inset-x-4 md:bottom-4">
+        <p className="font-[family-name:var(--font-mono)] text-[7.5px] uppercase tracking-[0.22em] text-white/85 md:text-[9px]">
           Scene
         </p>
-        <h5 className="mt-1 font-serif text-[18px] leading-[1.05] md:text-[24px]">
+        <h5 className="mt-0.5 font-serif text-[13px] leading-[1.1] md:mt-1 md:text-[24px]">
           {sub.title}
         </h5>
-        <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 font-[family-name:var(--font-mono)] text-[8.5px] uppercase tracking-[0.16em] text-white/85 md:text-[9.5px]">
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 font-[family-name:var(--font-mono)] text-[7px] uppercase tracking-[0.16em] text-white/85 md:mt-1.5 md:text-[9.5px]">
           <span className="inline-flex items-center gap-1">
-            <MapPin className="h-2.5 w-2.5" strokeWidth={1.8} />
+            <MapPin className="h-2 w-2 md:h-2.5 md:w-2.5" strokeWidth={1.8} />
             {sub.location}
           </span>
           <span className="inline-flex items-center gap-1">
-            <Calendar className="h-2.5 w-2.5" strokeWidth={1.8} />
+            <Calendar className="h-2 w-2 md:h-2.5 md:w-2.5" strokeWidth={1.8} />
             {sub.date}
           </span>
         </p>
-        <p className="mt-1.5 line-clamp-1 font-serif text-[11px] italic leading-[1.35] text-white/92 md:text-[12.5px]">
+        {/* Teaser hidden on mobile — no vertical room in the small 2-col card. */}
+        <p className="mt-1.5 hidden line-clamp-1 font-serif italic leading-[1.35] text-white/92 md:block md:text-[12.5px]">
           {sub.teaser}
         </p>
       </div>
@@ -653,15 +666,24 @@ function SubgalleryCard({ sub, pulsing }: { sub: Subgallery; pulsing: boolean })
   );
 }
 
-function SceneStage({ scrollY }: { scrollY: number }) {
+function SceneStage({
+  scrollY,
+  outerRef,
+  innerRef,
+}: {
+  scrollY: number;
+  outerRef: React.RefObject<HTMLDivElement | null>;
+  innerRef: React.RefObject<HTMLDivElement | null>;
+}) {
   return (
-    <div className="h-full overflow-hidden">
+    <div ref={outerRef} className="h-full overflow-hidden">
       {/* The whole scene view scrolls as one block during the auto-scroll
           cue so the entry text drifts up as the photo grid reveals more. */}
       <motion.div
+        ref={innerRef}
         animate={{ y: -scrollY }}
         transition={{ duration: 0 }}
-        className="px-6 pt-5 md:px-8 md:pt-6"
+        className="px-5 pt-5 md:px-8 md:pt-6"
       >
         <button
           type="button"
@@ -688,7 +710,7 @@ function SceneStage({ scrollY }: { scrollY: number }) {
         </p>
 
         <div className="mt-4 border-t border-[color:var(--border)] pt-4">
-          <div className="grid grid-cols-3 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3">
             {SCENE_PHOTOS.map((p) => (
               <ScenePhoto key={p.id} src={p.src} />
             ))}

@@ -109,8 +109,8 @@ const CARDS: PlaceholderCard[] = [
   },
   {
     id: "c3",
-    title: "Japan Trip",
-    location: "Kyoto, Japan",
+    title: "Lake Como",
+    location: "Northern Italy",
     dateRange: "Apr 4 – Apr 14, 2024",
     year: "2024",
     days: 11,
@@ -120,8 +120,8 @@ const CARDS: PlaceholderCard[] = [
   },
   {
     id: "c4",
-    title: "Baja Mornings",
-    location: "Baja California, MX",
+    title: "Winter Olympics 2025",
+    location: "Livigno, Italy",
     dateRange: "Mar 18 – Mar 26, 2024",
     year: "2024",
     days: 9,
