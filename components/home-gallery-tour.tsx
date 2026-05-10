@@ -67,15 +67,6 @@ const GALLERIES: GalleryEntry[] = [
     imageSrc: "/demo/home-tour/gallery-norway.webp",
   },
   {
-    id: "spain",
-    title: "Weekends in Spain",
-    location: "Andalusia, Spain",
-    dateRange: "Jan 15 – May 22, 2026",
-    year: "2026",
-    days: 128,
-    imageSrc: "/demo/home-tour/gallery-spain.webp",
-  },
-  {
     id: "pais-vasco",
     title: "Road trip to Pais Vasco",
     location: "Basque Country, Spain",
@@ -83,6 +74,15 @@ const GALLERIES: GalleryEntry[] = [
     year: "2026",
     days: 5,
     imageSrc: "/demo/home-tour/gallery-pais-vasco.webp",
+  },
+  {
+    id: "spain",
+    title: "Weekends in Spain",
+    location: "Andalusia, Spain",
+    dateRange: "Jan 15 – May 22, 2026",
+    year: "2026",
+    days: 128,
+    imageSrc: "/demo/home-tour/gallery-spain.webp",
   },
   {
     id: "fruhlingsfest",
