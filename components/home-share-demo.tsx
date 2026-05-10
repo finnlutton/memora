@@ -476,10 +476,6 @@ export function HomeShareDemo() {
           ) : null}
         </AnimatePresence>
       </div>
-
-      <p className="mx-auto mt-6 max-w-[38rem] text-center text-[11px] uppercase tracking-[0.24em] text-white/55">
-        Demo only · placeholder cards, groups, and share page
-      </p>
     </section>
   );
 }

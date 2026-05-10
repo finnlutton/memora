@@ -257,10 +257,7 @@ export function HomeGalleryTour() {
       className="mx-auto w-full max-w-6xl px-4 md:px-6"
     >
       <div className="mx-auto max-w-3xl text-center">
-        <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-[color:var(--ink-soft)]">
-          A walkthrough
-        </p>
-        <h2 className="mt-5 font-serif text-[34px] leading-[1.04] text-[color:var(--ink)] md:text-[48px] md:leading-[1.0]">
+        <h2 className="font-serif text-[34px] leading-[1.04] text-[color:var(--ink)] md:text-[48px] md:leading-[1.0]">
           A look inside a real archive.
         </h2>
         <p className="mx-auto mt-5 max-w-[34rem] text-[14px] leading-7 text-[color:var(--ink-soft)] md:text-[15px]">
@@ -339,10 +336,6 @@ export function HomeGalleryTour() {
           ) : null}
         </AnimatePresence>
       </div>
-
-      <p className="mx-auto mt-6 max-w-[40rem] text-center text-[11px] uppercase tracking-[0.24em] text-[color:var(--ink-faint)]">
-        Built from a real archive · plays automatically when in view
-      </p>
     </section>
   );
 }
