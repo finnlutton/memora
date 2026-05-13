@@ -152,10 +152,10 @@ export const membershipPlans: MembershipPlan[] = [
   {
     id: "memora_pass",
     name: "Memora Pass",
-    priceMonthlyLabel: "$23.99",
+    priceMonthlyLabel: "$19.99",
     // One-time annual pass — store the actual cost so the checkout
     // summary renders correctly.
-    price: 23.99,
+    price: 19.99,
     galleryCount: 100,
     subgalleriesPerGallery: 50,
     photosPerSubgallery: 200,
@@ -422,7 +422,7 @@ export type ProfilePlanFields = {
  * Resolves the *effective* plan id for a profile, accounting for
  * one-time-plan expiry.
  *
- *   - Memora Pass     ($23.99 / 1 yr)     → `selected_plan = "memora_pass"`
+ *   - Memora Pass     ($19.99 / 1 yr)     → `selected_plan = "memora_pass"`
  *   - Abroad Pass     ($12.99 / 6 months) → `selected_plan = "abroad_pass"`
  *   - Max (legacy)    ($39.99 / 3 yrs)    → `selected_plan = "lifetime"`
  *
