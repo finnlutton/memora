@@ -39,7 +39,7 @@ export default function HelpPage() {
     <AppShell>
       <WorkspaceTopbar
         eyebrow="Beta support"
-        title="Help"
+        title="Feedback"
         subtitle="Seen something off? Send a quick note and I'll take a look."
       />
 

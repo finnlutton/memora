@@ -120,7 +120,7 @@ export function WorkspaceShell({ children, onSignOut, email: _email = "" }: Work
   // intact without making them visually compete with the real
   // destinations above.
   const utilityItems = [
-    { href: "/galleries/help", label: "Help", icon: HelpIcon, tourNav: undefined },
+    { href: "/galleries/help", label: "Feedback", icon: HelpIcon, tourNav: undefined },
     {
       href: "/galleries/settings",
       label: "Account Info",
