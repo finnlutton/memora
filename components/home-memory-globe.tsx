@@ -6,6 +6,24 @@ import type { GlobeMethods } from "react-globe.gl";
 
 const Globe = dynamic(() => import("react-globe.gl"), { ssr: false });
 
+/**
+ * three.js throws "Error creating WebGL context." when the browser refuses a
+ * WebGL context (HW acceleration off, blocklisted GPU driver — common on
+ * Firefox/Windows, or WebGL disabled). Probe once before mounting the globe so
+ * those visitors get a static fallback instead of a thrown error + blank area.
+ */
+function detectWebGL(): boolean {
+  try {
+    const canvas = document.createElement("canvas");
+    return Boolean(
+      window.WebGLRenderingContext &&
+        (canvas.getContext("webgl") || canvas.getContext("experimental-webgl")),
+    );
+  } catch {
+    return false;
+  }
+}
+
 type DemoPin = {
   id: string;
   title: string;
@@ -38,6 +56,11 @@ export function HomeMemoryGlobe() {
   const [size, setSize] = useState({ w: 560, h: 560 });
   const [activeId, setActiveId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [webglAvailable, setWebglAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setWebglAvailable(detectWebGL());
+  }, []);
 
   useEffect(() => {
     const node = containerRef.current;
@@ -54,6 +77,7 @@ export function HomeMemoryGlobe() {
   }, []);
 
   useEffect(() => {
+    if (webglAvailable !== true) return;
     // react-globe.gl is dynamically imported, so globeRef.current may not be
     // populated on first mount. Poll briefly until it is, then configure.
     let cancelled = false;
@@ -99,7 +123,7 @@ export function HomeMemoryGlobe() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [webglAvailable]);
 
   const pauseRotation = useCallback((paused: boolean) => {
     const controls = globeRef.current?.controls?.() as { autoRotate?: boolean } | undefined;
@@ -250,27 +274,37 @@ export function HomeMemoryGlobe() {
             aria-hidden
             className="pointer-events-none absolute inset-[-20%] rounded-full bg-[radial-gradient(circle_at_center,rgba(150,192,240,0.34)_0%,rgba(130,176,224,0.14)_40%,transparent_72%)] blur-[3px]"
           />
-          <div
-            className={`absolute inset-0 transition-opacity duration-[900ms] ${
-              ready ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <Globe
-              ref={globeRef}
-              width={size.w}
-              height={size.h}
-              backgroundColor="rgba(0,0,0,0)"
-              globeImageUrl="/textures/new_earth.jpg"
-              showAtmosphere
-              atmosphereColor="rgba(156, 196, 240, 0.7)"
-              atmosphereAltitude={0.26}
-              htmlElementsData={DEMO_PINS}
-              htmlLat="lat"
-              htmlLng="lng"
-              htmlAltitude={0.008}
-              htmlElement={htmlElement}
-            />
-          </div>
+          {webglAvailable === false ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <img
+                src="/textures/new_earth.jpg"
+                alt="Globe with saved memory locations"
+                className="aspect-square w-full max-w-[560px] rounded-full object-cover shadow-[0_0_60px_rgba(120,170,224,0.28)]"
+              />
+            </div>
+          ) : webglAvailable === true ? (
+            <div
+              className={`absolute inset-0 transition-opacity duration-[900ms] ${
+                ready ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <Globe
+                ref={globeRef}
+                width={size.w}
+                height={size.h}
+                backgroundColor="rgba(0,0,0,0)"
+                globeImageUrl="/textures/new_earth.jpg"
+                showAtmosphere
+                atmosphereColor="rgba(156, 196, 240, 0.7)"
+                atmosphereAltitude={0.26}
+                htmlElementsData={DEMO_PINS}
+                htmlLat="lat"
+                htmlLng="lng"
+                htmlAltitude={0.008}
+                htmlElement={htmlElement}
+              />
+            </div>
+          ) : null}
 
           {/* Compact preview anchored directly above the selected pin. */}
           {activePin && previewPos ? (
